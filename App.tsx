@@ -31,7 +31,7 @@ const App: React.FC = () => {
             </nav>
             <div className="flex items-center gap-2">
               <button className="p-2 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-lg text-slate-400"><Bell size={18} /></button>
-              <div className="w-8 h-8 rounded-full bg-indigo-100 dark:bg-indigo-900/50 border border-indigo-200 dark:border-indigo-700 flex items-center justify-center text-indigo-600 dark:text-indigo-400 text-xs font-black">관리자</div>
+              <img src="/admin_avatar.png" alt="관리자" className="w-8 h-8 rounded-full object-cover border-2 border-indigo-200 dark:border-indigo-700" />
             </div>
           </div>
         </header>

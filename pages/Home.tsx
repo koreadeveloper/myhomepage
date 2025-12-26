@@ -507,7 +507,7 @@ const Home: React.FC = () => {
          <main className="flex-grow overflow-y-auto bg-[#f9f9fb] dark:bg-slate-900 p-6 lg:p-12">
             <div className="max-w-7xl mx-auto">
                <div className="mb-12">
-                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 text-[10px] font-black uppercase mb-4">
+                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 text-[10px] font-black uppercase mb-4 ml-14 lg:ml-0">
                      <Zap size={12} fill="currentColor" /> {getKoreanGreeting()}
                   </div>
                   <h1 className="text-4xl lg:text-5xl font-black text-slate-900 dark:text-white tracking-tight">
@@ -559,7 +559,7 @@ const Home: React.FC = () => {
                               <span className="text-xs font-bold text-emerald-600">달러/원</span>
                               {marketData?.usd.isUp ? <TrendingUp size={12} className="text-red-500" /> : <TrendingDown size={12} className="text-blue-500" />}
                            </div>
-                           <div className="text-lg font-black">{marketData?.usd.value || '---'}</div>
+                           <div className="text-lg font-black dark:text-white">{marketData?.usd.value || '---'}</div>
                         </div>
                         {/* 코스피 */}
                         <div className="flex justify-between items-center">
@@ -567,17 +567,17 @@ const Home: React.FC = () => {
                               <span className="text-xs font-bold text-blue-600">코스피</span>
                               {marketData?.kospi.isUp ? <TrendingUp size={12} className="text-red-500" /> : <TrendingDown size={12} className="text-blue-500" />}
                            </div>
-                           <div className="text-lg font-black">{marketData?.kospi.value || '---'}</div>
+                           <div className="text-lg font-black dark:text-white">{marketData?.kospi.value || '---'}</div>
                         </div>
                         {/* 비트코인 */}
                         <div className="flex justify-between items-center">
                            <span className="text-xs font-bold text-orange-500">비트코인</span>
-                           <div className="text-sm font-black">${marketData?.btc.priceUsd || '---'}</div>
+                           <div className="text-sm font-black dark:text-white">${marketData?.btc.priceUsd || '---'}</div>
                         </div>
                         {/* 이더리움 */}
                         <div className="flex justify-between items-center">
                            <span className="text-xs font-bold text-indigo-500">이더리움</span>
-                           <div className="text-sm font-black">${marketData?.eth.priceUsd || '---'}</div>
+                           <div className="text-sm font-black dark:text-white">${marketData?.eth.priceUsd || '---'}</div>
                         </div>
                      </div>
                      <div className="text-[10px] text-slate-400 font-medium">실시간 시세</div>
