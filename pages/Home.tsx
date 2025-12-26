@@ -128,10 +128,12 @@ const Home: React.FC = () => {
    const [habits, setHabits] = useState<Habit[]>(() => JSON.parse(localStorage.getItem('habits') || '[]'));
    const [newHabitName, setNewHabitName] = useState('');
 
-   // 다크 모드 상태
+   // 다크 모드 상태 (시간 기반 기본값 적용)
    const [isDarkMode, setIsDarkMode] = useState(() => {
       const saved = localStorage.getItem('darkMode');
-      return saved ? JSON.parse(saved) : false;
+      if (saved !== null) return JSON.parse(saved);
+      const hour = new Date().getHours();
+      return hour >= 18 || hour < 6; // 저녁 6시 ~ 아침 6시는 다크 모드 기본
    });
 
    // 달력 상태
@@ -215,9 +217,8 @@ const Home: React.FC = () => {
       return () => clearInterval(interval);
    }, [isStopwatchActive]);
 
-   // 다크 모드 적용
+   // 다크 모드 적용 (DOM만 업데이트, 저장은 핸들러에서)
    useEffect(() => {
-      localStorage.setItem('darkMode', JSON.stringify(isDarkMode));
       if (isDarkMode) {
          document.documentElement.classList.add('dark');
       } else {
@@ -435,7 +436,11 @@ const Home: React.FC = () => {
             <div className="flex items-center justify-between">
                <span className="text-xs font-bold text-slate-500 dark:text-slate-400">테마</span>
                <button
-                  onClick={() => setIsDarkMode(!isDarkMode)}
+                  onClick={() => {
+                     const newMode = !isDarkMode;
+                     setIsDarkMode(newMode);
+                     localStorage.setItem('darkMode', JSON.stringify(newMode)); // 수동 변경 시 저장
+                  }}
                   className={`p-2 rounded-xl transition-all ${isDarkMode ? 'bg-indigo-500 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
                >
                   {isDarkMode ? <Moon size={16} /> : <Sun size={16} />}
