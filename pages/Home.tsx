@@ -7,7 +7,8 @@ import {
    Code, Monitor, Zap, LayoutGrid, Calendar,
    Calculator, Scissors, Type, ShieldCheck, HardDrive,
    Smartphone, Copy, Check, X, GripVertical, TrendingUp, TrendingDown,
-   Timer, Palette, FileCode, Link, Play, Pause, RotateCcw, Target, Plus, Trash2
+   Timer, Palette, FileCode, Link, Play, Pause, RotateCcw, Target, Plus, Trash2,
+   Sun, Moon, ChevronLeft, ChevronRight, ChevronUp, ChevronDown, User, Menu
 } from 'lucide-react';
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
@@ -127,6 +128,31 @@ const Home: React.FC = () => {
    const [habits, setHabits] = useState<Habit[]>(() => JSON.parse(localStorage.getItem('habits') || '[]'));
    const [newHabitName, setNewHabitName] = useState('');
 
+   // 다크 모드 상태
+   const [isDarkMode, setIsDarkMode] = useState(() => {
+      const saved = localStorage.getItem('darkMode');
+      return saved ? JSON.parse(saved) : false;
+   });
+
+   // 달력 상태
+   const [calendarDate, setCalendarDate] = useState(new Date());
+
+   // 방문자 카운터 상태
+   const [visitorCount, setVisitorCount] = useState(() => {
+      const today = new Date().toDateString();
+      const stored = JSON.parse(localStorage.getItem('visitorData') || '{"today":0,"total":0,"lastDate":""}');
+      if (stored.lastDate !== today) {
+         return { today: 1, total: stored.total + 1, lastDate: today };
+      }
+      return stored;
+   });
+
+   // 스크롤 버튼 표시 상태
+   const [showScrollBtn, setShowScrollBtn] = useState(false);
+
+   // 모바일 사이드바 상태
+   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
+
    // Drag and drop sensors
    const sensors = useSensors(
       useSensor(PointerSensor),
@@ -188,6 +214,30 @@ const Home: React.FC = () => {
       }
       return () => clearInterval(interval);
    }, [isStopwatchActive]);
+
+   // 다크 모드 적용
+   useEffect(() => {
+      localStorage.setItem('darkMode', JSON.stringify(isDarkMode));
+      if (isDarkMode) {
+         document.documentElement.classList.add('dark');
+      } else {
+         document.documentElement.classList.remove('dark');
+      }
+   }, [isDarkMode]);
+
+   // 방문자 카운터 저장
+   useEffect(() => {
+      localStorage.setItem('visitorData', JSON.stringify(visitorCount));
+   }, [visitorCount]);
+
+   // 스크롤 감지
+   useEffect(() => {
+      const handleScroll = () => {
+         setShowScrollBtn(window.scrollY > 300);
+      };
+      window.addEventListener('scroll', handleScroll);
+      return () => window.removeEventListener('scroll', handleScroll);
+   }, []);
 
    const formatPomo = () => {
       const m = Math.floor(pomo / 60);
@@ -325,35 +375,125 @@ const Home: React.FC = () => {
       }));
    };
 
+   // 달력 헬퍼
+   const getCalendarDays = () => {
+      const year = calendarDate.getFullYear();
+      const month = calendarDate.getMonth();
+      const firstDay = new Date(year, month, 1).getDay();
+      const daysInMonth = new Date(year, month + 1, 0).getDate();
+      const days: (number | null)[] = [];
+      for (let i = 0; i < firstDay; i++) days.push(null);
+      for (let i = 1; i <= daysInMonth; i++) days.push(i);
+      return days;
+   };
+   const prevMonth = () => setCalendarDate(new Date(calendarDate.getFullYear(), calendarDate.getMonth() - 1));
+   const nextMonth = () => setCalendarDate(new Date(calendarDate.getFullYear(), calendarDate.getMonth() + 1));
+   const isToday = (day: number) => {
+      const today = new Date();
+      return day === today.getDate() && calendarDate.getMonth() === today.getMonth() && calendarDate.getFullYear() === today.getFullYear();
+   };
+
+   // 스크롤 함수
+   const scrollToTop = () => window.scrollTo({ top: 0, behavior: 'smooth' });
+   const scrollToBottom = () => window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'smooth' });
+
    return (
-      <div className="flex h-[calc(100-72px)] overflow-hidden">
-         {/* 1. 사이드바 - 클릭 시 실제 모달 작동 */}
-         <aside className="w-64 bg-white border-r border-gray-100 hidden lg:flex flex-col p-6 space-y-8 overflow-y-auto">
+      <div className={`flex h-[calc(100-72px)] overflow-hidden ${isDarkMode ? 'dark' : ''}`}>
+         {/* 모바일 햄버거 버튼 */}
+         <button
+            onClick={() => setIsMobileSidebarOpen(true)}
+            className="lg:hidden fixed top-20 left-4 z-40 p-3 bg-white dark:bg-slate-800 rounded-xl shadow-lg border border-gray-100 dark:border-slate-700"
+         >
+            <Menu size={20} className="text-slate-600 dark:text-slate-300" />
+         </button>
+
+         {/* 모바일 오버레이 */}
+         {isMobileSidebarOpen && (
+            <div
+               onClick={() => setIsMobileSidebarOpen(false)}
+               className="lg:hidden fixed inset-0 bg-black/50 z-40"
+            />
+         )}
+
+         {/* 1. 사이드바 */}
+         <aside className={`
+            w-64 bg-white dark:bg-slate-800 border-r border-gray-100 dark:border-slate-700 
+            flex flex-col p-6 space-y-6 overflow-y-auto z-50
+            fixed lg:relative inset-y-0 left-0
+            transform transition-transform duration-300 ease-in-out
+            ${isMobileSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
+         `}>
+            {/* 모바일 닫기 버튼 */}
+            <button
+               onClick={() => setIsMobileSidebarOpen(false)}
+               className="lg:hidden absolute top-4 right-4 p-2 text-slate-400 hover:text-slate-600"
+            >
+               <X size={20} />
+            </button>
+
+            {/* 다크 모드 토글 */}
+            <div className="flex items-center justify-between">
+               <span className="text-xs font-bold text-slate-500 dark:text-slate-400">테마</span>
+               <button
+                  onClick={() => setIsDarkMode(!isDarkMode)}
+                  className={`p-2 rounded-xl transition-all ${isDarkMode ? 'bg-indigo-500 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
+               >
+                  {isDarkMode ? <Moon size={16} /> : <Sun size={16} />}
+               </button>
+            </div>
+
+            {/* 미니 프로필 */}
+            <div className="flex items-center gap-3 p-3 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-2xl text-white">
+               <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center">
+                  <User size={20} />
+               </div>
+               <div>
+                  <div className="font-bold text-sm">운영자</div>
+                  <div className="text-[10px] opacity-80">기록하는 개발자입니다</div>
+               </div>
+            </div>
+
+            {/* 방문자 카운터 */}
+            <div className="p-3 bg-slate-50 dark:bg-slate-700 rounded-xl">
+               <div className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase mb-2">방문자</div>
+               <div className="flex justify-between text-sm">
+                  <div className="text-center">
+                     <div className="font-black text-indigo-600 dark:text-indigo-400">{visitorCount.today}</div>
+                     <div className="text-[10px] text-slate-400">Today</div>
+                  </div>
+                  <div className="w-px bg-slate-200 dark:bg-slate-600" />
+                  <div className="text-center">
+                     <div className="font-black text-slate-700 dark:text-slate-300">{visitorCount.total}</div>
+                     <div className="text-[10px] text-slate-400">Total</div>
+                  </div>
+               </div>
+            </div>
+
             <div>
-               <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-4">작업 공간</h4>
+               <h4 className="text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest mb-4">작업 공간</h4>
                <nav className="space-y-1">
-                  <button onClick={() => setActiveModal(null)} className={`w-full flex items-center gap-3 px-3 py-2 text-sm font-bold rounded-lg transition-colors ${!activeModal ? 'text-slate-900 bg-slate-50' : 'text-slate-500 hover:bg-slate-50'}`}><LayoutGrid size={18} /> 홈</button>
-                  <button onClick={() => setActiveModal('json')} className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium text-slate-500 hover:bg-slate-50 rounded-lg transition-colors"><Code size={18} /> JSON 포맷터</button>
-                  <button onClick={() => { setActiveModal('pw'); generatePassword(); }} className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium text-slate-500 hover:bg-slate-50 rounded-lg transition-colors"><ShieldCheck size={18} /> 비밀번호 생성기</button>
-                  <button onClick={() => setActiveModal('word')} className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium text-slate-500 hover:bg-slate-50 rounded-lg transition-colors"><Type size={18} /> 글자수 세기</button>
-                  <button onClick={() => setActiveModal('stopwatch')} className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium text-slate-500 hover:bg-slate-50 rounded-lg transition-colors"><Timer size={18} /> 스톱워치</button>
-                  <button onClick={() => setActiveModal('dday')} className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium text-slate-500 hover:bg-slate-50 rounded-lg transition-colors"><Calendar size={18} /> D-day 카운터</button>
-                  <button onClick={() => setActiveModal('color')} className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium text-slate-500 hover:bg-slate-50 rounded-lg transition-colors"><Palette size={18} /> 색상 피커</button>
-                  <button onClick={() => setActiveModal('base64')} className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium text-slate-500 hover:bg-slate-50 rounded-lg transition-colors"><FileCode size={18} /> Base64 변환</button>
-                  <button onClick={() => setActiveModal('url')} className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium text-slate-500 hover:bg-slate-50 rounded-lg transition-colors"><Link size={18} /> URL 인코더</button>
-                  <button onClick={() => setActiveModal('snippet')} className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium text-slate-500 hover:bg-slate-50 rounded-lg transition-colors"><Code size={18} /> 코드 스니펫</button>
+                  <button onClick={() => setActiveModal(null)} className={`w-full flex items-center gap-3 px-3 py-2 text-sm font-bold rounded-lg transition-colors ${!activeModal ? 'text-slate-900 dark:text-white bg-slate-50 dark:bg-slate-700' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700'}`}><LayoutGrid size={18} /> 홈</button>
+                  <button onClick={() => setActiveModal('json')} className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-lg transition-colors"><Code size={18} /> JSON 포맷터</button>
+                  <button onClick={() => { setActiveModal('pw'); generatePassword(); }} className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-lg transition-colors"><ShieldCheck size={18} /> 비밀번호 생성기</button>
+                  <button onClick={() => setActiveModal('word')} className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-lg transition-colors"><Type size={18} /> 글자수 세기</button>
+                  <button onClick={() => setActiveModal('stopwatch')} className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-lg transition-colors"><Timer size={18} /> 스톱워치</button>
+                  <button onClick={() => setActiveModal('dday')} className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-lg transition-colors"><Calendar size={18} /> D-day 카운터</button>
+                  <button onClick={() => setActiveModal('color')} className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-lg transition-colors"><Palette size={18} /> 색상 피커</button>
+                  <button onClick={() => setActiveModal('base64')} className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-lg transition-colors"><FileCode size={18} /> Base64 변환</button>
+                  <button onClick={() => setActiveModal('url')} className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-lg transition-colors"><Link size={18} /> URL 인코더</button>
+                  <button onClick={() => setActiveModal('snippet')} className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-lg transition-colors"><Code size={18} /> 코드 스니펫</button>
                </nav>
             </div>
 
             <div>
-               <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-4">개인 루틴</h4>
+               <h4 className="text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest mb-4">개인 루틴</h4>
                <nav className="space-y-1">
-                  <button onClick={() => setIsPomoActive(!isPomoActive)} className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium text-slate-500 hover:bg-slate-50 rounded-lg transition-colors"><Flame size={18} /> {isPomoActive ? '타이머 중지' : '집중 모드 시작'}</button>
+                  <button onClick={() => setIsPomoActive(!isPomoActive)} className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-lg transition-colors"><Flame size={18} /> {isPomoActive ? '타이머 중지' : '집중 모드 시작'}</button>
                </nav>
             </div>
 
-            <div className="pt-8 mt-auto">
-               <div className="p-4 bg-slate-900 rounded-2xl text-white">
+            <div className="pt-4 mt-auto">
+               <div className="p-4 bg-slate-900 dark:bg-slate-950 rounded-2xl text-white">
                   <div className="text-[10px] font-bold text-slate-400 uppercase mb-2">시스템 상태</div>
                   <div className="space-y-2">
                      <div className="flex justify-between text-[11px]"><span>배터리</span> <span>{batt}</span></div>
@@ -364,13 +504,13 @@ const Home: React.FC = () => {
          </aside>
 
          {/* 2. 메인 대시보드 */}
-         <main className="flex-grow overflow-y-auto bg-[#f9f9fb] p-6 lg:p-12">
+         <main className="flex-grow overflow-y-auto bg-[#f9f9fb] dark:bg-slate-900 p-6 lg:p-12">
             <div className="max-w-7xl mx-auto">
                <div className="mb-12">
-                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-50 text-indigo-600 text-[10px] font-black uppercase mb-4">
+                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 text-[10px] font-black uppercase mb-4">
                      <Zap size={12} fill="currentColor" /> {getKoreanGreeting()}
                   </div>
-                  <h1 className="text-4xl lg:text-5xl font-black text-slate-900 tracking-tight">
+                  <h1 className="text-4xl lg:text-5xl font-black text-slate-900 dark:text-white tracking-tight">
                      당신의 스마트한 공간 , <span className="text-transparent bg-clip-text clickup-gradient">sia.kr</span>
                   </h1>
                </div>
@@ -396,7 +536,7 @@ const Home: React.FC = () => {
                   <div className="md:col-span-2 glass-card p-8 rounded-3xl flex justify-between items-center shadow-sm">
                      <div>
                         <div className="text-sm font-bold text-slate-400 mb-1">{time.toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' })}</div>
-                        <div className="text-5xl font-black text-slate-900">{time.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}</div>
+                        <div className="text-5xl font-black text-slate-900 dark:text-white">{time.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}</div>
                         <div className="mt-4 flex items-center gap-2 text-indigo-600 font-bold">
                            <AlertCircle size={16} /> <span>오늘 할 일이 {todos.filter(t => !t.completed).length}건 남았습니다.</span>
                         </div>
@@ -407,10 +547,10 @@ const Home: React.FC = () => {
                   </div>
 
                   {/* 시장 데이터 */}
-                  <div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 flex flex-col justify-between">
+                  <div className="bg-white dark:bg-slate-800 p-6 rounded-3xl shadow-sm border border-gray-100 dark:border-slate-700 flex flex-col justify-between">
                      <div className="flex justify-between items-start">
                         <h4 className="text-xs font-black uppercase text-slate-400">시장 데이터</h4>
-                        <RefreshCw size={14} className="text-slate-300 animate-spin-slow" />
+                        <RefreshCw size={14} className="text-slate-300 dark:text-slate-600 animate-spin-slow" />
                      </div>
                      <div className="space-y-3 my-4">
                         {/* 달러/원 환율 */}
@@ -462,7 +602,7 @@ const Home: React.FC = () => {
                   </div>
 
                   {/* 할 일 목록 */}
-                  <div className="md:row-span-2 bg-white p-6 rounded-3xl shadow-sm border border-gray-100 flex flex-col">
+                  <div className="md:row-span-2 bg-white dark:bg-slate-800 p-6 rounded-3xl shadow-sm border border-gray-100 dark:border-slate-700 flex flex-col">
                      <div className="flex items-center justify-between mb-4">
                         <h4 className="text-xs font-black uppercase text-slate-400">내 할 일</h4>
                         <CheckCircle size={18} className="text-green-500" />
@@ -477,7 +617,7 @@ const Home: React.FC = () => {
                               }
                            }
                         }}
-                        type="text" placeholder="입력 후 엔터..." className="w-full text-sm border-b pb-2 mb-4 outline-none focus:border-indigo-500 transition-colors"
+                        type="text" placeholder="입력 후 엔터..." className="w-full text-sm border-b dark:border-slate-600 pb-2 mb-4 outline-none focus:border-indigo-500 transition-colors bg-transparent dark:text-white dark:placeholder:text-slate-500"
                      />
                      <div className="flex-grow space-y-1 overflow-y-auto pr-2 max-h-[300px]">
                         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
@@ -496,24 +636,24 @@ const Home: React.FC = () => {
                   </div>
 
                   {/* 집중 타이머 위젯 */}
-                  <div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 text-center">
+                  <div className="bg-white dark:bg-slate-800 p-6 rounded-3xl shadow-sm border border-gray-100 dark:border-slate-700 text-center">
                      <h4 className="text-[10px] font-black uppercase text-slate-400 mb-4">포모도로</h4>
-                     <div className="text-4xl font-black text-slate-900 mb-4 font-mono">{formatPomo()}</div>
+                     <div className="text-4xl font-black text-slate-900 dark:text-white mb-4 font-mono">{formatPomo()}</div>
                      <div className="flex gap-2">
-                        <button onClick={() => setIsPomoActive(!isPomoActive)} className="flex-grow py-2 bg-slate-900 text-white text-[10px] font-bold rounded-xl hover:bg-black transition-all">
+                        <button onClick={() => setIsPomoActive(!isPomoActive)} className="flex-grow py-2 bg-slate-900 dark:bg-indigo-600 text-white text-[10px] font-bold rounded-xl hover:bg-black dark:hover:bg-indigo-700 transition-all">
                            {isPomoActive ? '정지' : '시작'}
                         </button>
-                        <button onClick={() => { setPomo(1500); setIsPomoActive(false); }} className="p-2 bg-slate-100 text-slate-500 rounded-xl hover:bg-slate-200"><RefreshCw size={14} /></button>
+                        <button onClick={() => { setPomo(1500); setIsPomoActive(false); }} className="p-2 bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-300 rounded-xl hover:bg-slate-200 dark:hover:bg-slate-600"><RefreshCw size={14} /></button>
                      </div>
                   </div>
 
                   {/* 퀵 메모 */}
-                  <div className="md:col-span-1 bg-white p-6 rounded-3xl shadow-sm border border-gray-100">
+                  <div className="md:col-span-1 bg-white dark:bg-slate-800 p-6 rounded-3xl shadow-sm border border-gray-100 dark:border-slate-700">
                      <h4 className="text-[10px] font-black uppercase text-slate-400 mb-4">퀵 메모</h4>
                      <textarea
                         value={note}
                         onChange={(e) => setNote(e.target.value)}
-                        className="w-full h-24 text-sm resize-none outline-none text-slate-600 bg-slate-50 p-3 rounded-2xl"
+                        className="w-full h-24 text-sm resize-none outline-none text-slate-600 dark:text-slate-200 bg-slate-50 dark:bg-slate-700 p-3 rounded-2xl placeholder:text-slate-400"
                         placeholder="아이디어를 기록하세요..."
                      />
                   </div>
@@ -532,20 +672,20 @@ const Home: React.FC = () => {
                   </div>
 
                   {/* 명언 위젯 */}
-                  <div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 flex flex-col justify-between">
+                  <div className="bg-white dark:bg-slate-800 p-6 rounded-3xl shadow-sm border border-gray-100 dark:border-slate-700 flex flex-col justify-between">
                      <div className="flex items-center gap-2 mb-4">
-                        <Quote size={16} className="text-slate-300" />
+                        <Quote size={16} className="text-slate-300 dark:text-slate-600" />
                         <h4 className="text-[10px] font-black uppercase text-slate-400">오늘의 영감</h4>
                      </div>
-                     <p className="text-[11px] italic text-slate-500 leading-relaxed font-medium">
+                     <p className="text-[11px] italic text-slate-500 dark:text-slate-300 leading-relaxed font-medium">
                         "지속적인 성장은 불편함을 기꺼이 감수할 때 찾아온다."
                      </p>
-                     <div className="mt-4 pt-4 border-t border-slate-50 flex justify-between items-center">
+                     <div className="mt-4 pt-4 border-t border-slate-50 dark:border-slate-700 flex justify-between items-center">
                         <div className="flex items-center gap-1">
                            <Globe size={12} className="text-slate-400" />
                            <span className="text-[10px] font-bold text-slate-400">{visitor?.country || '한국'}</span>
                         </div>
-                        <div className="text-[10px] font-bold text-indigo-500">sia.kr</div>
+                        <div className="text-[10px] font-bold text-indigo-500 dark:text-indigo-400">sia.kr</div>
                      </div>
                   </div>
 
@@ -589,9 +729,51 @@ const Home: React.FC = () => {
                         {habits.length === 0 && <div className="text-center text-white/50 text-sm py-4">습관을 추가해보세요</div>}
                      </div>
                   </div>
+
+                  {/* 달력 위젯 */}
+                  <div className="bg-white dark:bg-slate-800 p-6 rounded-3xl shadow-sm border border-gray-100 dark:border-slate-700">
+                     <div className="flex items-center justify-between mb-4">
+                        <button onClick={prevMonth} className="p-1 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg"><ChevronLeft size={16} className="text-slate-400" /></button>
+                        <h4 className="text-sm font-black text-slate-700 dark:text-slate-300">
+                           {calendarDate.getFullYear()}년 {calendarDate.getMonth() + 1}월
+                        </h4>
+                        <button onClick={nextMonth} className="p-1 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg"><ChevronRight size={16} className="text-slate-400" /></button>
+                     </div>
+                     <div className="grid grid-cols-7 gap-1 text-center text-[10px] text-slate-400 mb-2">
+                        {['일', '월', '화', '수', '목', '금', '토'].map(d => <div key={d} className="font-bold">{d}</div>)}
+                     </div>
+                     <div className="grid grid-cols-7 gap-1 text-center text-xs">
+                        {getCalendarDays().map((day, i) => (
+                           <div
+                              key={i}
+                              className={`p-1.5 rounded-lg ${day === null ? '' : isToday(day) ? 'bg-indigo-500 text-white font-bold' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700'}`}
+                           >
+                              {day}
+                           </div>
+                        ))}
+                     </div>
+                  </div>
                </div>
             </div>
          </main>
+
+         {/* 플로팅 스크롤 버튼 */}
+         {showScrollBtn && (
+            <div className="fixed bottom-6 right-6 flex flex-col gap-2 z-50">
+               <button
+                  onClick={scrollToTop}
+                  className="p-3 bg-slate-900 dark:bg-slate-700 text-white rounded-full shadow-lg hover:bg-black dark:hover:bg-slate-600 transition-all"
+               >
+                  <ChevronUp size={20} />
+               </button>
+               <button
+                  onClick={scrollToBottom}
+                  className="p-3 bg-slate-200 dark:bg-slate-600 text-slate-600 dark:text-white rounded-full shadow-lg hover:bg-slate-300 dark:hover:bg-slate-500 transition-all"
+               >
+                  <ChevronDown size={20} />
+               </button>
+            </div>
+         )}
 
          {/* 3. 유틸리티 모달들 */}
 

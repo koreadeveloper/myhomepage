@@ -9,29 +9,29 @@ import { Search, Bell } from 'lucide-react';
 const App: React.FC = () => {
   return (
     <Router>
-      <div className="flex flex-col bg-[#f9f9fb] min-h-screen">
+      <div className="flex flex-col bg-[#f9f9fb] dark:bg-slate-900 min-h-screen transition-colors">
         {/* sia.kr 전용 헤더 */}
-        <header className="h-[72px] flex-shrink-0 bg-white border-b border-gray-100 px-6 flex items-center justify-between z-50 sticky top-0 lg:static">
+        <header className="h-[72px] flex-shrink-0 bg-white dark:bg-slate-800 border-b border-gray-100 dark:border-slate-700 px-6 flex items-center justify-between z-50 sticky top-0 lg:static transition-colors">
           <div className="flex items-center gap-8">
             <Link to="/" className="flex items-center gap-2">
-              <div className="w-9 h-9 clickup-gradient rounded-xl flex items-center justify-center text-white font-black italic shadow-lg shadow-purple-100 text-lg">S</div>
-              <span className="font-black text-xl tracking-tighter text-slate-900">sia.kr</span>
+              <div className="w-9 h-9 clickup-gradient rounded-xl flex items-center justify-center text-white font-black italic shadow-lg shadow-purple-100 dark:shadow-purple-900/30 text-lg">S</div>
+              <span className="font-black text-xl tracking-tighter text-slate-900 dark:text-white">sia.kr</span>
             </Link>
-            <div className="hidden md:flex items-center bg-slate-50 rounded-lg px-3 py-1.5 border border-slate-100 w-64">
+            <div className="hidden md:flex items-center bg-slate-50 dark:bg-slate-700 rounded-lg px-3 py-1.5 border border-slate-100 dark:border-slate-600 w-64">
               <Search size={16} className="text-slate-400 mr-2" />
-              <input type="text" placeholder="명령어 또는 기능 검색..." className="bg-transparent text-xs font-medium outline-none w-full" />
+              <input type="text" placeholder="명령어 또는 기능 검색..." className="bg-transparent text-xs font-medium outline-none w-full text-slate-600 dark:text-slate-200 placeholder:text-slate-400" />
             </div>
           </div>
 
           <div className="flex items-center gap-4">
             <nav className="hidden lg:flex items-center gap-6 mr-6">
-              <Link to="/" className="text-xs font-bold text-slate-500 hover:text-indigo-600 transition-colors">전체보기</Link>
-              <Link to="/community" className="text-xs font-bold text-slate-500 hover:text-indigo-600 transition-colors">커뮤니티</Link>
-              <Link to="/guestbook" className="text-xs font-bold text-slate-500 hover:text-indigo-600 transition-colors">방명록</Link>
+              <Link to="/" className="text-xs font-bold text-slate-500 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">전체보기</Link>
+              <Link to="/community" className="text-xs font-bold text-slate-500 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">커뮤니티</Link>
+              <Link to="/guestbook" className="text-xs font-bold text-slate-500 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">방명록</Link>
             </nav>
             <div className="flex items-center gap-2">
-              <button className="p-2 hover:bg-slate-50 rounded-lg text-slate-400"><Bell size={18} /></button>
-              <div className="w-8 h-8 rounded-full bg-indigo-100 border border-indigo-200 flex items-center justify-center text-indigo-600 text-xs font-black">관리자</div>
+              <button className="p-2 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-lg text-slate-400"><Bell size={18} /></button>
+              <div className="w-8 h-8 rounded-full bg-indigo-100 dark:bg-indigo-900/50 border border-indigo-200 dark:border-indigo-700 flex items-center justify-center text-indigo-600 dark:text-indigo-400 text-xs font-black">관리자</div>
             </div>
           </div>
         </header>
