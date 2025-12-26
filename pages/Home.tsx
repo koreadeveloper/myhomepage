@@ -6,13 +6,14 @@ import {
    Settings, Battery, AlertCircle, RefreshCw,
    Code, Monitor, Zap, LayoutGrid, Calendar,
    Calculator, Scissors, Type, ShieldCheck, HardDrive,
-   Smartphone, Copy, Check, X, GripVertical, TrendingUp, TrendingDown
+   Smartphone, Copy, Check, X, GripVertical, TrendingUp, TrendingDown,
+   Timer, Palette, FileCode, Link, Play, Pause, RotateCcw, Target, Plus, Trash2
 } from 'lucide-react';
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { fetchWeather, fetchMarketData, getVisitorIpInfo } from '../services/api';
-import { Shortcut, WeatherData, CryptoData, MarketData, VisitorInfo, Todo } from '../types';
+import { Shortcut, WeatherData, CryptoData, MarketData, VisitorInfo, Todo, Dday, Habit, CodeSnippet } from '../types';
 import Modal from '../components/Modal';
 
 const ORIGINAL_SHORTCUTS: Shortcut[] = [
@@ -92,6 +93,40 @@ const Home: React.FC = () => {
    const [calcInput, setCalcInput] = useState('');
    const [copied, setCopied] = useState(false);
 
+   // 스톱워치 상태
+   const [stopwatch, setStopwatch] = useState(0);
+   const [isStopwatchActive, setIsStopwatchActive] = useState(false);
+   const [laps, setLaps] = useState<number[]>([]);
+
+   // D-day 상태
+   const [ddays, setDdays] = useState<Dday[]>(() => JSON.parse(localStorage.getItem('ddays') || '[]'));
+   const [newDdayTitle, setNewDdayTitle] = useState('');
+   const [newDdayDate, setNewDdayDate] = useState('');
+
+   // 색상 피커 상태
+   const [pickerColor, setPickerColor] = useState('#7b68ee');
+   const [savedColors, setSavedColors] = useState<string[]>(() => JSON.parse(localStorage.getItem('savedColors') || '[]'));
+
+   // Base64 상태
+   const [base64Input, setBase64Input] = useState('');
+   const [base64Output, setBase64Output] = useState('');
+   const [base64Mode, setBase64Mode] = useState<'encode' | 'decode'>('encode');
+
+   // URL 인코더 상태
+   const [urlInput, setUrlInput] = useState('');
+   const [urlOutput, setUrlOutput] = useState('');
+   const [urlMode, setUrlMode] = useState<'encode' | 'decode'>('encode');
+
+   // 코드 스니펫 상태
+   const [snippets, setSnippets] = useState<CodeSnippet[]>(() => JSON.parse(localStorage.getItem('snippets') || '[]'));
+   const [newSnippetTitle, setNewSnippetTitle] = useState('');
+   const [newSnippetCode, setNewSnippetCode] = useState('');
+   const [newSnippetLang, setNewSnippetLang] = useState('javascript');
+
+   // 습관 트래커 상태
+   const [habits, setHabits] = useState<Habit[]>(() => JSON.parse(localStorage.getItem('habits') || '[]'));
+   const [newHabitName, setNewHabitName] = useState('');
+
    // Drag and drop sensors
    const sensors = useSensors(
       useSensor(PointerSensor),
@@ -131,7 +166,11 @@ const Home: React.FC = () => {
    useEffect(() => {
       localStorage.setItem('todos', JSON.stringify(todos));
       localStorage.setItem('quick_note', note);
-   }, [todos, note]);
+      localStorage.setItem('ddays', JSON.stringify(ddays));
+      localStorage.setItem('savedColors', JSON.stringify(savedColors));
+      localStorage.setItem('snippets', JSON.stringify(snippets));
+      localStorage.setItem('habits', JSON.stringify(habits));
+   }, [todos, note, ddays, savedColors, snippets, habits]);
 
    useEffect(() => {
       let interval: any;
@@ -140,6 +179,15 @@ const Home: React.FC = () => {
       } else clearInterval(interval);
       return () => clearInterval(interval);
    }, [isPomoActive, pomo]);
+
+   // 스톱워치 타이머
+   useEffect(() => {
+      let interval: any;
+      if (isStopwatchActive) {
+         interval = setInterval(() => setStopwatch(s => s + 10), 10);
+      }
+      return () => clearInterval(interval);
+   }, [isStopwatchActive]);
 
    const formatPomo = () => {
       const m = Math.floor(pomo / 60);
@@ -190,6 +238,93 @@ const Home: React.FC = () => {
       }
    };
 
+   // 스톱워치 헬퍼
+   const formatStopwatch = (ms: number) => {
+      const minutes = Math.floor(ms / 60000);
+      const seconds = Math.floor((ms % 60000) / 1000);
+      const centiseconds = Math.floor((ms % 1000) / 10);
+      return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}.${centiseconds.toString().padStart(2, '0')}`;
+   };
+
+   const addLap = () => setLaps([...laps, stopwatch]);
+   const resetStopwatch = () => { setStopwatch(0); setLaps([]); setIsStopwatchActive(false); };
+
+   // D-day 헬퍼
+   const addDday = () => {
+      if (newDdayTitle && newDdayDate) {
+         setDdays([...ddays, { id: Date.now().toString(), title: newDdayTitle, date: newDdayDate }]);
+         setNewDdayTitle(''); setNewDdayDate('');
+      }
+   };
+   const deleteDday = (id: string) => setDdays(ddays.filter(d => d.id !== id));
+   const getDdayDiff = (dateStr: string) => {
+      const target = new Date(dateStr);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      target.setHours(0, 0, 0, 0);
+      return Math.ceil((target.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+   };
+
+   // 색상 피커 헬퍼
+   const saveColor = () => {
+      if (!savedColors.includes(pickerColor)) {
+         setSavedColors([...savedColors, pickerColor]);
+      }
+   };
+   const deleteColor = (color: string) => setSavedColors(savedColors.filter(c => c !== color));
+   const hexToRgb = (hex: string) => {
+      const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+      return result ? `rgb(${parseInt(result[1], 16)}, ${parseInt(result[2], 16)}, ${parseInt(result[3], 16)})` : '';
+   };
+
+   // Base64 헬퍼
+   const handleBase64 = () => {
+      try {
+         if (base64Mode === 'encode') {
+            setBase64Output(btoa(unescape(encodeURIComponent(base64Input))));
+         } else {
+            setBase64Output(decodeURIComponent(escape(atob(base64Input))));
+         }
+      } catch { setBase64Output('오류: 유효하지 않은 입력'); }
+   };
+
+   // URL 인코더 헬퍼
+   const handleUrl = () => {
+      try {
+         setUrlOutput(urlMode === 'encode' ? encodeURIComponent(urlInput) : decodeURIComponent(urlInput));
+      } catch { setUrlOutput('오류: 유효하지 않은 입력'); }
+   };
+
+   // 코드 스니펫 헬퍼
+   const addSnippet = () => {
+      if (newSnippetTitle && newSnippetCode) {
+         setSnippets([...snippets, { id: Date.now().toString(), title: newSnippetTitle, code: newSnippetCode, language: newSnippetLang }]);
+         setNewSnippetTitle(''); setNewSnippetCode(''); setNewSnippetLang('javascript');
+      }
+   };
+   const deleteSnippet = (id: string) => setSnippets(snippets.filter(s => s.id !== id));
+
+   // 습관 트래커 헬퍼
+   const addHabit = () => {
+      if (newHabitName) {
+         setHabits([...habits, { id: Date.now().toString(), name: newHabitName, streak: 0, lastChecked: null }]);
+         setNewHabitName('');
+      }
+   };
+   const deleteHabit = (id: string) => setHabits(habits.filter(h => h.id !== id));
+   const checkHabit = (id: string) => {
+      const today = new Date().toDateString();
+      setHabits(habits.map(h => {
+         if (h.id === id) {
+            if (h.lastChecked === today) return h;
+            const yesterday = new Date(Date.now() - 86400000).toDateString();
+            const newStreak = h.lastChecked === yesterday ? h.streak + 1 : 1;
+            return { ...h, streak: newStreak, lastChecked: today };
+         }
+         return h;
+      }));
+   };
+
    return (
       <div className="flex h-[calc(100-72px)] overflow-hidden">
          {/* 1. 사이드바 - 클릭 시 실제 모달 작동 */}
@@ -201,6 +336,12 @@ const Home: React.FC = () => {
                   <button onClick={() => setActiveModal('json')} className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium text-slate-500 hover:bg-slate-50 rounded-lg transition-colors"><Code size={18} /> JSON 포맷터</button>
                   <button onClick={() => { setActiveModal('pw'); generatePassword(); }} className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium text-slate-500 hover:bg-slate-50 rounded-lg transition-colors"><ShieldCheck size={18} /> 비밀번호 생성기</button>
                   <button onClick={() => setActiveModal('word')} className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium text-slate-500 hover:bg-slate-50 rounded-lg transition-colors"><Type size={18} /> 글자수 세기</button>
+                  <button onClick={() => setActiveModal('stopwatch')} className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium text-slate-500 hover:bg-slate-50 rounded-lg transition-colors"><Timer size={18} /> 스톱워치</button>
+                  <button onClick={() => setActiveModal('dday')} className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium text-slate-500 hover:bg-slate-50 rounded-lg transition-colors"><Calendar size={18} /> D-day 카운터</button>
+                  <button onClick={() => setActiveModal('color')} className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium text-slate-500 hover:bg-slate-50 rounded-lg transition-colors"><Palette size={18} /> 색상 피커</button>
+                  <button onClick={() => setActiveModal('base64')} className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium text-slate-500 hover:bg-slate-50 rounded-lg transition-colors"><FileCode size={18} /> Base64 변환</button>
+                  <button onClick={() => setActiveModal('url')} className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium text-slate-500 hover:bg-slate-50 rounded-lg transition-colors"><Link size={18} /> URL 인코더</button>
+                  <button onClick={() => setActiveModal('snippet')} className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium text-slate-500 hover:bg-slate-50 rounded-lg transition-colors"><Code size={18} /> 코드 스니펫</button>
                </nav>
             </div>
 
@@ -407,6 +548,47 @@ const Home: React.FC = () => {
                         <div className="text-[10px] font-bold text-indigo-500">sia.kr</div>
                      </div>
                   </div>
+
+                  {/* 습관 트래커 위젯 */}
+                  <div className="md:col-span-2 bg-gradient-to-br from-emerald-500 to-teal-600 text-white p-6 rounded-3xl shadow-xl">
+                     <div className="flex items-center justify-between mb-4">
+                        <h4 className="text-[10px] font-black uppercase opacity-80"><Target size={14} className="inline mr-1" /> 습관 트래커</h4>
+                        <div className="flex items-center gap-2">
+                           <input
+                              type="text"
+                              value={newHabitName}
+                              onChange={(e) => setNewHabitName(e.target.value)}
+                              onKeyDown={(e) => e.key === 'Enter' && addHabit()}
+                              placeholder="새 습관 추가..."
+                              className="px-2 py-1 text-xs bg-white/20 rounded-lg outline-none placeholder-white/50 w-28"
+                           />
+                           <button onClick={addHabit} className="p-1 bg-white/20 rounded-lg hover:bg-white/30"><Plus size={14} /></button>
+                        </div>
+                     </div>
+                     <div className="space-y-2 max-h-32 overflow-y-auto">
+                        {habits.map(h => {
+                           const isCheckedToday = h.lastChecked === new Date().toDateString();
+                           return (
+                              <div key={h.id} className="flex items-center justify-between bg-white/10 p-2 rounded-xl group">
+                                 <div className="flex items-center gap-2">
+                                    <button
+                                       onClick={() => checkHabit(h.id)}
+                                       className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${isCheckedToday ? 'bg-white border-white' : 'border-white/50'}`}
+                                    >
+                                       {isCheckedToday && <Check size={12} className="text-emerald-500" />}
+                                    </button>
+                                    <span className={`text-sm font-medium ${isCheckedToday ? 'opacity-60' : ''}`}>{h.name}</span>
+                                 </div>
+                                 <div className="flex items-center gap-2">
+                                    <span className="text-xs font-bold bg-white/20 px-2 py-0.5 rounded-full">🔥 {h.streak}일</span>
+                                    <button onClick={() => deleteHabit(h.id)} className="opacity-0 group-hover:opacity-100 text-white/60 hover:text-white"><X size={14} /></button>
+                                 </div>
+                              </div>
+                           );
+                        })}
+                        {habits.length === 0 && <div className="text-center text-white/50 text-sm py-4">습관을 추가해보세요</div>}
+                     </div>
+                  </div>
                </div>
             </div>
          </main>
@@ -504,6 +686,151 @@ const Home: React.FC = () => {
                   </div>
                </div>
                <button onClick={() => setActiveModal(null)} className="w-full py-3 bg-slate-900 text-white rounded-xl font-bold mt-2">확인 완료</button>
+            </div>
+         </Modal>
+
+         {/* 스톱워치 */}
+         <Modal isOpen={activeModal === 'stopwatch'} onClose={() => setActiveModal(null)} title="스톱워치">
+            <div className="text-center mb-6">
+               <div className="text-5xl font-black text-slate-900 font-mono mb-4">{formatStopwatch(stopwatch)}</div>
+               <div className="flex gap-2 justify-center">
+                  <button onClick={() => setIsStopwatchActive(!isStopwatchActive)} className={`px-6 py-3 rounded-xl font-bold ${isStopwatchActive ? 'bg-red-500 text-white' : 'bg-green-500 text-white'}`}>
+                     {isStopwatchActive ? <><Pause size={16} className="inline mr-2" />정지</> : <><Play size={16} className="inline mr-2" />시작</>}
+                  </button>
+                  <button onClick={addLap} disabled={!isStopwatchActive} className="px-4 py-3 bg-indigo-500 text-white rounded-xl font-bold disabled:opacity-50">랩</button>
+                  <button onClick={resetStopwatch} className="px-4 py-3 bg-slate-200 text-slate-600 rounded-xl font-bold"><RotateCcw size={16} /></button>
+               </div>
+            </div>
+            {laps.length > 0 && (
+               <div className="max-h-40 overflow-y-auto space-y-1">
+                  {laps.map((lap, i) => (
+                     <div key={i} className="flex justify-between text-sm p-2 bg-slate-50 rounded-lg">
+                        <span className="font-bold text-slate-500">랩 {i + 1}</span>
+                        <span className="font-mono">{formatStopwatch(lap)}</span>
+                     </div>
+                  ))}
+               </div>
+            )}
+         </Modal>
+
+         {/* D-day 카운터 */}
+         <Modal isOpen={activeModal === 'dday'} onClose={() => setActiveModal(null)} title="D-day 카운터">
+            <div className="flex gap-2 mb-4">
+               <input type="text" value={newDdayTitle} onChange={(e) => setNewDdayTitle(e.target.value)} placeholder="제목" className="flex-grow px-3 py-2 border rounded-lg text-sm" />
+               <input type="date" value={newDdayDate} onChange={(e) => setNewDdayDate(e.target.value)} className="px-3 py-2 border rounded-lg text-sm" />
+               <button onClick={addDday} className="px-4 py-2 bg-indigo-500 text-white rounded-lg font-bold"><Plus size={16} /></button>
+            </div>
+            <div className="space-y-2 max-h-60 overflow-y-auto">
+               {ddays.map(d => {
+                  const diff = getDdayDiff(d.date);
+                  return (
+                     <div key={d.id} className="flex items-center justify-between p-3 bg-slate-50 rounded-xl group">
+                        <div>
+                           <div className="font-bold text-slate-700">{d.title}</div>
+                           <div className="text-xs text-slate-400">{d.date}</div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                           <span className={`text-lg font-black ${diff === 0 ? 'text-green-500' : diff < 0 ? 'text-slate-400' : 'text-indigo-600'}`}>
+                              {diff === 0 ? 'D-Day!' : diff < 0 ? `D+${Math.abs(diff)}` : `D-${diff}`}
+                           </span>
+                           <button onClick={() => deleteDday(d.id)} className="opacity-0 group-hover:opacity-100 text-red-400 hover:text-red-600"><X size={16} /></button>
+                        </div>
+                     </div>
+                  );
+               })}
+               {ddays.length === 0 && <div className="text-center text-slate-400 py-4">D-day를 추가하세요</div>}
+            </div>
+         </Modal>
+
+         {/* 색상 피커 */}
+         <Modal isOpen={activeModal === 'color'} onClose={() => setActiveModal(null)} title="색상 피커">
+            <div className="flex items-center gap-4 mb-4">
+               <input type="color" value={pickerColor} onChange={(e) => setPickerColor(e.target.value)} className="w-16 h-16 rounded-xl cursor-pointer border-0" />
+               <div className="flex-grow">
+                  <div className="text-sm font-bold text-slate-600 mb-1">HEX: <span className="font-mono">{pickerColor}</span></div>
+                  <div className="text-sm font-bold text-slate-600">RGB: <span className="font-mono">{hexToRgb(pickerColor)}</span></div>
+               </div>
+            </div>
+            <div className="flex gap-2 mb-4">
+               <button onClick={() => copyToClipboard(pickerColor)} className="flex-grow py-2 bg-slate-900 text-white rounded-xl font-bold text-sm">HEX 복사</button>
+               <button onClick={() => copyToClipboard(hexToRgb(pickerColor))} className="flex-grow py-2 bg-slate-100 text-slate-600 rounded-xl font-bold text-sm">RGB 복사</button>
+               <button onClick={saveColor} className="px-4 py-2 bg-indigo-500 text-white rounded-xl font-bold"><Plus size={16} /></button>
+            </div>
+            {savedColors.length > 0 && (
+               <div className="flex flex-wrap gap-2">
+                  {savedColors.map((c, i) => (
+                     <div key={i} className="relative group">
+                        <div onClick={() => setPickerColor(c)} style={{ backgroundColor: c }} className="w-10 h-10 rounded-lg cursor-pointer border-2 border-white shadow-md hover:scale-110 transition-transform" />
+                        <button onClick={() => deleteColor(c)} className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 text-xs">×</button>
+                     </div>
+                  ))}
+               </div>
+            )}
+         </Modal>
+
+         {/* Base64 변환 */}
+         <Modal isOpen={activeModal === 'base64'} onClose={() => setActiveModal(null)} title="Base64 인코더/디코더">
+            <div className="flex gap-2 mb-4">
+               <button onClick={() => setBase64Mode('encode')} className={`flex-grow py-2 rounded-lg font-bold text-sm ${base64Mode === 'encode' ? 'bg-indigo-500 text-white' : 'bg-slate-100 text-slate-600'}`}>인코딩</button>
+               <button onClick={() => setBase64Mode('decode')} className={`flex-grow py-2 rounded-lg font-bold text-sm ${base64Mode === 'decode' ? 'bg-indigo-500 text-white' : 'bg-slate-100 text-slate-600'}`}>디코딩</button>
+            </div>
+            <textarea value={base64Input} onChange={(e) => setBase64Input(e.target.value)} placeholder={base64Mode === 'encode' ? '인코딩할 텍스트 입력...' : 'Base64 문자열 입력...'} className="w-full h-24 p-3 border rounded-xl text-sm mb-2 resize-none" />
+            <button onClick={handleBase64} className="w-full py-2 bg-slate-900 text-white rounded-xl font-bold mb-2">변환</button>
+            {base64Output && (
+               <div className="relative">
+                  <textarea value={base64Output} readOnly className="w-full h-24 p-3 bg-slate-50 border rounded-xl text-sm resize-none font-mono" />
+                  <button onClick={() => copyToClipboard(base64Output)} className="absolute top-2 right-2 p-2 bg-white rounded-lg shadow hover:bg-slate-100"><Copy size={14} /></button>
+               </div>
+            )}
+         </Modal>
+
+         {/* URL 인코더 */}
+         <Modal isOpen={activeModal === 'url'} onClose={() => setActiveModal(null)} title="URL 인코더/디코더">
+            <div className="flex gap-2 mb-4">
+               <button onClick={() => setUrlMode('encode')} className={`flex-grow py-2 rounded-lg font-bold text-sm ${urlMode === 'encode' ? 'bg-indigo-500 text-white' : 'bg-slate-100 text-slate-600'}`}>인코딩</button>
+               <button onClick={() => setUrlMode('decode')} className={`flex-grow py-2 rounded-lg font-bold text-sm ${urlMode === 'decode' ? 'bg-indigo-500 text-white' : 'bg-slate-100 text-slate-600'}`}>디코딩</button>
+            </div>
+            <textarea value={urlInput} onChange={(e) => setUrlInput(e.target.value)} placeholder={urlMode === 'encode' ? 'URL 인코딩할 텍스트...' : '디코딩할 URL...'} className="w-full h-20 p-3 border rounded-xl text-sm mb-2 resize-none" />
+            <button onClick={handleUrl} className="w-full py-2 bg-slate-900 text-white rounded-xl font-bold mb-2">변환</button>
+            {urlOutput && (
+               <div className="relative">
+                  <textarea value={urlOutput} readOnly className="w-full h-20 p-3 bg-slate-50 border rounded-xl text-sm resize-none font-mono break-all" />
+                  <button onClick={() => copyToClipboard(urlOutput)} className="absolute top-2 right-2 p-2 bg-white rounded-lg shadow hover:bg-slate-100"><Copy size={14} /></button>
+               </div>
+            )}
+         </Modal>
+
+         {/* 코드 스니펫 */}
+         <Modal isOpen={activeModal === 'snippet'} onClose={() => setActiveModal(null)} title="코드 스니펫 저장소">
+            <div className="space-y-2 mb-4">
+               <input type="text" value={newSnippetTitle} onChange={(e) => setNewSnippetTitle(e.target.value)} placeholder="스니펫 제목" className="w-full px-3 py-2 border rounded-lg text-sm" />
+               <select value={newSnippetLang} onChange={(e) => setNewSnippetLang(e.target.value)} className="w-full px-3 py-2 border rounded-lg text-sm">
+                  <option value="javascript">JavaScript</option>
+                  <option value="typescript">TypeScript</option>
+                  <option value="python">Python</option>
+                  <option value="html">HTML</option>
+                  <option value="css">CSS</option>
+                  <option value="json">JSON</option>
+                  <option value="sql">SQL</option>
+               </select>
+               <textarea value={newSnippetCode} onChange={(e) => setNewSnippetCode(e.target.value)} placeholder="코드 입력..." className="w-full h-24 p-3 border rounded-xl text-sm font-mono resize-none" />
+               <button onClick={addSnippet} className="w-full py-2 bg-indigo-500 text-white rounded-xl font-bold">스니펫 저장</button>
+            </div>
+            <div className="space-y-2 max-h-48 overflow-y-auto">
+               {snippets.map(s => (
+                  <div key={s.id} className="p-3 bg-slate-50 rounded-xl group">
+                     <div className="flex justify-between items-center mb-2">
+                        <span className="font-bold text-sm text-slate-700">{s.title}</span>
+                        <div className="flex items-center gap-2">
+                           <span className="text-xs px-2 py-1 bg-slate-200 rounded">{s.language}</span>
+                           <button onClick={() => copyToClipboard(s.code)} className="text-slate-400 hover:text-indigo-500"><Copy size={14} /></button>
+                           <button onClick={() => deleteSnippet(s.id)} className="opacity-0 group-hover:opacity-100 text-red-400 hover:text-red-600"><Trash2 size={14} /></button>
+                        </div>
+                     </div>
+                     <pre className="text-xs bg-slate-900 text-green-400 p-2 rounded-lg overflow-x-auto">{s.code.slice(0, 100)}{s.code.length > 100 ? '...' : ''}</pre>
+                  </div>
+               ))}
+               {snippets.length === 0 && <div className="text-center text-slate-400 py-4">저장된 스니펫이 없습니다</div>}
             </div>
          </Modal>
       </div>

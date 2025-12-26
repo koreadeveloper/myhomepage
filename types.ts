@@ -45,3 +45,23 @@ export interface Todo {
   text: string;
   completed: boolean;
 }
+
+export interface Dday {
+  id: string;
+  title: string;
+  date: string;
+}
+
+export interface Habit {
+  id: string;
+  name: string;
+  streak: number;
+  lastChecked: string | null;
+}
+
+export interface CodeSnippet {
+  id: string;
+  title: string;
+  code: string;
+  language: string;
+}
