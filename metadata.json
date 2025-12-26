@@ -1,0 +1,5 @@
+{
+  "name": "My Minimal World",
+  "description": "A clean, modern personal portal featuring site shortcuts, real-time weather, crypto prices, visitor statistics, and community features.",
+  "requestFramePermissions": []
+}
