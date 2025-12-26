@@ -11,6 +11,14 @@ export interface WeatherData {
   city: string;
 }
 
+
+export interface MarketData {
+  name: string;
+  value: string;
+  change?: string;
+  isUp?: boolean;
+}
+
 export interface CryptoData {
   symbol: string;
   priceUsd: string;

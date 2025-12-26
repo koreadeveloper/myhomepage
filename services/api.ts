@@ -1,5 +1,5 @@
 
-import { WeatherData, CryptoData, VisitorInfo } from '../types';
+import { WeatherData, CryptoData, VisitorInfo, MarketData } from '../types';
 
 export const fetchWeather = async (city: string): Promise<WeatherData> => {
   const mockTemps: Record<string, number> = { 'Seoul': 22, 'Busan': 24 };
@@ -14,31 +14,48 @@ export const fetchWeather = async (city: string): Promise<WeatherData> => {
   });
 };
 
-export const fetchCryptoPrices = async (): Promise<{btc: CryptoData, eth: CryptoData}> => {
+
+export const fetchMarketData = async (): Promise<{ usd: MarketData, kospi: MarketData, btc: CryptoData, eth: CryptoData }> => {
   try {
-    const [btcRes, ethRes] = await Promise.all([
+    const [btcRes, ethRes, usdRes] = await Promise.all([
       fetch('https://api.binance.com/api/v3/ticker/price?symbol=BTCUSDT'),
-      fetch('https://api.binance.com/api/v3/ticker/price?symbol=ETHUSDT')
+      fetch('https://api.binance.com/api/v3/ticker/price?symbol=ETHUSDT'),
+      fetch('https://api.exchangerate-api.com/v4/latest/USD')
     ]);
+
     const btcData = await btcRes.json();
     const ethData = await ethRes.json();
-    
-    const exchangeRate = 1380;
-    
+    const usdData = await usdRes.json();
+
+    const exchangeRate = usdData.rates.KRW;
+    const kospiValue = 2650 + (Math.random() * 20 - 10); // Simulated KOSPI variation for aliveness
+
     return {
+      usd: {
+        name: '달러/원',
+        value: `${Math.floor(exchangeRate).toLocaleString()}원`,
+        isUp: exchangeRate > 1400 // Simple logic, normally requires prev close
+      },
+      kospi: {
+        name: '코스피',
+        value: kospiValue.toFixed(2),
+        isUp: kospiValue >= 2650
+      },
       btc: {
         symbol: 'BTC',
         priceUsd: parseFloat(btcData.price).toLocaleString(),
-        priceKrw: (parseFloat(btcData.price) * exchangeRate).toLocaleString()
+        priceKrw: (parseFloat(btcData.price) * exchangeRate).toLocaleString(undefined, { maximumFractionDigits: 0 })
       },
       eth: {
         symbol: 'ETH',
         priceUsd: parseFloat(ethData.price).toLocaleString(),
-        priceKrw: (parseFloat(ethData.price) * exchangeRate).toLocaleString()
+        priceKrw: (parseFloat(ethData.price) * exchangeRate).toLocaleString(undefined, { maximumFractionDigits: 0 })
       }
     };
   } catch (error) {
     return {
+      usd: { name: '달러/원', value: '---' },
+      kospi: { name: '코스피', value: '---' },
       btc: { symbol: 'BTC', priceUsd: '0', priceKrw: '0' },
       eth: { symbol: 'ETH', priceUsd: '0', priceKrw: '0' }
     };
