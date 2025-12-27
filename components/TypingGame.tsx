@@ -103,24 +103,24 @@ const TypingGame = () => {
     };
 
     return (
-        <div className="flex flex-col items-center gap-4 w-full max-w-2xl mx-auto">
-            <div className="flex justify-between w-full px-4">
-                <div className="text-lg font-bold text-slate-800 dark:text-white">
+        <div className="flex flex-col items-center gap-4 w-full max-w-3xl mx-auto px-2">
+            <div className="flex justify-between w-full px-2 lg:px-4 text-base lg:text-xl">
+                <div className="font-bold text-slate-800 dark:text-white">
                     점수: <span className="text-green-500">{score}</span>
                 </div>
-                <div className="text-lg font-bold text-slate-800 dark:text-white">
+                <div className="font-bold text-slate-800 dark:text-white">
                     레벨: <span className="text-blue-500">{level}</span>
                 </div>
-                <div className="text-lg font-bold text-slate-800 dark:text-white">
+                <div className="font-bold text-slate-800 dark:text-white">
                     생명: <span className="text-red-500">{'❤️'.repeat(lives)}{'🖤'.repeat(5 - lives)}</span>
                 </div>
             </div>
 
-            <div className="relative w-full h-80 lg:h-96 bg-gradient-to-b from-sky-100 to-sky-300 dark:from-slate-800 dark:to-slate-900 rounded-xl overflow-hidden border-2 border-slate-300 dark:border-slate-600">
+            <div className="relative w-full h-[50vh] min-h-[300px] max-h-[500px] bg-gradient-to-b from-sky-100 to-sky-300 dark:from-slate-800 dark:to-slate-900 rounded-xl overflow-hidden border-2 border-slate-300 dark:border-slate-600">
                 {words.map(word => (
                     <div
                         key={word.id}
-                        className="absolute text-xl lg:text-2xl font-bold text-slate-800 dark:text-white bg-white/80 dark:bg-slate-700/80 px-3 py-1 rounded-lg shadow-md transition-all"
+                        className="absolute text-lg lg:text-2xl font-bold text-slate-800 dark:text-white bg-white/90 dark:bg-slate-700/90 px-3 py-1 rounded-lg shadow-md transition-all"
                         style={{ left: `${word.x}%`, top: `${word.y}%`, transform: 'translateX(-50%)' }}
                     >
                         {word.word}
@@ -129,7 +129,7 @@ const TypingGame = () => {
 
                 {!started && (
                     <div className="absolute inset-0 flex items-center justify-center bg-black/50">
-                        <button onClick={startGame} className="px-8 py-4 bg-green-500 text-white text-xl font-bold rounded-xl hover:bg-green-400">
+                        <button onClick={startGame} className="px-8 py-4 bg-green-500 text-white text-xl lg:text-2xl font-bold rounded-xl hover:bg-green-400 active:bg-green-400">
                             게임 시작
                         </button>
                     </div>
@@ -137,16 +137,16 @@ const TypingGame = () => {
 
                 {gameOver && (
                     <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/70">
-                        <div className="text-3xl font-bold text-red-500 mb-2">게임 오버!</div>
-                        <div className="text-xl text-white mb-4">최종 점수: {score}</div>
-                        <button onClick={startGame} className="px-8 py-4 bg-green-500 text-white text-xl font-bold rounded-xl hover:bg-green-400">
+                        <div className="text-3xl lg:text-4xl font-bold text-red-500 mb-2">게임 오버!</div>
+                        <div className="text-xl lg:text-2xl text-white mb-4">최종 점수: {score}</div>
+                        <button onClick={startGame} className="px-8 py-4 bg-green-500 text-white text-xl font-bold rounded-xl hover:bg-green-400 active:bg-green-400">
                             다시 시작
                         </button>
                     </div>
                 )}
             </div>
 
-            <form onSubmit={handleSubmit} className="w-full max-w-md">
+            <form onSubmit={handleSubmit} className="w-full">
                 <input
                     ref={inputRef}
                     type="text"
@@ -154,8 +154,9 @@ const TypingGame = () => {
                     onChange={(e) => setInput(e.target.value)}
                     disabled={!started || gameOver}
                     placeholder="단어를 입력하세요..."
-                    className="w-full px-6 py-4 text-xl text-center border-2 border-slate-300 dark:border-slate-600 rounded-xl bg-white dark:bg-slate-800 text-slate-800 dark:text-white focus:border-green-500 focus:outline-none"
+                    className="w-full px-4 lg:px-6 py-4 text-lg lg:text-xl text-center border-2 border-slate-300 dark:border-slate-600 rounded-xl bg-white dark:bg-slate-800 text-slate-800 dark:text-white focus:border-green-500 focus:outline-none"
                     autoComplete="off"
+                    enterKeyHint="go"
                 />
             </form>
         </div>

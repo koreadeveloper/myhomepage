@@ -133,27 +133,28 @@ const GomokuGame = () => {
     };
 
     return (
-        <div className="flex flex-col items-center gap-4">
-            <div className="text-lg font-bold text-slate-800 dark:text-white">
+        <div className="flex flex-col items-center gap-4 w-full max-w-2xl mx-auto">
+            <div className="text-xl font-bold text-slate-800 dark:text-white">
                 {winner ? (winner === 'black' ? '🎉 승리!' : '😢 패배') : (thinking ? '🤔 AI 생각중...' : '⚫ 당신의 차례')}
             </div>
             <div
-                className="grid gap-0 bg-amber-200 p-2 rounded-lg shadow-lg"
-                style={{ gridTemplateColumns: `repeat(${BOARD_SIZE}, 1fr)` }}
+                className="grid gap-0 bg-amber-200 p-1 lg:p-2 rounded-lg shadow-lg w-full max-w-[600px]"
+                style={{ gridTemplateColumns: `repeat(${BOARD_SIZE}, 1fr)`, aspectRatio: '1' }}
             >
                 {board.map((row, r) => row.map((cell, c) => (
                     <div
                         key={`${r}-${c}`}
                         onClick={() => handleClick(r, c)}
-                        className="w-6 h-6 lg:w-8 lg:h-8 border border-amber-400 flex items-center justify-center cursor-pointer hover:bg-amber-300 transition-colors"
+                        onTouchEnd={(e) => { e.preventDefault(); handleClick(r, c); }}
+                        className="aspect-square border border-amber-400 flex items-center justify-center cursor-pointer hover:bg-amber-300 active:bg-amber-300 transition-colors"
                     >
-                        {cell === 'black' && <div className="w-5 h-5 lg:w-6 lg:h-6 rounded-full bg-slate-900 shadow-md" />}
-                        {cell === 'white' && <div className="w-5 h-5 lg:w-6 lg:h-6 rounded-full bg-white border-2 border-slate-300 shadow-md" />}
+                        {cell === 'black' && <div className="w-[85%] h-[85%] rounded-full bg-slate-900 shadow-md" />}
+                        {cell === 'white' && <div className="w-[85%] h-[85%] rounded-full bg-white border-2 border-slate-300 shadow-md" />}
                     </div>
                 )))}
             </div>
             {winner && (
-                <button onClick={resetGame} className="px-6 py-3 bg-amber-500 text-white font-bold rounded-lg hover:bg-amber-400">
+                <button onClick={resetGame} className="px-8 py-4 bg-amber-500 text-white text-lg font-bold rounded-lg hover:bg-amber-400">
                     다시 시작
                 </button>
             )}

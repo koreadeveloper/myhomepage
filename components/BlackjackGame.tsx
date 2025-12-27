@@ -144,7 +144,7 @@ const BlackjackGame = () => {
     }, [gameState, deck, dealerHand, playerHand, bet]);
 
     const renderCard = (card: Card, hidden = false) => (
-        <div className={`w-16 h-24 lg:w-20 lg:h-28 rounded-lg shadow-lg flex items-center justify-center text-2xl lg:text-3xl font-bold
+        <div className={`w-14 h-20 lg:w-24 lg:h-32 rounded-lg shadow-lg flex items-center justify-center text-xl lg:text-3xl font-bold
             ${hidden ? 'bg-blue-600' : 'bg-white'}
             ${!hidden && (card.suit === '♥' || card.suit === '♦') ? 'text-red-500' : 'text-slate-800'}
         `}>
@@ -153,13 +153,13 @@ const BlackjackGame = () => {
     );
 
     return (
-        <div className="flex flex-col items-center gap-4 p-4">
-            <div className="text-xl font-bold text-yellow-500">💰 칩: {chips}</div>
+        <div className="flex flex-col items-center gap-4 lg:gap-6 p-4 w-full max-w-2xl mx-auto">
+            <div className="text-2xl lg:text-3xl font-bold text-yellow-500">💰 칩: {chips}</div>
 
             {/* Dealer's hand */}
             <div className="text-center">
-                <div className="text-sm text-slate-500 dark:text-slate-400 mb-2">딜러 {showDealerCard ? `(${dealerScore})` : ''}</div>
-                <div className="flex gap-2 justify-center">
+                <div className="text-base lg:text-lg text-slate-500 dark:text-slate-400 mb-2">딜러 {showDealerCard ? `(${dealerScore})` : ''}</div>
+                <div className="flex gap-2 lg:gap-3 justify-center">
                     {dealerHand.map((card, i) => (
                         <React.Fragment key={i}>{renderCard(card, !showDealerCard && i === 1)}</React.Fragment>
                     ))}
@@ -168,7 +168,7 @@ const BlackjackGame = () => {
 
             {/* Result */}
             {result && (
-                <div className={`text-2xl font-bold 
+                <div className={`text-2xl lg:text-3xl font-bold 
                     ${result === 'blackjack' ? 'text-yellow-500' : ''}
                     ${result === 'win' ? 'text-green-500' : ''}
                     ${result === 'lose' ? 'text-red-500' : ''}
@@ -183,8 +183,8 @@ const BlackjackGame = () => {
 
             {/* Player's hand */}
             <div className="text-center">
-                <div className="text-sm text-slate-500 dark:text-slate-400 mb-2">플레이어 ({playerScore})</div>
-                <div className="flex gap-2 justify-center">
+                <div className="text-base lg:text-lg text-slate-500 dark:text-slate-400 mb-2">플레이어 ({playerScore})</div>
+                <div className="flex gap-2 lg:gap-3 justify-center">
                     {playerHand.map((card, i) => (
                         <React.Fragment key={i}>{renderCard(card, false)}</React.Fragment>
                     ))}
@@ -195,11 +195,11 @@ const BlackjackGame = () => {
             {gameState === 'betting' && (
                 <div className="flex flex-col items-center gap-4">
                     <div className="flex items-center gap-4">
-                        <button onClick={() => setBet(b => Math.max(10, b - 50))} className="px-4 py-2 bg-slate-600 text-white rounded-lg">-50</button>
-                        <span className="text-xl font-bold text-slate-800 dark:text-white">베팅: {bet}</span>
-                        <button onClick={() => setBet(b => Math.min(chips, b + 50))} className="px-4 py-2 bg-slate-600 text-white rounded-lg">+50</button>
+                        <button onClick={() => setBet(b => Math.max(10, b - 50))} className="px-5 py-3 bg-slate-600 text-white text-lg rounded-lg active:bg-slate-500">-50</button>
+                        <span className="text-xl lg:text-2xl font-bold text-slate-800 dark:text-white">베팅: {bet}</span>
+                        <button onClick={() => setBet(b => Math.min(chips, b + 50))} className="px-5 py-3 bg-slate-600 text-white text-lg rounded-lg active:bg-slate-500">+50</button>
                     </div>
-                    <button onClick={startGame} disabled={bet > chips || chips <= 0} className="px-8 py-3 bg-green-500 text-white font-bold rounded-lg hover:bg-green-400 disabled:bg-slate-400">
+                    <button onClick={startGame} disabled={bet > chips || chips <= 0} className="px-10 py-4 bg-green-500 text-white text-xl font-bold rounded-lg hover:bg-green-400 active:bg-green-400 disabled:bg-slate-400">
                         {chips <= 0 ? '게임 오버' : '게임 시작'}
                     </button>
                 </div>
@@ -207,11 +207,11 @@ const BlackjackGame = () => {
 
             {gameState === 'playing' && (
                 <div className="flex gap-4">
-                    <button onClick={hit} className="px-8 py-3 bg-blue-500 text-white font-bold rounded-lg hover:bg-blue-400">
+                    <button onClick={hit} className="px-8 py-4 bg-blue-500 text-white text-lg lg:text-xl font-bold rounded-lg hover:bg-blue-400 active:bg-blue-400">
                         힛 (카드 받기)
                     </button>
-                    <button onClick={stand} className="px-8 py-3 bg-red-500 text-white font-bold rounded-lg hover:bg-red-400">
-                        스탠드 (멈추기)
+                    <button onClick={stand} className="px-8 py-4 bg-red-500 text-white text-lg lg:text-xl font-bold rounded-lg hover:bg-red-400 active:bg-red-400">
+                        스탠드
                     </button>
                 </div>
             )}

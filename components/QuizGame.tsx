@@ -111,10 +111,10 @@ const QuizGame = () => {
 
     if (shuffledQuizzes.length === 0) {
         return (
-            <div className="flex flex-col items-center gap-6 p-4">
-                <h2 className="text-2xl font-bold text-slate-800 dark:text-white">🧠 어려운 상식 퀴즈</h2>
-                <p className="text-slate-500 dark:text-slate-400 text-center">역사, 과학, 문학, IT 등 다양한 분야의 어려운 문제!</p>
-                <button onClick={startGame} className="px-8 py-4 bg-purple-500 text-white text-xl font-bold rounded-xl hover:bg-purple-400">
+            <div className="flex flex-col items-center gap-6 p-4 w-full max-w-2xl mx-auto">
+                <h2 className="text-2xl lg:text-3xl font-bold text-slate-800 dark:text-white">🧠 어려운 상식 퀴즈</h2>
+                <p className="text-lg text-slate-500 dark:text-slate-400 text-center">역사, 과학, 문학, IT 등 다양한 분야의 어려운 문제!</p>
+                <button onClick={startGame} className="px-10 py-5 bg-purple-500 text-white text-xl lg:text-2xl font-bold rounded-xl hover:bg-purple-400 active:bg-purple-400">
                     퀴즈 시작
                 </button>
             </div>
@@ -124,11 +124,11 @@ const QuizGame = () => {
     if (gameOver) {
         const grade = score >= 90 ? '천재' : score >= 70 ? '수재' : score >= 50 ? '평범' : '노력 필요';
         return (
-            <div className="flex flex-col items-center gap-6 p-4">
-                <h2 className="text-2xl font-bold text-slate-800 dark:text-white">퀴즈 완료!</h2>
-                <div className="text-6xl font-black text-purple-500">{score}점</div>
-                <div className="text-xl text-slate-600 dark:text-slate-300">등급: {grade}</div>
-                <button onClick={startGame} className="px-8 py-4 bg-purple-500 text-white text-xl font-bold rounded-xl hover:bg-purple-400">
+            <div className="flex flex-col items-center gap-6 p-4 w-full max-w-2xl mx-auto">
+                <h2 className="text-2xl lg:text-3xl font-bold text-slate-800 dark:text-white">퀴즈 완료!</h2>
+                <div className="text-7xl lg:text-8xl font-black text-purple-500">{score}점</div>
+                <div className="text-2xl text-slate-600 dark:text-slate-300">등급: {grade}</div>
+                <button onClick={startGame} className="px-10 py-5 bg-purple-500 text-white text-xl font-bold rounded-xl hover:bg-purple-400 active:bg-purple-400">
                     다시 도전
                 </button>
             </div>
@@ -138,31 +138,31 @@ const QuizGame = () => {
     const quiz = shuffledQuizzes[currentQuestion];
 
     return (
-        <div className="flex flex-col items-center gap-4 p-4 w-full max-w-2xl mx-auto">
-            <div className="flex justify-between w-full">
-                <span className="text-lg font-bold text-slate-800 dark:text-white">문제 {currentQuestion + 1}/10</span>
-                <span className="text-lg font-bold text-purple-500">점수: {score}</span>
-                {streak >= 2 && <span className="text-lg font-bold text-orange-500">🔥 {streak}연속!</span>}
+        <div className="flex flex-col items-center gap-4 lg:gap-6 p-4 w-full max-w-3xl mx-auto">
+            <div className="flex justify-between w-full text-base lg:text-xl">
+                <span className="font-bold text-slate-800 dark:text-white">문제 {currentQuestion + 1}/10</span>
+                <span className="font-bold text-purple-500">점수: {score}</span>
+                {streak >= 2 && <span className="font-bold text-orange-500">🔥 {streak}연속!</span>}
             </div>
 
-            <div className="text-xs text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-3 py-1 rounded-full">
+            <div className="text-sm lg:text-base text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-4 py-2 rounded-full">
                 {quiz.category}
             </div>
 
-            <div className="text-xl lg:text-2xl font-bold text-center text-slate-800 dark:text-white p-6 bg-white dark:bg-slate-800 rounded-xl shadow-lg w-full">
+            <div className="text-lg lg:text-2xl font-bold text-center text-slate-800 dark:text-white p-6 lg:p-8 bg-white dark:bg-slate-800 rounded-xl shadow-lg w-full">
                 {quiz.question}
             </div>
 
-            <div className="grid grid-cols-1 gap-3 w-full">
+            <div className="grid grid-cols-1 gap-3 lg:gap-4 w-full">
                 {quiz.options.map((option, i) => (
                     <button
                         key={i}
                         onClick={() => handleAnswer(i)}
                         disabled={showResult}
-                        className={`p-4 text-lg font-medium rounded-xl transition-all text-left
+                        className={`p-4 lg:p-5 text-base lg:text-lg font-medium rounded-xl transition-all text-left active:scale-[0.98]
                             ${showResult && i === quiz.answer ? 'bg-green-500 text-white' : ''}
                             ${showResult && i === selectedAnswer && i !== quiz.answer ? 'bg-red-500 text-white' : ''}
-                            ${!showResult ? 'bg-slate-100 dark:bg-slate-700 hover:bg-purple-100 dark:hover:bg-purple-900 text-slate-800 dark:text-white' : ''}
+                            ${!showResult ? 'bg-slate-100 dark:bg-slate-700 hover:bg-purple-100 dark:hover:bg-purple-900 active:bg-purple-200 text-slate-800 dark:text-white' : ''}
                             ${showResult && i !== quiz.answer && i !== selectedAnswer ? 'opacity-50' : ''}
                         `}
                     >
@@ -173,10 +173,10 @@ const QuizGame = () => {
 
             {showResult && (
                 <div className="text-center">
-                    <div className={`text-2xl font-bold mb-2 ${isCorrect ? 'text-green-500' : 'text-red-500'}`}>
+                    <div className={`text-2xl lg:text-3xl font-bold mb-3 ${isCorrect ? 'text-green-500' : 'text-red-500'}`}>
                         {isCorrect ? '✅ 정답!' : '❌ 오답!'}
                     </div>
-                    <button onClick={nextQuestion} className="px-6 py-3 bg-purple-500 text-white font-bold rounded-lg hover:bg-purple-400">
+                    <button onClick={nextQuestion} className="px-8 py-4 bg-purple-500 text-white text-lg lg:text-xl font-bold rounded-lg hover:bg-purple-400 active:bg-purple-400">
                         {currentQuestion < shuffledQuizzes.length - 1 ? '다음 문제' : '결과 보기'}
                     </button>
                 </div>

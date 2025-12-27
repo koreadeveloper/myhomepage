@@ -124,13 +124,13 @@ const MathGame = () => {
 
     if (gameState === 'ready') {
         return (
-            <div className="flex flex-col items-center gap-6 p-4">
-                <h2 className="text-2xl font-bold text-slate-800 dark:text-white">🧮 암산 게임</h2>
-                <div className="text-slate-500 dark:text-slate-400 text-center">
+            <div className="flex flex-col items-center gap-6 p-4 w-full max-w-2xl mx-auto">
+                <h2 className="text-2xl lg:text-3xl font-bold text-slate-800 dark:text-white">🧮 암산 게임</h2>
+                <div className="text-lg text-slate-500 dark:text-slate-400 text-center">
                     <p>60초 안에 최대한 많은 문제를 풀어보세요!</p>
-                    <p className="text-sm mt-2">레벨이 올라갈수록 곱셈, 나눗셈이 추가됩니다.</p>
+                    <p className="text-base mt-2">레벨이 올라갈수록 곱셈, 나눗셈이 추가됩니다.</p>
                 </div>
-                <button onClick={startGame} className="px-8 py-4 bg-blue-500 text-white text-xl font-bold rounded-xl hover:bg-blue-400">
+                <button onClick={startGame} className="px-10 py-5 bg-blue-500 text-white text-xl lg:text-2xl font-bold rounded-xl hover:bg-blue-400 active:bg-blue-400">
                     게임 시작
                 </button>
             </div>
@@ -144,26 +144,26 @@ const MathGame = () => {
             : 0;
 
         return (
-            <div className="flex flex-col items-center gap-6 p-4">
-                <h2 className="text-2xl font-bold text-slate-800 dark:text-white">게임 종료!</h2>
-                <div className={`text-8xl font-black ${color}`}>{grade}</div>
-                <div className="text-xl text-slate-600 dark:text-slate-300">{msg}</div>
-                <div className="text-4xl font-bold text-blue-500">{score}점</div>
-                <div className="grid grid-cols-3 gap-4 text-center">
+            <div className="flex flex-col items-center gap-6 p-4 w-full max-w-2xl mx-auto">
+                <h2 className="text-2xl lg:text-3xl font-bold text-slate-800 dark:text-white">게임 종료!</h2>
+                <div className={`text-8xl lg:text-9xl font-black ${color}`}>{grade}</div>
+                <div className="text-xl lg:text-2xl text-slate-600 dark:text-slate-300">{msg}</div>
+                <div className="text-4xl lg:text-5xl font-bold text-blue-500">{score}점</div>
+                <div className="grid grid-cols-3 gap-6 text-center">
                     <div>
-                        <div className="text-2xl font-bold text-green-500">{correctCount}</div>
-                        <div className="text-sm text-slate-500">정답</div>
+                        <div className="text-3xl lg:text-4xl font-bold text-green-500">{correctCount}</div>
+                        <div className="text-base text-slate-500">정답</div>
                     </div>
                     <div>
-                        <div className="text-2xl font-bold text-red-500">{wrongCount}</div>
-                        <div className="text-sm text-slate-500">오답</div>
+                        <div className="text-3xl lg:text-4xl font-bold text-red-500">{wrongCount}</div>
+                        <div className="text-base text-slate-500">오답</div>
                     </div>
                     <div>
-                        <div className="text-2xl font-bold text-slate-600 dark:text-slate-300">{accuracy}%</div>
-                        <div className="text-sm text-slate-500">정확도</div>
+                        <div className="text-3xl lg:text-4xl font-bold text-slate-600 dark:text-slate-300">{accuracy}%</div>
+                        <div className="text-base text-slate-500">정확도</div>
                     </div>
                 </div>
-                <button onClick={startGame} className="px-8 py-4 bg-blue-500 text-white text-xl font-bold rounded-xl hover:bg-blue-400">
+                <button onClick={startGame} className="px-10 py-5 bg-blue-500 text-white text-xl font-bold rounded-xl hover:bg-blue-400 active:bg-blue-400">
                     다시 도전
                 </button>
             </div>
@@ -171,27 +171,27 @@ const MathGame = () => {
     }
 
     return (
-        <div className="flex flex-col items-center gap-4 p-4 w-full max-w-md mx-auto">
-            <div className="flex justify-between w-full">
-                <span className="text-lg font-bold text-slate-800 dark:text-white">레벨 {level}</span>
-                <span className={`text-lg font-bold ${timeLeft <= 10 ? 'text-red-500 animate-pulse' : 'text-slate-800 dark:text-white'}`}>
+        <div className="flex flex-col items-center gap-4 lg:gap-6 p-4 w-full max-w-2xl mx-auto">
+            <div className="flex justify-between w-full text-base lg:text-xl">
+                <span className="font-bold text-slate-800 dark:text-white">레벨 {level}</span>
+                <span className={`font-bold ${timeLeft <= 10 ? 'text-red-500 animate-pulse' : 'text-slate-800 dark:text-white'}`}>
                     ⏱️ {timeLeft}초
                 </span>
-                <span className="text-lg font-bold text-blue-500">{score}점</span>
+                <span className="font-bold text-blue-500">{score}점</span>
             </div>
 
             {streak >= 3 && (
-                <div className="text-orange-500 font-bold animate-bounce">🔥 {streak}연속 정답! (x{streak >= 5 ? 5 : 3} 보너스)</div>
+                <div className="text-lg lg:text-xl text-orange-500 font-bold animate-bounce">🔥 {streak}연속 정답! (x{streak >= 5 ? 5 : 3} 보너스)</div>
             )}
 
-            <div className={`text-6xl lg:text-7xl font-black text-center py-8 px-4 rounded-2xl w-full transition-colors
+            <div className={`text-5xl lg:text-7xl font-black text-center py-8 lg:py-12 px-4 rounded-2xl w-full transition-colors
                 ${feedback === 'correct' ? 'bg-green-100 dark:bg-green-900/30' : ''}
                 ${feedback === 'wrong' ? 'bg-red-100 dark:bg-red-900/30' : 'bg-white dark:bg-slate-800'}
             `}>
                 <span className="text-slate-800 dark:text-white">{question.num1}</span>
-                <span className="text-blue-500 mx-4">{question.op}</span>
+                <span className="text-blue-500 mx-2 lg:mx-4">{question.op}</span>
                 <span className="text-slate-800 dark:text-white">{question.num2}</span>
-                <span className="text-slate-400 mx-4">=</span>
+                <span className="text-slate-400 mx-2 lg:mx-4">=</span>
                 <span className="text-green-500">?</span>
             </div>
 
@@ -199,16 +199,19 @@ const MathGame = () => {
                 <input
                     ref={inputRef}
                     type="number"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
                     value={userAnswer}
                     onChange={(e) => setUserAnswer(e.target.value)}
                     placeholder="정답 입력"
-                    className="w-full px-6 py-4 text-3xl text-center font-bold border-2 border-slate-300 dark:border-slate-600 rounded-xl bg-white dark:bg-slate-800 text-slate-800 dark:text-white focus:border-blue-500 focus:outline-none"
+                    className="w-full px-6 py-5 text-2xl lg:text-3xl text-center font-bold border-2 border-slate-300 dark:border-slate-600 rounded-xl bg-white dark:bg-slate-800 text-slate-800 dark:text-white focus:border-blue-500 focus:outline-none"
                     autoComplete="off"
+                    enterKeyHint="go"
                     autoFocus
                 />
             </form>
 
-            <div className="flex gap-2">
+            <div className="flex gap-4 text-lg lg:text-xl">
                 {correctCount > 0 && <span className="text-green-500">✓ {correctCount}</span>}
                 {wrongCount > 0 && <span className="text-red-500">✗ {wrongCount}</span>}
             </div>

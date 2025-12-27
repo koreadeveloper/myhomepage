@@ -53,55 +53,56 @@ const ReactionTest = () => {
     };
 
     return (
-        <div className="flex flex-col items-center gap-6 p-4">
+        <div className="flex flex-col items-center gap-6 p-4 w-full max-w-2xl mx-auto">
             <div className="text-center">
-                <h2 className="text-2xl font-bold text-slate-800 dark:text-white mb-2">반응속도 테스트</h2>
+                <h2 className="text-2xl lg:text-3xl font-bold text-slate-800 dark:text-white mb-2">반응속도 테스트</h2>
                 <p className="text-slate-500 dark:text-slate-400">초록색으로 바뀌면 최대한 빨리 클릭!</p>
             </div>
 
             <div
                 onClick={handleClick}
-                className={`w-80 h-80 lg:w-96 lg:h-96 rounded-2xl flex items-center justify-center cursor-pointer transition-colors duration-200 text-white text-xl font-bold text-center p-6 select-none
-                    ${state === 'waiting' ? 'bg-blue-500 hover:bg-blue-400' : ''}
+                onTouchEnd={(e) => { e.preventDefault(); handleClick(); }}
+                className={`w-full max-w-md aspect-square rounded-2xl flex items-center justify-center cursor-pointer transition-colors duration-200 text-white text-xl lg:text-2xl font-bold text-center p-6 select-none touch-manipulation
+                    ${state === 'waiting' ? 'bg-blue-500 hover:bg-blue-400 active:bg-blue-400' : ''}
                     ${state === 'ready' ? 'bg-red-500' : ''}
                     ${state === 'go' ? 'bg-green-500' : ''}
                     ${state === 'result' ? 'bg-blue-500' : ''}
                     ${state === 'early' ? 'bg-orange-500' : ''}
                 `}
             >
-                {state === 'waiting' && <div>클릭하여 시작</div>}
-                {state === 'ready' && <div>기다리세요...</div>}
-                {state === 'go' && <div className="text-4xl">클릭!</div>}
+                {state === 'waiting' && <div className="text-2xl lg:text-3xl">클릭하여 시작</div>}
+                {state === 'ready' && <div className="text-2xl lg:text-3xl">기다리세요...</div>}
+                {state === 'go' && <div className="text-5xl lg:text-6xl">클릭!</div>}
                 {state === 'early' && (
                     <div>
-                        <div className="text-3xl mb-2">너무 빨랐어요!</div>
-                        <div className="text-lg">클릭하여 다시 시도</div>
+                        <div className="text-3xl lg:text-4xl mb-2">너무 빨랐어요!</div>
+                        <div className="text-lg lg:text-xl">터치하여 다시 시도</div>
                     </div>
                 )}
                 {state === 'result' && (
                     <div>
-                        <div className={`text-5xl font-black mb-2 ${getTimeColor(reactionTime)}`}>
+                        <div className={`text-6xl lg:text-7xl font-black mb-2 ${getTimeColor(reactionTime)}`}>
                             {reactionTime}ms
                         </div>
-                        <div className="text-lg mb-4">{getTimeMessage(reactionTime)}</div>
-                        <div className="text-sm">클릭하여 다시 시도</div>
+                        <div className="text-xl lg:text-2xl mb-4">{getTimeMessage(reactionTime)}</div>
+                        <div className="text-base lg:text-lg">터치하여 다시 시도</div>
                     </div>
                 )}
             </div>
 
             {attempts.length > 0 && (
-                <div className="bg-slate-100 dark:bg-slate-800 rounded-xl p-4 w-80 lg:w-96">
+                <div className="bg-slate-100 dark:bg-slate-800 rounded-xl p-6 w-full max-w-md">
                     <div className="grid grid-cols-2 gap-4 text-center">
                         <div>
-                            <div className="text-sm text-slate-500 dark:text-slate-400">최고 기록</div>
-                            <div className={`text-2xl font-bold ${getTimeColor(bestTime || 0)}`}>{bestTime}ms</div>
+                            <div className="text-sm lg:text-base text-slate-500 dark:text-slate-400">최고 기록</div>
+                            <div className={`text-3xl lg:text-4xl font-bold ${getTimeColor(bestTime || 0)}`}>{bestTime}ms</div>
                         </div>
                         <div>
-                            <div className="text-sm text-slate-500 dark:text-slate-400">평균</div>
-                            <div className={`text-2xl font-bold ${getTimeColor(avgTime)}`}>{avgTime}ms</div>
+                            <div className="text-sm lg:text-base text-slate-500 dark:text-slate-400">평균</div>
+                            <div className={`text-3xl lg:text-4xl font-bold ${getTimeColor(avgTime)}`}>{avgTime}ms</div>
                         </div>
                     </div>
-                    <div className="mt-3 text-center text-sm text-slate-500 dark:text-slate-400">
+                    <div className="mt-4 text-center text-base text-slate-500 dark:text-slate-400">
                         시도 횟수: {attempts.length}회
                     </div>
                 </div>
