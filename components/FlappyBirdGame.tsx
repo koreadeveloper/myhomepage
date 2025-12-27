@@ -200,14 +200,12 @@ const FlappyBirdGame = () => {
                     </button>
                 </div>
             )}
-        </div>
-    )
-}
-<MobileControls
-    type="jump"
-    onAction={jump}
-    onActionLabel="JUMP"
-/>
+
+            <MobileControls
+                type="jump"
+                onAction={jump}
+                onActionLabel="JUMP"
+            />
         </div >
     );
 };

@@ -422,17 +422,16 @@ const TetrisGame = () => {
                     </div>
                 ))}
             </div>
-                })}
-        </div>
-            { gameOver && <button onClick={() => { setBoard(createBoard()); setScore(0); setGameOver(false); setCurrPiece(null); }} className="mt-6 px-6 py-2 bg-blue-500 text-white rounded font-bold hover:bg-blue-600 transition-colors">다시 시작</button> }
 
-    <MobileControls
-        type="dpad"
-        onUp={rotate}
-        onDown={() => move(0, 1)}
-        onLeft={() => move(-1, 0)}
-        onRight={() => move(1, 0)}
-    />
+            {gameOver && <button onClick={() => { setBoard(createBoard()); setScore(0); setGameOver(false); setCurrPiece(null); }} className="mt-6 px-6 py-2 bg-blue-500 text-white rounded font-bold hover:bg-blue-600 transition-colors">다시 시작</button>}
+
+            <MobileControls
+                type="dpad"
+                onUp={rotate}
+                onDown={() => move(0, 1)}
+                onLeft={() => move(-1, 0)}
+                onRight={() => move(1, 0)}
+            />
         </div >
     );
 };
@@ -1729,7 +1728,7 @@ const ChessGame = () => {
             </div>
 
             {/* Chess Board - Fully Responsive - Maximum Size */}
-            <div className="flex-shrink-0" style={{ width: 'min(calc(100vh - 100px), calc(100vw - 400px), 800px)', height: 'min(calc(100vh - 100px), calc(100vw - 400px), 800px)' }}>
+            <div className="flex-shrink-0 w-[95vw] aspect-square lg:w-[600px] lg:aspect-square relative">
                 <div className="grid grid-cols-8 border-2 lg:border-4 border-lime-800 dark:border-lime-600 rounded-lg overflow-hidden shadow-2xl w-full h-full">
                     {(playerColor === 'black' ? [...board].reverse().map(row => [...row].reverse()) : board).map((row, displayR) => row.map((piece, displayC) => {
                         const r = playerColor === 'black' ? 7 - displayR : displayR;

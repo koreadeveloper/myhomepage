@@ -239,14 +239,12 @@ const DinoJumpGame = () => {
                     </button>
                 </div>
             )}
-        </div>
-    )
-}
-<MobileControls
-    type="vertical"
-    onUp={jump}
-    onDown={() => { duck(true); setTimeout(() => duck(false), 500); }}
-/>
+
+            <MobileControls
+                type="vertical"
+                onUp={jump}
+                onDown={() => { duck(true); setTimeout(() => duck(false), 500); }}
+            />
         </div >
     );
 };
