@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Link } from 'react-router-dom';
+import ChessGameNew from '../components/ChessGame';
 
 // --- Shared Types & Constants ---
 type Game = {
@@ -902,6 +903,7 @@ const ChessGame = () => {
     const [halfMoveClock, setHalfMoveClock] = useState(0); // For 50-move rule
     const [aiMode, setAiMode] = useState<'simple' | 'gemini' | null>(null); // AI mode selection
     const [gameStarted, setGameStarted] = useState(false); // Track if game has started
+    const [aiRating, setAiRating] = useState(800); // Chess.com style rating (300-2500)
 
     const isWhite = (piece: Piece) => piece !== null && piece === piece.toUpperCase();
     const isBlack = (piece: Piece) => piece !== null && piece === piece.toLowerCase();
@@ -1278,7 +1280,8 @@ const ChessGame = () => {
                 body: JSON.stringify({
                     fen: fenPosition,
                     color: color,
-                    validMoves: validMovesStr
+                    validMoves: validMovesStr,
+                    rating: aiRating
                 })
             });
 
@@ -1530,7 +1533,7 @@ const ChessGame = () => {
                                 <span className="text-3xl">✨</span>
                                 <div className="text-left">
                                     <span className="font-bold text-white text-sm lg:text-base block">Gemini AI</span>
-                                    <span className="text-xs text-blue-100">Google AI 기반 강력한 AI</span>
+                                    <span className="text-xs text-blue-100">난이도 조절 가능</span>
                                 </div>
                             </button>
                         </div>
@@ -1538,13 +1541,70 @@ const ChessGame = () => {
                 </div>
             )}
 
-            {/* Color Selection Screen */}
-            {aiMode && !playerColor && (
+            {/* Rating Selection Screen (only for Gemini AI) */}
+            {aiMode === 'gemini' && !playerColor && (
+                <div className="absolute inset-0 bg-black/50 z-50 flex items-center justify-center">
+                    <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 lg:p-8 shadow-2xl text-center mx-4 w-80 lg:w-96">
+                        <div className="text-xs text-slate-500 dark:text-slate-400 mb-2">✨ Gemini AI</div>
+                        <h2 className="text-xl lg:text-2xl font-bold text-slate-800 dark:text-white mb-2">난이도 선택</h2>
+                        <p className="text-xs text-slate-500 dark:text-slate-400 mb-4">Chess.com 레이팅 기준</p>
+
+                        <div className="mb-6">
+                            <div className="flex justify-between items-center mb-2">
+                                <span className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-500 to-purple-600">{aiRating}</span>
+                                <span className="text-sm text-slate-500 dark:text-slate-400">
+                                    {aiRating < 400 ? '🐣 완전 초보' :
+                                        aiRating < 600 ? '🐥 입문자' :
+                                            aiRating < 900 ? '🎮 초급' :
+                                                aiRating < 1200 ? '♟️ 중급' :
+                                                    aiRating < 1500 ? '🏆 클럽 수준' :
+                                                        aiRating < 1800 ? '⚔️ 강한 클럽' :
+                                                            aiRating < 2100 ? '🎯 전문가' : '👑 마스터'}
+                                </span>
+                            </div>
+                            <input
+                                type="range"
+                                min="300"
+                                max="2500"
+                                step="100"
+                                value={aiRating}
+                                onChange={(e) => setAiRating(Number(e.target.value))}
+                                className="w-full h-3 bg-gradient-to-r from-green-400 via-yellow-400 via-orange-400 to-red-500 rounded-lg appearance-none cursor-pointer"
+                                style={{
+                                    background: `linear-gradient(to right, #4ade80 0%, #facc15 33%, #fb923c 66%, #ef4444 100%)`
+                                }}
+                            />
+                            <div className="flex justify-between text-xs text-slate-400 mt-1">
+                                <span>300</span>
+                                <span>1000</span>
+                                <span>1800</span>
+                                <span>2500</span>
+                            </div>
+                        </div>
+
+                        <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-3">색상 선택</h3>
+                        <div className="flex gap-3 lg:gap-4 justify-center">
+                            <button onClick={() => startGame('white')} className="flex flex-col items-center gap-2 p-4 lg:p-5 bg-slate-100 dark:bg-slate-700 rounded-xl hover:bg-lime-100 dark:hover:bg-lime-900 transition-colors border-2 border-transparent hover:border-lime-500">
+                                <img src="/chess1/imgi_54_wk.png" alt="White King" className="w-10 h-10 lg:w-12 lg:h-12" />
+                                <span className="font-bold text-slate-700 dark:text-white text-sm">백</span>
+                            </button>
+                            <button onClick={() => startGame('black')} className="flex flex-col items-center gap-2 p-4 lg:p-5 bg-slate-100 dark:bg-slate-700 rounded-xl hover:bg-lime-100 dark:hover:bg-lime-900 transition-colors border-2 border-transparent hover:border-lime-500">
+                                <img src="/chess1/imgi_47_bk.png" alt="Black King" className="w-10 h-10 lg:w-12 lg:h-12" />
+                                <span className="font-bold text-slate-700 dark:text-white text-sm">흑</span>
+                            </button>
+                        </div>
+                        <button onClick={() => setAiMode(null)} className="mt-4 text-sm text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200">
+                            ← AI 모드 다시 선택
+                        </button>
+                    </div>
+                </div>
+            )}
+
+            {/* Color Selection Screen (only for Simple AI) */}
+            {aiMode === 'simple' && !playerColor && (
                 <div className="absolute inset-0 bg-black/50 z-50 flex items-center justify-center">
                     <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 lg:p-8 shadow-2xl text-center mx-4">
-                        <div className="text-xs text-slate-500 dark:text-slate-400 mb-2">
-                            {aiMode === 'gemini' ? '✨ Gemini AI' : '🤖 간단한 AI'}
-                        </div>
+                        <div className="text-xs text-slate-500 dark:text-slate-400 mb-2">🤖 간단한 AI</div>
                         <h2 className="text-xl lg:text-2xl font-bold text-slate-800 dark:text-white mb-4 lg:mb-6">색상을 선택하세요</h2>
                         <div className="flex gap-3 lg:gap-4">
                             <button onClick={() => startGame('white')} className="flex flex-col items-center gap-2 p-4 lg:p-6 bg-slate-100 dark:bg-slate-700 rounded-xl hover:bg-lime-100 dark:hover:bg-lime-900 transition-colors border-2 border-transparent hover:border-lime-500">
@@ -1727,7 +1787,7 @@ const GameZone: React.FC = () => {
 
     const renderGame = () => {
         switch (activeGame?.title) {
-            case '체스': return <ChessGame />;
+            case '체스': return <ChessGameNew />;
             case '스네이크': return <SnakeGame />;
             case '테트리스': return <TetrisGame />;
             case '2048': return <Game2048 />;
