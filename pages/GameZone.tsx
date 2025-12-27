@@ -10,17 +10,19 @@ type Game = {
     bgColor: string;
     accentColor: string;
     cornerAccentColor: string;
+    isLarge?: boolean;
 };
 
 const games: Game[] = [
-    { title: 'Snake', description: 'The classic retro challenge.', icon: 'gesture', color: 'text-emerald-600 dark:text-emerald-400', bgColor: 'bg-emerald-100 dark:bg-emerald-900/30', accentColor: 'bg-emerald-500', cornerAccentColor: 'bg-emerald-500/10' },
-    { title: 'Tetris Block', description: 'Fit the blocks perfectly.', icon: 'view_module', color: 'text-blue-600 dark:text-blue-400', bgColor: 'bg-blue-100 dark:bg-blue-900/30', accentColor: 'bg-blue-500', cornerAccentColor: 'bg-blue-500/10' },
-    { title: '2048', description: 'Join numbers to reach 2048.', icon: 'grid_4x4', color: 'text-amber-600 dark:text-amber-400', bgColor: 'bg-amber-100 dark:bg-amber-900/30', accentColor: 'bg-amber-500', cornerAccentColor: 'bg-amber-500/10' },
-    { title: 'Minesweeper', description: 'Clear the minefield safely.', icon: 'flag', color: 'text-rose-600 dark:text-rose-400', bgColor: 'bg-rose-100 dark:bg-rose-900/30', accentColor: 'bg-rose-500', cornerAccentColor: 'bg-rose-500/10' },
-    { title: 'Sudoku', description: 'Fill the 9x9 grid logic.', icon: 'calculate', color: 'text-indigo-600 dark:text-indigo-400', bgColor: 'bg-indigo-100 dark:bg-indigo-900/30', accentColor: 'bg-indigo-500', cornerAccentColor: 'bg-indigo-500/10' },
-    { title: 'Memory Match', description: 'Test your brain power.', icon: 'style', color: 'text-pink-600 dark:text-pink-400', bgColor: 'bg-pink-100 dark:bg-pink-900/30', accentColor: 'bg-pink-500', cornerAccentColor: 'bg-pink-500/10' },
-    { title: 'Tic Tac Toe', description: 'Quick match against AI.', icon: 'close', color: 'text-cyan-600 dark:text-cyan-400', bgColor: 'bg-cyan-100 dark:bg-cyan-900/30', accentColor: 'bg-cyan-500', cornerAccentColor: 'bg-cyan-500/10' },
-    { title: 'Word Puzzle', description: 'Guess the 5-letter word.', icon: 'abc', color: 'text-orange-600 dark:text-orange-400', bgColor: 'bg-orange-100 dark:bg-orange-900/30', accentColor: 'bg-orange-500', cornerAccentColor: 'bg-orange-500/10' },
+    { title: '체스', description: 'AI와 대전하는 클래식 전략 게임', icon: 'grid_on', color: 'text-lime-700 dark:text-lime-400', bgColor: 'bg-lime-100 dark:bg-lime-900/30', accentColor: 'bg-lime-600', cornerAccentColor: 'bg-lime-600/10' },
+    { title: '스네이크', description: '클래식 레트로 도전 게임', icon: 'gesture', color: 'text-emerald-600 dark:text-emerald-400', bgColor: 'bg-emerald-100 dark:bg-emerald-900/30', accentColor: 'bg-emerald-500', cornerAccentColor: 'bg-emerald-500/10' },
+    { title: '테트리스', description: '블록을 완벽하게 맞춰라', icon: 'view_module', color: 'text-blue-600 dark:text-blue-400', bgColor: 'bg-blue-100 dark:bg-blue-900/30', accentColor: 'bg-blue-500', cornerAccentColor: 'bg-blue-500/10' },
+    { title: '2048', description: '숫자를 합쳐 2048을 만들어라', icon: 'grid_4x4', color: 'text-amber-600 dark:text-amber-400', bgColor: 'bg-amber-100 dark:bg-amber-900/30', accentColor: 'bg-amber-500', cornerAccentColor: 'bg-amber-500/10' },
+    { title: '지뢰찾기', description: '지뢰밭을 안전하게 정리하라', icon: 'flag', color: 'text-rose-600 dark:text-rose-400', bgColor: 'bg-rose-100 dark:bg-rose-900/30', accentColor: 'bg-rose-500', cornerAccentColor: 'bg-rose-500/10' },
+    { title: '스도쿠', description: '9x9 격자 논리 퍼즐', icon: 'calculate', color: 'text-indigo-600 dark:text-indigo-400', bgColor: 'bg-indigo-100 dark:bg-indigo-900/30', accentColor: 'bg-indigo-500', cornerAccentColor: 'bg-indigo-500/10' },
+    { title: '카드 뒤집기', description: '두뇌력을 테스트하라', icon: 'style', color: 'text-pink-600 dark:text-pink-400', bgColor: 'bg-pink-100 dark:bg-pink-900/30', accentColor: 'bg-pink-500', cornerAccentColor: 'bg-pink-500/10' },
+    { title: '틱택토', description: 'AI와 빠른 대결', icon: 'close', color: 'text-cyan-600 dark:text-cyan-400', bgColor: 'bg-cyan-100 dark:bg-cyan-900/30', accentColor: 'bg-cyan-500', cornerAccentColor: 'bg-cyan-500/10' },
+    { title: '단어 퍼즐', description: '5글자 영단어를 맞춰라', icon: 'abc', color: 'text-orange-600 dark:text-orange-400', bgColor: 'bg-orange-100 dark:bg-orange-900/30', accentColor: 'bg-orange-500', cornerAccentColor: 'bg-orange-500/10' },
 ];
 
 // --- Game 1: Snake (Canvas) ---
@@ -368,7 +370,7 @@ const TetrisGame = () => {
 
     return (
         <div className="flex flex-col items-center w-full h-full justify-center">
-            <div className="mb-4 text-xl font-bold dark:text-white">Score: {score}</div>
+            <div className="mb-4 text-xl font-bold dark:text-white">점수: {score}</div>
             <div className="bg-slate-900 border-8 border-slate-700 grid grid-rows-[repeat(20,minmax(0,1fr))] gap-px rounded-xl shadow-2xl overflow-hidden aspect-[1/2]" style={{ height: 'min(80vh, 100%)' }}>
                 {Array.from({ length: rows }).map((_, r) => (
                     <div key={r} className="grid grid-cols-[repeat(10,minmax(0,1fr))] gap-px">
@@ -379,7 +381,7 @@ const TetrisGame = () => {
                     </div>
                 ))}
             </div>
-            {gameOver && <button onClick={() => { setBoard(createBoard()); setScore(0); setGameOver(false); setCurrPiece(null); }} className="mt-6 px-6 py-2 bg-blue-500 text-white rounded font-bold hover:bg-blue-600 transition-colors">Retry</button>}
+            {gameOver && <button onClick={() => { setBoard(createBoard()); setScore(0); setGameOver(false); setCurrPiece(null); }} className="mt-6 px-6 py-2 bg-blue-500 text-white rounded font-bold hover:bg-blue-600 transition-colors">다시 시작</button>}
         </div>
     );
 };
@@ -628,7 +630,7 @@ const Sudoku = () => {
 
     const checkSolution = () => {
         const isCorrect = JSON.stringify(board) === JSON.stringify(solution);
-        setCheck(isCorrect ? 'Success!' : 'Keep trying...');
+        setCheck(isCorrect ? '정답입니다!' : '다시 시도해보세요...');
     };
 
     return (
@@ -652,9 +654,9 @@ const Sudoku = () => {
                 </div>
             </div>
             <div className="flex gap-4 mt-6">
-                <button onClick={checkSolution} className="px-8 py-3 bg-indigo-500 text-white rounded-xl font-bold hover:bg-indigo-600 transition-colors">Check Solution</button>
+                <button onClick={checkSolution} className="px-8 py-3 bg-indigo-500 text-white rounded-xl font-bold hover:bg-indigo-600 transition-colors">정답 확인</button>
             </div>
-            {check && <div className={`mt-3 font-bold text-xl ${check === 'Success!' ? 'text-green-500' : 'text-slate-500'}`}>{check}</div>}
+            {check && <div className={`mt-3 font-bold text-xl ${check === '정답입니다!' ? 'text-green-500' : 'text-slate-500'}`}>{check}</div>}
         </div>
     );
 };
@@ -706,7 +708,7 @@ const MemoryMatch = () => {
 
     return (
         <div className="flex flex-col items-center w-full h-full justify-center">
-            <div className="mb-4 text-xl font-bold dark:text-white">Moves: {moves}</div>
+            <div className="mb-4 text-xl font-bold dark:text-white">시도 횟수: {moves}</div>
             <div className="grid grid-cols-4 gap-4 w-full max-w-[60vh] aspect-square p-2">
                 {cards.map((c) => (
                     <div
@@ -720,7 +722,7 @@ const MemoryMatch = () => {
                     </div>
                 ))}
             </div>
-            <button onClick={initGame} className="mt-8 px-8 py-3 bg-pink-500 text-white rounded-xl font-bold hover:bg-pink-600 transition-colors">Reset Game</button>
+            <button onClick={initGame} className="mt-8 px-8 py-3 bg-pink-500 text-white rounded-xl font-bold hover:bg-pink-600 transition-colors">다시 시작</button>
         </div>
     );
 };
@@ -768,7 +770,7 @@ const TicTacToe = () => {
     return (
         <div className="flex flex-col items-center w-full h-full justify-center">
             <div className="mb-8 text-2xl font-bold dark:text-white">
-                {winner ? `Winner: ${winner}` : board.every(Boolean) ? 'Draw!' : `Turn: ${isXNext ? 'You (X)' : 'AI (O)'}`}
+                {winner ? `승자: ${winner}` : board.every(Boolean) ? '무승부!' : `차례: ${isXNext ? '당신 (X)' : 'AI (O)'}`}
             </div>
             <div className="grid grid-cols-3 gap-4 w-full max-w-[50vh] aspect-square">
                 {board.map((val, i) => (
@@ -782,7 +784,7 @@ const TicTacToe = () => {
                     </button>
                 ))}
             </div>
-            <button onClick={() => { setBoard(Array(9).fill(null)); setIsXNext(true); }} className="mt-8 px-8 py-3 bg-cyan-500 text-white rounded-xl font-bold hover:bg-cyan-600 transition-colors">Restart</button>
+            <button onClick={() => { setBoard(Array(9).fill(null)); setIsXNext(true); }} className="mt-8 px-8 py-3 bg-cyan-500 text-white rounded-xl font-bold hover:bg-cyan-600 transition-colors">다시 시작</button>
         </div>
     );
 };
@@ -831,7 +833,7 @@ const WordPuzzle = () => {
 
     return (
         <div className="flex flex-col items-center w-full h-full justify-center">
-            <div className="mb-8 text-2xl font-bold dark:text-white">{status === 'won' ? 'Great Job!' : status === 'lost' ? `Answer: ${answer}` : 'Guess the Word'}</div>
+            <div className="mb-8 text-2xl font-bold dark:text-white">{status === 'won' ? '정답입니다!' : status === 'lost' ? `정답: ${answer}` : '단어를 맞춰보세요'}</div>
             <div className="space-y-2 mb-8 w-full max-w-sm">
                 {[...Array(6)].map((_, i) => (
                     <div key={i} className="flex gap-2 justify-center">
@@ -848,8 +850,544 @@ const WordPuzzle = () => {
                     </div>
                 ))}
             </div>
-            {status !== 'playing' && <button onClick={() => { setGuesses([]); setCurrentGuess(''); setStatus('playing'); }} className="px-8 py-3 bg-orange-500 text-white rounded-xl font-bold hover:bg-orange-600 transition-colors">Play Again</button>}
-            <p className="text-slate-500 text-sm mt-4">Type on your keyboard</p>
+            {status !== 'playing' && <button onClick={() => { setGuesses([]); setCurrentGuess(''); setStatus('playing'); }} className="px-8 py-3 bg-orange-500 text-white rounded-xl font-bold hover:bg-orange-600 transition-colors">다시 도전</button>}
+            <p className="text-slate-500 text-sm mt-4">키보드로 입력하세요</p>
+        </div>
+    );
+};
+
+// --- Game 9: Chess ---
+const ChessGame = () => {
+    // Piece values for AI
+    const PIECE_VALUES: { [key: string]: number } = { p: 1, n: 3, b: 3, r: 5, q: 9, k: 100 };
+
+    // Image paths for pieces
+    const PIECE_IMAGES: { [key: string]: string } = {
+        'R': '/chess1/imgi_51_wr.png', 'N': '/chess1/imgi_52_wn.png', 'B': '/chess1/imgi_53_wb.png',
+        'Q': '/chess1/imgi_55_wq (1).png', 'K': '/chess1/imgi_54_wk.png', 'P': '/chess1/imgi_50_wp.png',
+        'r': '/chess1/imgi_44_br.png', 'n': '/chess1/imgi_45_bn.png', 'b': '/chess1/imgi_46_bb.png',
+        'q': '/chess1/imgi_48_bq.png', 'k': '/chess1/imgi_47_bk.png', 'p': '/chess1/imgi_49_bp.png',
+    };
+
+    // Initial board setup
+    const getInitialBoard = () => [
+        ['r', 'n', 'b', 'q', 'k', 'b', 'n', 'r'],
+        ['p', 'p', 'p', 'p', 'p', 'p', 'p', 'p'],
+        [null, null, null, null, null, null, null, null],
+        [null, null, null, null, null, null, null, null],
+        [null, null, null, null, null, null, null, null],
+        [null, null, null, null, null, null, null, null],
+        ['P', 'P', 'P', 'P', 'P', 'P', 'P', 'P'],
+        ['R', 'N', 'B', 'Q', 'K', 'B', 'N', 'R'],
+    ];
+
+    type Piece = string | null;
+    type Board = Piece[][];
+    type Position = { row: number; col: number };
+    type CastlingRights = { whiteKing: boolean; whiteQueen: boolean; blackKing: boolean; blackQueen: boolean };
+
+    const [board, setBoard] = useState<Board>(getInitialBoard);
+    const [selected, setSelected] = useState<Position | null>(null);
+    const [validMoves, setValidMoves] = useState<Position[]>([]);
+    const [turn, setTurn] = useState<'white' | 'black'>('white');
+    const [status, setStatus] = useState<'playing' | 'check' | 'checkmate' | 'stalemate'>('playing');
+    const [thinking, setThinking] = useState(false);
+    const [capturedWhite, setCapturedWhite] = useState<string[]>([]);
+    const [capturedBlack, setCapturedBlack] = useState<string[]>([]);
+    const [dragging, setDragging] = useState<Position | null>(null);
+    const [playerColor, setPlayerColor] = useState<'white' | 'black' | null>(null);
+    const [enPassant, setEnPassant] = useState<Position | null>(null);
+    const [castlingRights, setCastlingRights] = useState<CastlingRights>({ whiteKing: true, whiteQueen: true, blackKing: true, blackQueen: true });
+
+    const isWhite = (piece: Piece) => piece !== null && piece === piece.toUpperCase();
+    const isBlack = (piece: Piece) => piece !== null && piece === piece.toLowerCase();
+    const getPieceColor = (piece: Piece) => piece ? (isWhite(piece) ? 'white' : 'black') : null;
+
+    const getPieceSymbol = (piece: Piece) => {
+        if (!piece) return '';
+        const symbols: { [key: string]: string } = {
+            'K': '♔', 'Q': '♕', 'R': '♖', 'B': '♗', 'N': '♘', 'P': '♙',
+            'k': '♚', 'q': '♛', 'r': '♜', 'b': '♝', 'n': '♞', 'p': '♟',
+        };
+        return symbols[piece] || piece;
+    };
+
+    const getPieceImage = (piece: Piece) => piece ? PIECE_IMAGES[piece] : null;
+
+    // Find king position
+    const findKing = (b: Board, color: 'white' | 'black'): Position | null => {
+        const kingChar = color === 'white' ? 'K' : 'k';
+        for (let r = 0; r < 8; r++) {
+            for (let c = 0; c < 8; c++) {
+                if (b[r][c] === kingChar) return { row: r, col: c };
+            }
+        }
+        return null;
+    };
+
+    // Check if a square is attacked by opponent
+    const isSquareAttacked = (b: Board, pos: Position, byColor: 'white' | 'black'): boolean => {
+        for (let r = 0; r < 8; r++) {
+            for (let c = 0; c < 8; c++) {
+                const piece = b[r][c];
+                if (piece && getPieceColor(piece) === byColor) {
+                    const moves = getRawMoves(b, r, c, false);
+                    if (moves.some(m => m.row === pos.row && m.col === pos.col)) return true;
+                }
+            }
+        }
+        return false;
+    };
+
+    // Check if king is in check
+    const isInCheck = (b: Board, color: 'white' | 'black'): boolean => {
+        const kingPos = findKing(b, color);
+        if (!kingPos) return false;
+        return isSquareAttacked(b, kingPos, color === 'white' ? 'black' : 'white');
+    };
+
+    // Get raw moves without check validation
+    const getRawMoves = (b: Board, row: number, col: number, includeCastling = true): Position[] => {
+        const piece = b[row][col];
+        if (!piece) return [];
+        const moves: Position[] = [];
+        const color = getPieceColor(piece)!;
+        const type = piece.toLowerCase();
+
+        const addMove = (r: number, c: number) => {
+            if (r >= 0 && r < 8 && c >= 0 && c < 8) {
+                const target = b[r][c];
+                if (!target || getPieceColor(target) !== color) moves.push({ row: r, col: c });
+            }
+        };
+
+        const addLineMove = (dr: number, dc: number) => {
+            for (let i = 1; i < 8; i++) {
+                const r = row + dr * i, c = col + dc * i;
+                if (r < 0 || r > 7 || c < 0 || c > 7) break;
+                const target = b[r][c];
+                if (!target) moves.push({ row: r, col: c });
+                else {
+                    if (getPieceColor(target) !== color) moves.push({ row: r, col: c });
+                    break;
+                }
+            }
+        };
+
+        switch (type) {
+            case 'p': // Pawn
+                const dir = color === 'white' ? -1 : 1;
+                const startRow = color === 'white' ? 6 : 1;
+                // Forward
+                if (!b[row + dir]?.[col]) {
+                    moves.push({ row: row + dir, col });
+                    if (row === startRow && !b[row + 2 * dir]?.[col]) moves.push({ row: row + 2 * dir, col });
+                }
+                // Capture
+                [-1, 1].forEach(dc => {
+                    const target = b[row + dir]?.[col + dc];
+                    if (target && getPieceColor(target) !== color) moves.push({ row: row + dir, col: col + dc });
+                });
+                // En Passant
+                if (enPassant) {
+                    [-1, 1].forEach(dc => {
+                        if (col + dc === enPassant.col && row + dir === enPassant.row) {
+                            moves.push({ row: enPassant.row, col: enPassant.col });
+                        }
+                    });
+                }
+                break;
+            case 'n': // Knight
+                [[-2, -1], [-2, 1], [-1, -2], [-1, 2], [1, -2], [1, 2], [2, -1], [2, 1]].forEach(([dr, dc]) => addMove(row + dr, col + dc));
+                break;
+            case 'b': // Bishop
+                [[-1, -1], [-1, 1], [1, -1], [1, 1]].forEach(([dr, dc]) => addLineMove(dr, dc));
+                break;
+            case 'r': // Rook
+                [[-1, 0], [1, 0], [0, -1], [0, 1]].forEach(([dr, dc]) => addLineMove(dr, dc));
+                break;
+            case 'q': // Queen
+                [[-1, -1], [-1, 1], [1, -1], [1, 1], [-1, 0], [1, 0], [0, -1], [0, 1]].forEach(([dr, dc]) => addLineMove(dr, dc));
+                break;
+            case 'k': // King
+                [[-1, -1], [-1, 0], [-1, 1], [0, -1], [0, 1], [1, -1], [1, 0], [1, 1]].forEach(([dr, dc]) => addMove(row + dr, col + dc));
+                // Castling
+                if (includeCastling && !isInCheck(b, color)) {
+                    const kingRow = color === 'white' ? 7 : 0;
+                    if (row === kingRow && col === 4) {
+                        // King-side castling
+                        if ((color === 'white' ? castlingRights.whiteKing : castlingRights.blackKing) &&
+                            !b[kingRow][5] && !b[kingRow][6] &&
+                            !isSquareAttacked(b, { row: kingRow, col: 5 }, color === 'white' ? 'black' : 'white') &&
+                            !isSquareAttacked(b, { row: kingRow, col: 6 }, color === 'white' ? 'black' : 'white')) {
+                            moves.push({ row: kingRow, col: 6 });
+                        }
+                        // Queen-side castling
+                        if ((color === 'white' ? castlingRights.whiteQueen : castlingRights.blackQueen) &&
+                            !b[kingRow][1] && !b[kingRow][2] && !b[kingRow][3] &&
+                            !isSquareAttacked(b, { row: kingRow, col: 2 }, color === 'white' ? 'black' : 'white') &&
+                            !isSquareAttacked(b, { row: kingRow, col: 3 }, color === 'white' ? 'black' : 'white')) {
+                            moves.push({ row: kingRow, col: 2 });
+                        }
+                    }
+                }
+                break;
+        }
+        return moves;
+    };
+
+    // Get valid moves (excluding those that leave king in check)
+    const getValidMoves = (b: Board, row: number, col: number): Position[] => {
+        const piece = b[row][col];
+        if (!piece) return [];
+        const color = getPieceColor(piece)!;
+        const rawMoves = getRawMoves(b, row, col);
+
+        return rawMoves.filter(move => {
+            const newBoard = b.map(r => [...r]);
+            newBoard[move.row][move.col] = newBoard[row][col];
+            newBoard[row][col] = null;
+            // Pawn promotion
+            if (piece.toLowerCase() === 'p' && (move.row === 0 || move.row === 7)) {
+                newBoard[move.row][move.col] = color === 'white' ? 'Q' : 'q';
+            }
+            return !isInCheck(newBoard, color);
+        });
+    };
+
+    // Get all valid moves for a color
+    const getAllValidMoves = (b: Board, color: 'white' | 'black') => {
+        const moves: { from: Position; to: Position; piece: string }[] = [];
+        for (let r = 0; r < 8; r++) {
+            for (let c = 0; c < 8; c++) {
+                const piece = b[r][c];
+                if (piece && getPieceColor(piece) === color) {
+                    getValidMoves(b, r, c).forEach(to => {
+                        moves.push({ from: { row: r, col: c }, to, piece });
+                    });
+                }
+            }
+        }
+        return moves;
+    };
+
+    // Check game status
+    const checkGameStatus = useCallback((b: Board, color: 'white' | 'black') => {
+        const moves = getAllValidMoves(b, color);
+        const inCheck = isInCheck(b, color);
+        if (moves.length === 0) {
+            setStatus(inCheck ? 'checkmate' : 'stalemate');
+        } else if (inCheck) {
+            setStatus('check');
+        } else {
+            setStatus('playing');
+        }
+    }, []);
+
+    // Make a move
+    const makeMove = (from: Position, to: Position) => {
+        const newBoard = board.map(r => [...r]);
+        const piece = newBoard[from.row][from.col];
+        const captured = newBoard[to.row][to.col];
+        const pieceType = piece?.toLowerCase();
+        const color = getPieceColor(piece);
+
+        // Handle en passant capture
+        if (pieceType === 'p' && enPassant && to.row === enPassant.row && to.col === enPassant.col) {
+            const capturedPawnRow = color === 'white' ? to.row + 1 : to.row - 1;
+            const capturedPawn = newBoard[capturedPawnRow][to.col];
+            if (capturedPawn) {
+                if (isWhite(capturedPawn)) setCapturedWhite(prev => [...prev, capturedPawn]);
+                else setCapturedBlack(prev => [...prev, capturedPawn]);
+            }
+            newBoard[capturedPawnRow][to.col] = null;
+        } else if (captured) {
+            if (isWhite(captured)) setCapturedWhite(prev => [...prev, captured]);
+            else setCapturedBlack(prev => [...prev, captured]);
+        }
+
+        // Handle castling
+        if (pieceType === 'k' && Math.abs(to.col - from.col) === 2) {
+            const kingRow = from.row;
+            if (to.col === 6) { // King-side
+                newBoard[kingRow][5] = newBoard[kingRow][7];
+                newBoard[kingRow][7] = null;
+            } else if (to.col === 2) { // Queen-side
+                newBoard[kingRow][3] = newBoard[kingRow][0];
+                newBoard[kingRow][0] = null;
+            }
+        }
+
+        newBoard[to.row][to.col] = piece;
+        newBoard[from.row][from.col] = null;
+
+        // Update en passant target
+        if (pieceType === 'p' && Math.abs(to.row - from.row) === 2) {
+            setEnPassant({ row: (from.row + to.row) / 2, col: from.col });
+        } else {
+            setEnPassant(null);
+        }
+
+        // Update castling rights
+        const newCastlingRights = { ...castlingRights };
+        if (pieceType === 'k') {
+            if (color === 'white') { newCastlingRights.whiteKing = false; newCastlingRights.whiteQueen = false; }
+            else { newCastlingRights.blackKing = false; newCastlingRights.blackQueen = false; }
+        }
+        if (pieceType === 'r') {
+            if (from.row === 7 && from.col === 7) newCastlingRights.whiteKing = false;
+            if (from.row === 7 && from.col === 0) newCastlingRights.whiteQueen = false;
+            if (from.row === 0 && from.col === 7) newCastlingRights.blackKing = false;
+            if (from.row === 0 && from.col === 0) newCastlingRights.blackQueen = false;
+        }
+        setCastlingRights(newCastlingRights);
+
+        // Pawn promotion
+        if (pieceType === 'p' && (to.row === 0 || to.row === 7)) {
+            newBoard[to.row][to.col] = color === 'white' ? 'Q' : 'q';
+        }
+
+        setBoard(newBoard);
+        setSelected(null);
+        setValidMoves([]);
+
+        const nextTurn = turn === 'white' ? 'black' : 'white';
+        setTurn(nextTurn);
+        checkGameStatus(newBoard, nextTurn);
+
+        return newBoard;
+    };
+
+    // AI move
+    useEffect(() => {
+        if (!playerColor) return;
+        const aiColor = playerColor === 'white' ? 'black' : 'white';
+        if (turn === aiColor && (status === 'playing' || status === 'check')) {
+            setThinking(true);
+            const timer = setTimeout(() => {
+                const moves = getAllValidMoves(board, aiColor);
+                if (moves.length === 0) return;
+
+                // Score moves by capture value
+                const scoredMoves = moves.map(m => {
+                    const target = board[m.to.row][m.to.col];
+                    const captureValue = target ? PIECE_VALUES[target.toLowerCase()] || 0 : 0;
+                    return { ...m, score: captureValue + Math.random() * 0.5 };
+                });
+
+                scoredMoves.sort((a, b) => b.score - a.score);
+                const best = scoredMoves[0];
+
+                const newBoard = board.map(r => [...r]);
+                const piece = newBoard[best.from.row][best.from.col];
+                const captured = newBoard[best.to.row][best.to.col];
+
+                if (captured) {
+                    if (isWhite(captured)) setCapturedWhite(prev => [...prev, captured]);
+                    else setCapturedBlack(prev => [...prev, captured]);
+                }
+
+                // Handle AI castling
+                if (piece?.toLowerCase() === 'k' && Math.abs(best.to.col - best.from.col) === 2) {
+                    const kingRow = best.from.row;
+                    if (best.to.col === 6) {
+                        newBoard[kingRow][5] = newBoard[kingRow][7];
+                        newBoard[kingRow][7] = null;
+                    } else if (best.to.col === 2) {
+                        newBoard[kingRow][3] = newBoard[kingRow][0];
+                        newBoard[kingRow][0] = null;
+                    }
+                }
+
+                newBoard[best.to.row][best.to.col] = piece;
+                newBoard[best.from.row][best.from.col] = null;
+
+                // AI pawn promotion
+                if (piece?.toLowerCase() === 'p' && (best.to.row === 0 || best.to.row === 7)) {
+                    newBoard[best.to.row][best.to.col] = aiColor === 'white' ? 'Q' : 'q';
+                }
+
+                setEnPassant(null);
+                setBoard(newBoard);
+                setTurn(playerColor);
+                setThinking(false);
+                checkGameStatus(newBoard, playerColor);
+            }, 700);
+            return () => clearTimeout(timer);
+        }
+    }, [turn, board, status, playerColor]);
+
+    const isPlayerPiece = (piece: Piece) => {
+        if (!playerColor || !piece) return false;
+        return playerColor === 'white' ? isWhite(piece) : isBlack(piece);
+    };
+
+    const handleClick = (row: number, col: number) => {
+        if (!playerColor || turn !== playerColor || thinking || status === 'checkmate' || status === 'stalemate') return;
+
+        const piece = board[row][col];
+
+        if (selected) {
+            const isValidMoveCell = validMoves.some(m => m.row === row && m.col === col);
+            if (isValidMoveCell) {
+                makeMove(selected, { row, col });
+            } else if (piece && isPlayerPiece(piece)) {
+                setSelected({ row, col });
+                setValidMoves(getValidMoves(board, row, col));
+            } else {
+                setSelected(null);
+                setValidMoves([]);
+            }
+        } else if (piece && isPlayerPiece(piece)) {
+            setSelected({ row, col });
+            setValidMoves(getValidMoves(board, row, col));
+        }
+    };
+
+    const handleDragStart = (row: number, col: number) => {
+        if (!playerColor || turn !== playerColor || thinking || status === 'checkmate' || status === 'stalemate') return;
+        const piece = board[row][col];
+        if (piece && isPlayerPiece(piece)) {
+            setDragging({ row, col });
+            setSelected({ row, col });
+            setValidMoves(getValidMoves(board, row, col));
+        }
+    };
+
+    const handleDragEnd = () => {
+        setDragging(null);
+    };
+
+    const handleDrop = (row: number, col: number) => {
+        if (!dragging) return;
+        const isValidMoveCell = validMoves.some(m => m.row === row && m.col === col);
+        if (isValidMoveCell) {
+            makeMove(dragging, { row, col });
+        }
+        setDragging(null);
+    };
+
+    const resetGame = () => {
+        setBoard(getInitialBoard());
+        setSelected(null);
+        setValidMoves([]);
+        setTurn('white');
+        setStatus('playing');
+        setThinking(false);
+        setCapturedWhite([]);
+        setCapturedBlack([]);
+        setDragging(null);
+        setPlayerColor(null);
+        setEnPassant(null);
+        setCastlingRights({ whiteKing: true, whiteQueen: true, blackKing: true, blackQueen: true });
+    };
+
+    const startGame = (color: 'white' | 'black') => {
+        setPlayerColor(color);
+        if (color === 'black') {
+            // AI plays first as white
+            setTurn('white');
+        }
+    };
+
+    const getStatusText = () => {
+        if (status === 'checkmate') return turn === playerColor ? '체크메이트! AI 승리' : '체크메이트! 당신이 이겼습니다!';
+        if (status === 'stalemate') return '스테일메이트! 무승부';
+        if (thinking) return 'AI가 생각 중...';
+        if (status === 'check') return turn === playerColor ? '체크! 당신의 차례' : '체크!';
+        return turn === playerColor ? `당신의 차례 (${playerColor === 'white' ? '백' : '흑'})` : `AI 차례 (${playerColor === 'white' ? '흑' : '백'})`;
+    };
+
+    return (
+        <div className="flex flex-col lg:flex-row items-center justify-center w-full h-full gap-4 p-2">
+            {/* Color Selection Screen */}
+            {!playerColor && (
+                <div className="absolute inset-0 bg-black/50 z-50 flex items-center justify-center">
+                    <div className="bg-white dark:bg-slate-800 rounded-2xl p-8 shadow-2xl text-center">
+                        <h2 className="text-2xl font-bold text-slate-800 dark:text-white mb-6">색상을 선택하세요</h2>
+                        <div className="flex gap-4">
+                            <button onClick={() => startGame('white')} className="flex flex-col items-center gap-2 p-6 bg-slate-100 dark:bg-slate-700 rounded-xl hover:bg-lime-100 dark:hover:bg-lime-900 transition-colors border-2 border-transparent hover:border-lime-500">
+                                <img src="/chess1/imgi_54_wk.png" alt="White King" className="w-16 h-16" />
+                                <span className="font-bold text-slate-700 dark:text-white">백 (선공)</span>
+                            </button>
+                            <button onClick={() => startGame('black')} className="flex flex-col items-center gap-2 p-6 bg-slate-100 dark:bg-slate-700 rounded-xl hover:bg-lime-100 dark:hover:bg-lime-900 transition-colors border-2 border-transparent hover:border-lime-500">
+                                <img src="/chess1/imgi_47_bk.png" alt="Black King" className="w-16 h-16" />
+                                <span className="font-bold text-slate-700 dark:text-white">흑 (후공)</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Info Panel */}
+            <div className="flex lg:flex-col gap-3 items-center">
+                <div className="bg-white dark:bg-slate-800 rounded-lg p-3 shadow-lg border border-slate-200 dark:border-slate-700">
+                    <div className="text-xs font-bold text-slate-500 dark:text-slate-400 mb-1">잡은 기물 (AI)</div>
+                    <div className="flex flex-wrap gap-1 min-h-[24px]">
+                        {(playerColor === 'white' ? capturedWhite : capturedBlack).map((p, i) => <img key={i} src={getPieceImage(p) || ''} alt="" className="w-6 h-6" />)}
+                    </div>
+                </div>
+                <div className={`px-3 py-1.5 rounded-lg font-bold text-sm text-center ${status === 'checkmate' ? 'bg-red-500 text-white' :
+                    status === 'check' ? 'bg-yellow-500 text-white' :
+                        thinking ? 'bg-purple-500 text-white animate-pulse' :
+                            'bg-lime-600 text-white'}`}>
+                    {playerColor ? getStatusText() : '색상 선택 대기'}
+                </div>
+                <div className="bg-white dark:bg-slate-800 rounded-lg p-3 shadow-lg border border-slate-200 dark:border-slate-700">
+                    <div className="text-xs font-bold text-slate-500 dark:text-slate-400 mb-1">잡은 기물 (나)</div>
+                    <div className="flex flex-wrap gap-1 min-h-[24px]">
+                        {(playerColor === 'white' ? capturedBlack : capturedWhite).map((p, i) => <img key={i} src={getPieceImage(p) || ''} alt="" className="w-6 h-6" />)}
+                    </div>
+                </div>
+            </div>
+
+            {/* Chess Board */}
+            <div className="relative">
+                <div className="grid grid-cols-8 border-4 border-lime-800 dark:border-lime-600 rounded-lg overflow-hidden shadow-2xl" style={{ width: '400px', height: '400px' }}>
+                    {(playerColor === 'black' ? [...board].reverse().map(row => [...row].reverse()) : board).map((row, displayR) => row.map((piece, displayC) => {
+                        const r = playerColor === 'black' ? 7 - displayR : displayR;
+                        const c = playerColor === 'black' ? 7 - displayC : displayC;
+                        const isLight = (r + c) % 2 === 0;
+                        const isSelectedCell = selected?.row === r && selected?.col === c;
+                        const isValidMoveCell = validMoves.some(m => m.row === r && m.col === c);
+                        const hasEnemy = piece && !isPlayerPiece(piece) && isValidMoveCell;
+                        const pieceImg = getPieceImage(board[r][c]);
+                        const canDrag = board[r][c] && isPlayerPiece(board[r][c]) && turn === playerColor && !thinking;
+
+                        return (
+                            <div
+                                key={`${r}-${c}`}
+                                onClick={() => handleClick(r, c)}
+                                onDragOver={(e) => { e.preventDefault(); }}
+                                onDrop={() => handleDrop(r, c)}
+                                className={`w-[50px] h-[50px] flex items-center justify-center cursor-pointer relative
+                                    ${isLight ? 'bg-[#ebecd0]' : 'bg-[#779556]'}
+                                    ${isSelectedCell ? 'ring-4 ring-yellow-400 ring-inset' : ''}
+                                    ${hasEnemy ? 'ring-4 ring-red-500 ring-inset' : ''}`}
+                            >
+                                {isValidMoveCell && !board[r][c] && (
+                                    <div className="absolute w-4 h-4 bg-black/20 rounded-full" />
+                                )}
+                                {pieceImg && (
+                                    <img
+                                        src={pieceImg}
+                                        alt={board[r][c] || ''}
+                                        draggable={!!canDrag}
+                                        onDragStart={() => handleDragStart(r, c)}
+                                        onDragEnd={handleDragEnd}
+                                        className={`w-[42px] h-[42px] object-contain select-none ${canDrag ? 'cursor-grab active:cursor-grabbing' : ''} ${dragging?.row === r && dragging?.col === c ? 'opacity-50' : ''}`}
+                                    />
+                                )}
+                            </div>
+                        );
+                    }))}
+                </div>
+            </div>
+
+            {/* Reset Button */}
+            <button onClick={resetGame} className="px-4 py-2 bg-lime-600 text-white rounded-lg font-bold text-sm hover:bg-lime-700 transition-colors shadow-lg">
+                새 게임
+            </button>
         </div>
     );
 };
@@ -881,15 +1419,16 @@ const GameZone: React.FC = () => {
 
     const renderGame = () => {
         switch (activeGame?.title) {
-            case 'Snake': return <SnakeGame />;
-            case 'Tetris Block': return <TetrisGame />;
+            case '체스': return <ChessGame />;
+            case '스네이크': return <SnakeGame />;
+            case '테트리스': return <TetrisGame />;
             case '2048': return <Game2048 />;
-            case 'Minesweeper': return <Minesweeper />;
-            case 'Sudoku': return <Sudoku />;
-            case 'Memory Match': return <MemoryMatch />;
-            case 'Tic Tac Toe': return <TicTacToe />;
-            case 'Word Puzzle': return <WordPuzzle />;
-            default: return <div>Game not found</div>;
+            case '지뢰찾기': return <Minesweeper />;
+            case '스도쿠': return <Sudoku />;
+            case '카드 뒤집기': return <MemoryMatch />;
+            case '틱택토': return <TicTacToe />;
+            case '단어 퍼즐': return <WordPuzzle />;
+            default: return <div>게임을 찾을 수 없습니다</div>;
         }
     };
 
@@ -910,7 +1449,7 @@ const GameZone: React.FC = () => {
                 </div>
                 <div className="flex items-center gap-3 p-3 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-2xl text-white">
                     <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center"><span className="material-icons-round">person</span></div>
-                    <div><div className="font-bold text-sm">운영자</div><div className="text-[10px] opacity-80">Game Master</div></div>
+                    <div><div className="font-bold text-sm">운영자</div><div className="text-[10px] opacity-80">게임 마스터</div></div>
                 </div>
                 <div>
                     <h4 className="text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest mb-4">바로가기</h4>
@@ -926,18 +1465,19 @@ const GameZone: React.FC = () => {
                 <div className={`h-full overflow-y-auto p-6 transition-all duration-300 transform ${activeGame ? 'opacity-0 scale-95 pointer-events-none' : 'opacity-100 scale-100 pointer-events-auto'}`}>
                     <div className="max-w-7xl mx-auto">
                         <div className="mb-8">
-                            <div className="inline-flex items-center px-3 py-1 rounded-full bg-purple-100 dark:bg-purple-900/30 text-violet-600 text-xs font-bold mb-3"><span className="material-icons-round text-sm mr-1">bolt</span> Active Zone</div>
-                            <h2 className="text-3xl md:text-4xl font-extrabold text-slate-900 dark:text-white mb-2">Your Smart Space, <span className="text-violet-500">Play & Relax</span></h2>
-                            <p className="text-slate-500 dark:text-slate-400">Select a game to launch it in full screen focus mode.</p>
+                            <div className="inline-flex items-center px-3 py-1 rounded-full bg-purple-100 dark:bg-purple-900/30 text-violet-600 text-xs font-bold mb-3"><span className="material-icons-round text-sm mr-1">bolt</span> 게임존</div>
+                            <h2 className="text-3xl md:text-4xl font-extrabold text-slate-900 dark:text-white mb-2">나만의 게임 공간, <span className="text-violet-500">즐기고 휴식하세요</span></h2>
+                            <p className="text-slate-500 dark:text-slate-400">게임을 선택하면 전체 화면 모드로 시작됩니다.</p>
                         </div>
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                             {games.map((game) => (
-                                <div key={game.title} className="game-card group bg-white dark:bg-slate-800 rounded-2xl p-6 border border-slate-100 dark:border-slate-700 shadow-sm hover:shadow-xl cursor-pointer transition-all duration-300 hover:-translate-y-2 relative overflow-hidden" onClick={() => openGame(game)}>
-                                    <div className={`absolute top-0 right-0 w-24 h-24 ${game.cornerAccentColor} rounded-bl-full -mr-4 -mt-4 transition-transform group-hover:scale-150`}></div>
+                                <div key={game.title} className={`game-card group bg-white dark:bg-slate-800 rounded-2xl p-6 border border-slate-100 dark:border-slate-700 shadow-sm hover:shadow-xl cursor-pointer transition-all duration-300 hover:-translate-y-2 relative overflow-hidden ${game.isLarge ? 'sm:col-span-2 sm:row-span-2' : ''}`} onClick={() => openGame(game)}>
+                                    <div className={`absolute top-0 right-0 ${game.isLarge ? 'w-32 h-32' : 'w-24 h-24'} ${game.cornerAccentColor} rounded-bl-full -mr-4 -mt-4 transition-transform group-hover:scale-150`}></div>
                                     <div className="relative z-10">
-                                        <div className={`w-14 h-14 rounded-xl ${game.bgColor} ${game.color} flex items-center justify-center mb-4 group-hover:${game.accentColor} group-hover:text-white transition-colors`}><span className="material-icons-round text-3xl">{game.icon}</span></div>
-                                        <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-1">{game.title}</h3>
-                                        <p className="text-xs text-slate-500 dark:text-slate-400">{game.description}</p>
+                                        <div className={`${game.isLarge ? 'w-20 h-20' : 'w-14 h-14'} rounded-xl ${game.bgColor} ${game.color} flex items-center justify-center mb-4 group-hover:${game.accentColor} group-hover:text-white transition-colors`}><span className={`material-icons-round ${game.isLarge ? 'text-5xl' : 'text-3xl'}`}>{game.icon}</span></div>
+                                        <h3 className={`${game.isLarge ? 'text-2xl' : 'text-lg'} font-bold text-slate-800 dark:text-white mb-1`}>{game.title}</h3>
+                                        <p className={`${game.isLarge ? 'text-sm' : 'text-xs'} text-slate-500 dark:text-slate-400`}>{game.description}</p>
+                                        {game.isLarge && <div className="mt-4 flex items-center gap-2 text-lime-600 dark:text-lime-400 font-medium text-sm"><span className="material-icons-round text-lg">play_arrow</span>플레이하기</div>}
                                     </div>
                                 </div>
                             ))}
@@ -948,11 +1488,11 @@ const GameZone: React.FC = () => {
                 <div className={`absolute inset-0 z-50 bg-[#f9f9fb] dark:bg-[#0f172a] flex flex-col transition-all duration-500 transform ${activeGame ? 'translate-y-0 opacity-100 pointer-events-auto' : 'translate-y-full opacity-0 pointer-events-none'}`}>
                     <div className="flex items-center justify-between p-6 border-b border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-sm shrink-0">
                         <div className="flex items-center gap-4">
-                            <button className="flex items-center gap-2 text-slate-600 dark:text-slate-300 hover:text-violet-500 dark:hover:text-violet-500 transition-colors font-medium" onClick={closeGame}><span className="material-icons-round">arrow_back</span><span>Back to Arcade</span></button>
+                            <button className="flex items-center gap-2 text-slate-600 dark:text-slate-300 hover:text-violet-500 dark:hover:text-violet-500 transition-colors font-medium" onClick={closeGame}><span className="material-icons-round">arrow_back</span><span>게임 목록으로</span></button>
                             <div className="h-6 w-px bg-slate-300 dark:bg-slate-600 mx-2"></div>
                             <h2 className="text-xl font-bold text-slate-800 dark:text-white">{activeGame?.title}</h2>
                         </div>
-                        <div className="text-sm font-medium text-slate-500 hidden sm:block">Press ESC or Back button to exit</div>
+                        <div className="text-sm font-medium text-slate-500 hidden sm:block">ESC 또는 뒤로가기 버튼으로 나가기</div>
                     </div>
                     {/* Game Container: Flexible and Centered */}
                     <div className="flex-1 overflow-hidden relative flex flex-col items-center justify-center p-2 sm:p-6 bg-slate-50 dark:bg-slate-900/50">
