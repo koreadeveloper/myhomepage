@@ -14,6 +14,7 @@ import TypingGame from '../components/TypingGame';
 import BlackjackGame from '../components/BlackjackGame';
 import QuizGame from '../components/QuizGame';
 import MathGame from '../components/MathGame';
+import MobileControls from '../components/MobileControls';
 
 // --- Shared Types & Constants ---
 type Game = {
@@ -236,23 +237,27 @@ const SnakeGame = () => {
         return () => cancelAnimationFrame(animationId);
     }, [gameOver]);
 
+    const handleDirection = useCallback((key: string) => {
+        const state = gameStateRef.current;
+        if (!started) setStarted(true);
+        switch (key) {
+            case 'ArrowUp': if (state.dir.y !== 1) { state.nextDir = { x: 0, y: -1 }; if (state.dir.x === 0 && state.dir.y === 0) state.dir = state.nextDir; } break;
+            case 'ArrowDown': if (state.dir.y !== -1) { state.nextDir = { x: 0, y: 1 }; if (state.dir.x === 0 && state.dir.y === 0) state.dir = state.nextDir; } break;
+            case 'ArrowLeft': if (state.dir.x !== 1) { state.nextDir = { x: -1, y: 0 }; if (state.dir.x === 0 && state.dir.y === 0) state.dir = state.nextDir; } break;
+            case 'ArrowRight': if (state.dir.x !== -1) { state.nextDir = { x: 1, y: 0 }; if (state.dir.x === 0 && state.dir.y === 0) state.dir = state.nextDir; } break;
+        }
+    }, [started]);
+
     useEffect(() => {
         const handleKey = (e: KeyboardEvent) => {
             if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
                 e.preventDefault();
-                const state = gameStateRef.current;
-                if (!started) setStarted(true);
-                switch (e.key) {
-                    case 'ArrowUp': if (state.dir.y !== 1) { state.nextDir = { x: 0, y: -1 }; if (state.dir.x === 0 && state.dir.y === 0) state.dir = state.nextDir; } break;
-                    case 'ArrowDown': if (state.dir.y !== -1) { state.nextDir = { x: 0, y: 1 }; if (state.dir.x === 0 && state.dir.y === 0) state.dir = state.nextDir; } break;
-                    case 'ArrowLeft': if (state.dir.x !== 1) { state.nextDir = { x: -1, y: 0 }; if (state.dir.x === 0 && state.dir.y === 0) state.dir = state.nextDir; } break;
-                    case 'ArrowRight': if (state.dir.x !== -1) { state.nextDir = { x: 1, y: 0 }; if (state.dir.x === 0 && state.dir.y === 0) state.dir = state.nextDir; } break;
-                }
+                handleDirection(e.key);
             }
         };
         window.addEventListener('keydown', handleKey);
         return () => window.removeEventListener('keydown', handleKey);
-    }, [started]);
+    }, [handleDirection]);
 
     return (
         <div className="flex flex-col items-center w-full h-full justify-center">
@@ -267,9 +272,16 @@ const SnakeGame = () => {
                     </div>
                 )}
                 {!started && !gameOver && (
-                    <div className="absolute inset-0 flex items-center justify-center text-white/70 text-xl font-bold animate-pulse">방향키를 눌러 시작하세요</div>
+                    <div className="absolute inset-0 flex items-center justify-center text-white/70 text-xl font-bold animate-pulse text-center p-4">방향키 또는 화면 버튼으로<br />시작하세요</div>
                 )}
             </div>
+            <MobileControls
+                type="dpad"
+                onUp={() => handleDirection('ArrowUp')}
+                onDown={() => handleDirection('ArrowDown')}
+                onLeft={() => handleDirection('ArrowLeft')}
+                onRight={() => handleDirection('ArrowRight')}
+            />
         </div>
     );
 };
@@ -410,8 +422,18 @@ const TetrisGame = () => {
                     </div>
                 ))}
             </div>
-            {gameOver && <button onClick={() => { setBoard(createBoard()); setScore(0); setGameOver(false); setCurrPiece(null); }} className="mt-6 px-6 py-2 bg-blue-500 text-white rounded font-bold hover:bg-blue-600 transition-colors">다시 시작</button>}
+                })}
         </div>
+            { gameOver && <button onClick={() => { setBoard(createBoard()); setScore(0); setGameOver(false); setCurrPiece(null); }} className="mt-6 px-6 py-2 bg-blue-500 text-white rounded font-bold hover:bg-blue-600 transition-colors">다시 시작</button> }
+
+    <MobileControls
+        type="dpad"
+        onUp={rotate}
+        onDown={() => move(0, 1)}
+        onLeft={() => move(-1, 0)}
+        onRight={() => move(1, 0)}
+    />
+        </div >
     );
 };
 
@@ -523,6 +545,13 @@ const Game2048 = () => {
                 </div>
             </div>
             <button onClick={initGame} className="mt-6 px-6 py-2 bg-stone-600 text-white rounded-lg font-bold hover:bg-stone-700 transition-colors">새 게임</button>
+            <MobileControls
+                type="dpad"
+                onUp={() => move('ArrowUp')}
+                onDown={() => move('ArrowDown')}
+                onLeft={() => move('ArrowLeft')}
+                onRight={() => move('ArrowRight')}
+            />
         </div>
     );
 };
@@ -534,6 +563,7 @@ const Minesweeper = () => {
     type Cell = { isMine: boolean, isOpen: boolean, isFlag: boolean, count: number };
     const [board, setBoard] = useState<Cell[][]>([]);
     const [status, setStatus] = useState<'playing' | 'won' | 'lost'>('playing');
+    const [flagMode, setFlagMode] = useState(false);
 
     const initGame = () => {
         const newBoard: Cell[][] = Array(size).fill(0).map(() => Array(size).fill(0).map(() => ({ isMine: false, isOpen: false, isFlag: false, count: 0 })));
@@ -586,12 +616,21 @@ const Minesweeper = () => {
         }
     };
 
-    const toggleFlag = (e: React.MouseEvent, r: number, c: number) => {
-        e.preventDefault();
+    const toggleFlag = (e: React.MouseEvent | React.TouchEvent, r: number, c: number) => {
+        if (e && e.preventDefault) e.preventDefault();
         if (status !== 'playing' || board[r][c].isOpen) return;
         const newBoard = board.map(row => [...row]);
         newBoard[r][c].isFlag = !newBoard[r][c].isFlag;
         setBoard(newBoard);
+    };
+
+    const handleCellClick = (r: number, c: number) => {
+        if (flagMode) {
+            // Mock event object for reuse
+            toggleFlag({ preventDefault: () => { } } as any, r, c);
+        } else {
+            reveal(r, c);
+        }
     };
 
     useEffect(() => { initGame(); }, []);
@@ -606,9 +645,9 @@ const Minesweeper = () => {
                     {board.map((row, r) => row.map((cell, c) => (
                         <div
                             key={`${r}-${c}`}
-                            onClick={() => reveal(r, c)}
+                            onClick={() => handleCellClick(r, c)}
                             onContextMenu={(e) => toggleFlag(e, r, c)}
-                            className={`flex items-center justify-center font-bold text-sm md:text-base cursor-pointer select-none rounded
+                            className={`flex items-center justify-center font-bold text-sm md:text-base cursor-pointer select-none rounded touch-manipulation
                                 ${cell.isOpen
                                     ? (cell.isMine ? 'bg-red-500' : 'bg-slate-100 dark:bg-slate-700')
                                     : 'bg-slate-400 dark:bg-slate-500 hover:bg-slate-500 dark:hover:bg-slate-400 shadow-sm'}
@@ -625,7 +664,20 @@ const Minesweeper = () => {
                     )))}
                 </div>
             </div>
-            <div className="mt-4 text-sm text-slate-500 dark:text-slate-400">좌클릭: 열기 | 우클릭: 깃발</div>
+
+            <div className="flex gap-4 mt-6">
+                <button
+                    onClick={() => setFlagMode(!flagMode)}
+                    className={`px-6 py-3 rounded-xl font-bold text-lg shadow-lg transition-all active:scale-95 flex items-center gap-2
+                        ${flagMode
+                            ? 'bg-red-500 text-white ring-4 ring-red-200'
+                            : 'bg-slate-200 text-slate-700 dark:bg-slate-700 dark:text-white'}`}
+                >
+                    {flagMode ? '🚩 깃발 모드 (터치)' : '⛏️ 굴착 모드 (터치)'}
+                </button>
+                <button onClick={initGame} className="px-6 py-3 bg-blue-500 text-white rounded-xl font-bold shadow-lg active:scale-95">😊 새 게임</button>
+            </div>
+            <div className="mt-2 text-sm text-slate-500 dark:text-slate-400">PC: 좌클릭 열기 / 우클릭 깃발</div>
             <button onClick={initGame} className="mt-4 px-6 py-2 bg-slate-600 text-white rounded font-bold hover:bg-slate-700 transition-colors">다시 시작</button>
         </div>
     );

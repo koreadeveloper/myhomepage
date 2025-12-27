@@ -1,4 +1,5 @@
-import React, { useRef, useState, useEffect } from 'react';
+import React, { useRef, useState, useEffect, useCallback } from 'react';
+import MobileControls from './MobileControls';
 
 // Pong Game (vs AI)
 const PongGame = () => {
@@ -119,6 +120,17 @@ const PongGame = () => {
         return () => cancelAnimationFrame(animationId);
     }, [started, gameOver]);
 
+    const moveUp = useCallback(() => {
+        const state = gameStateRef.current;
+        state.player.y = Math.max(0, state.player.y - 25);
+    }, []);
+
+    const moveDown = useCallback(() => {
+        const state = gameStateRef.current;
+        const canvasHeight = canvasRef.current ? canvasRef.current.height : 500;
+        state.player.y = Math.min(canvasHeight - state.player.height, state.player.y + 25);
+    }, []);
+
     useEffect(() => {
         const handleMove = (e: MouseEvent | TouchEvent) => {
             const canvas = canvasRef.current;
@@ -128,9 +140,8 @@ const PongGame = () => {
             gameStateRef.current.player.y = Math.max(0, Math.min(canvas.height - gameStateRef.current.player.height, y - gameStateRef.current.player.height / 2));
         };
         const handleKey = (e: KeyboardEvent) => {
-            const state = gameStateRef.current;
-            if (e.key === 'ArrowUp' || e.key === 'w') state.player.y = Math.max(0, state.player.y - 20);
-            if (e.key === 'ArrowDown' || e.key === 's') state.player.y = Math.min(400 - state.player.height, state.player.y + 20);
+            if (e.key === 'ArrowUp' || e.key === 'w') moveUp();
+            if (e.key === 'ArrowDown' || e.key === 's') moveDown();
         };
         window.addEventListener('mousemove', handleMove);
         window.addEventListener('touchmove', handleMove);
@@ -140,7 +151,7 @@ const PongGame = () => {
             window.removeEventListener('touchmove', handleMove);
             window.removeEventListener('keydown', handleKey);
         };
-    }, []);
+    }, [moveUp, moveDown]);
 
     return (
         <div className="flex flex-col items-center gap-4">
@@ -166,6 +177,11 @@ const PongGame = () => {
                 </div>
             )}
             <p className="text-sm text-slate-400">마우스, 터치, 또는 W/S 키로 조작</p>
+            <MobileControls
+                type="vertical"
+                onUp={moveUp}
+                onDown={moveDown}
+            />
         </div>
     );
 };

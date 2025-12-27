@@ -1,4 +1,5 @@
-import React, { useRef, useState, useEffect } from 'react';
+import React, { useRef, useState, useEffect, useCallback } from 'react';
+import MobileControls from './MobileControls';
 
 // Breakout Game
 const BreakoutGame = () => {
@@ -124,6 +125,17 @@ const BreakoutGame = () => {
         return () => cancelAnimationFrame(animationId);
     }, [started, gameOver, won]);
 
+    const moveLeft = useCallback(() => {
+        const state = gameStateRef.current;
+        state.paddle.x = Math.max(0, state.paddle.x - 25);
+    }, []);
+
+    const moveRight = useCallback(() => {
+        const state = gameStateRef.current;
+        const canvasWidth = canvasRef.current ? canvasRef.current.width : 600;
+        state.paddle.x = Math.min(canvasWidth - state.paddle.width, state.paddle.x + 25);
+    }, []);
+
     useEffect(() => {
         const handleMove = (e: MouseEvent | TouchEvent) => {
             const canvas = canvasRef.current;
@@ -133,9 +145,8 @@ const BreakoutGame = () => {
             gameStateRef.current.paddle.x = Math.max(0, Math.min(canvas.width - gameStateRef.current.paddle.width, x - gameStateRef.current.paddle.width / 2));
         };
         const handleKey = (e: KeyboardEvent) => {
-            const state = gameStateRef.current;
-            if (e.key === 'ArrowLeft' || e.key === 'a') state.paddle.x = Math.max(0, state.paddle.x - 20);
-            if (e.key === 'ArrowRight' || e.key === 'd') state.paddle.x = Math.min(400 - state.paddle.width, state.paddle.x + 20);
+            if (e.key === 'ArrowLeft' || e.key === 'a') moveLeft();
+            if (e.key === 'ArrowRight' || e.key === 'd') moveRight();
         };
         window.addEventListener('mousemove', handleMove);
         window.addEventListener('touchmove', handleMove);
@@ -145,7 +156,7 @@ const BreakoutGame = () => {
             window.removeEventListener('touchmove', handleMove);
             window.removeEventListener('keydown', handleKey);
         };
-    }, []);
+    }, [moveLeft, moveRight]);
 
     return (
         <div className="flex flex-col items-center gap-4">
@@ -166,6 +177,12 @@ const BreakoutGame = () => {
                     </button>
                 </div>
             )}
+            {/* Remove hardcoded width constraint in logic above */}
+            <MobileControls
+                type="horizontal"
+                onLeft={moveLeft}
+                onRight={moveRight}
+            />
         </div>
     );
 };

@@ -1,4 +1,5 @@
 import React, { useRef, useState, useEffect, useCallback } from 'react';
+import MobileControls from './MobileControls';
 
 // Flappy Bird Game
 const FlappyBirdGame = () => {
@@ -200,6 +201,14 @@ const FlappyBirdGame = () => {
                 </div>
             )}
         </div>
+    )
+}
+<MobileControls
+    type="jump"
+    onAction={jump}
+    onActionLabel="JUMP"
+/>
+        </div >
     );
 };
 

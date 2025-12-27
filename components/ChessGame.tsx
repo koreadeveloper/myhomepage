@@ -403,6 +403,10 @@ const ChessGame: React.FC = () => {
                             <div
                                 key={square}
                                 onClick={() => handleClick(square)}
+                                onTouchEnd={(e) => {
+                                    e.preventDefault(); // 기본 터치 동작 방지
+                                    handleClick(square);
+                                }}
                                 onDragOver={(e) => e.preventDefault()}
                                 onDrop={() => handleDrop(square)}
                                 className={`w-full h-full flex items-center justify-center cursor-pointer relative

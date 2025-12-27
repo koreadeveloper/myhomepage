@@ -1,4 +1,5 @@
 import React, { useRef, useState, useEffect, useCallback } from 'react';
+import MobileControls from './MobileControls';
 
 // Dino Jump Game (Chrome Dinosaur Clone)
 const DinoJumpGame = () => {
@@ -239,6 +240,14 @@ const DinoJumpGame = () => {
                 </div>
             )}
         </div>
+    )
+}
+<MobileControls
+    type="vertical"
+    onUp={jump}
+    onDown={() => { duck(true); setTimeout(() => duck(false), 500); }}
+/>
+        </div >
     );
 };
 
