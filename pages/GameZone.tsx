@@ -898,6 +898,7 @@ const ChessGame = () => {
     const [playerColor, setPlayerColor] = useState<'white' | 'black' | null>(null);
     const [enPassant, setEnPassant] = useState<Position | null>(null);
     const [castlingRights, setCastlingRights] = useState<CastlingRights>({ whiteKing: true, whiteQueen: true, blackKing: true, blackQueen: true });
+    const [moveHistory, setMoveHistory] = useState<{ white: string; black: string }[]>([]);
 
     const isWhite = (piece: Piece) => piece !== null && piece === piece.toUpperCase();
     const isBlack = (piece: Piece) => piece !== null && piece === piece.toLowerCase();
@@ -1085,12 +1086,30 @@ const ChessGame = () => {
     }, []);
 
     // Make a move
+    const getMoveNotation = (piece: Piece, from: Position, to: Position, captured: Piece, isCastling: boolean) => {
+        const files = 'abcdefgh';
+        const ranks = '87654321';
+        const toSquare = files[to.col] + ranks[to.row];
+
+        if (isCastling) return to.col === 6 ? 'O-O' : 'O-O-O';
+
+        const pieceSymbol = piece?.toLowerCase() === 'p' ? '' : getPieceSymbol(piece);
+        const captureX = captured ? 'x' : '';
+        const fromFile = piece?.toLowerCase() === 'p' && captured ? files[from.col] : '';
+
+        return `${pieceSymbol}${fromFile}${captureX}${toSquare}`;
+    };
+
     const makeMove = (from: Position, to: Position) => {
         const newBoard = board.map(r => [...r]);
         const piece = newBoard[from.row][from.col];
         const captured = newBoard[to.row][to.col];
         const pieceType = piece?.toLowerCase();
         const color = getPieceColor(piece);
+        const isCastling = pieceType === 'k' && Math.abs(to.col - from.col) === 2;
+
+        // Generate move notation
+        const notation = getMoveNotation(piece, from, to, captured, isCastling);
 
         // Handle en passant capture
         if (pieceType === 'p' && enPassant && to.row === enPassant.row && to.col === enPassant.col) {
@@ -1107,7 +1126,7 @@ const ChessGame = () => {
         }
 
         // Handle castling
-        if (pieceType === 'k' && Math.abs(to.col - from.col) === 2) {
+        if (isCastling) {
             const kingRow = from.row;
             if (to.col === 6) { // King-side
                 newBoard[kingRow][5] = newBoard[kingRow][7];
@@ -1145,6 +1164,19 @@ const ChessGame = () => {
         // Pawn promotion
         if (pieceType === 'p' && (to.row === 0 || to.row === 7)) {
             newBoard[to.row][to.col] = color === 'white' ? 'Q' : 'q';
+        }
+
+        // Record move history
+        if (turn === 'white') {
+            setMoveHistory(prev => [...prev, { white: notation, black: '' }]);
+        } else {
+            setMoveHistory(prev => {
+                const updated = [...prev];
+                if (updated.length > 0) {
+                    updated[updated.length - 1] = { ...updated[updated.length - 1], black: notation };
+                }
+                return updated;
+            });
         }
 
         setBoard(newBoard);
@@ -1205,6 +1237,24 @@ const ChessGame = () => {
                 // AI pawn promotion
                 if (piece?.toLowerCase() === 'p' && (best.to.row === 0 || best.to.row === 7)) {
                     newBoard[best.to.row][best.to.col] = aiColor === 'white' ? 'Q' : 'q';
+                }
+
+                // Record AI move in history
+                const isCastling = piece?.toLowerCase() === 'k' && Math.abs(best.to.col - best.from.col) === 2;
+                const notation = getMoveNotation(piece, best.from, best.to, captured, isCastling);
+
+                if (aiColor === 'white') {
+                    setMoveHistory(prev => [...prev, { white: notation, black: '' }]);
+                } else {
+                    setMoveHistory(prev => {
+                        const updated = [...prev];
+                        if (updated.length > 0) {
+                            updated[updated.length - 1] = { ...updated[updated.length - 1], black: notation };
+                        } else {
+                            updated.push({ white: '', black: notation });
+                        }
+                        return updated;
+                    });
                 }
 
                 setEnPassant(null);
@@ -1280,6 +1330,7 @@ const ChessGame = () => {
         setPlayerColor(null);
         setEnPassant(null);
         setCastlingRights({ whiteKing: true, whiteQueen: true, blackKing: true, blackQueen: true });
+        setMoveHistory([]);
     };
 
     const startGame = (color: 'white' | 'black') => {
@@ -1298,52 +1349,66 @@ const ChessGame = () => {
         return turn === playerColor ? `당신의 차례 (${playerColor === 'white' ? '백' : '흑'})` : `AI 차례 (${playerColor === 'white' ? '흑' : '백'})`;
     };
 
+    // ESC key handler
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.key === 'Escape') {
+                // Will be handled by parent component
+            }
+        };
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, []);
+
     return (
-        <div className="flex flex-col lg:flex-row items-center justify-center w-full h-full gap-4 p-2">
+        <div className="flex flex-col lg:flex-row items-center justify-center w-full h-full p-2 lg:p-4 gap-2 lg:gap-4">
             {/* Color Selection Screen */}
             {!playerColor && (
                 <div className="absolute inset-0 bg-black/50 z-50 flex items-center justify-center">
-                    <div className="bg-white dark:bg-slate-800 rounded-2xl p-8 shadow-2xl text-center">
-                        <h2 className="text-2xl font-bold text-slate-800 dark:text-white mb-6">색상을 선택하세요</h2>
-                        <div className="flex gap-4">
-                            <button onClick={() => startGame('white')} className="flex flex-col items-center gap-2 p-6 bg-slate-100 dark:bg-slate-700 rounded-xl hover:bg-lime-100 dark:hover:bg-lime-900 transition-colors border-2 border-transparent hover:border-lime-500">
-                                <img src="/chess1/imgi_54_wk.png" alt="White King" className="w-16 h-16" />
-                                <span className="font-bold text-slate-700 dark:text-white">백 (선공)</span>
+                    <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 lg:p-8 shadow-2xl text-center mx-4">
+                        <h2 className="text-xl lg:text-2xl font-bold text-slate-800 dark:text-white mb-4 lg:mb-6">색상을 선택하세요</h2>
+                        <div className="flex gap-3 lg:gap-4">
+                            <button onClick={() => startGame('white')} className="flex flex-col items-center gap-2 p-4 lg:p-6 bg-slate-100 dark:bg-slate-700 rounded-xl hover:bg-lime-100 dark:hover:bg-lime-900 transition-colors border-2 border-transparent hover:border-lime-500">
+                                <img src="/chess1/imgi_54_wk.png" alt="White King" className="w-12 h-12 lg:w-16 lg:h-16" />
+                                <span className="font-bold text-slate-700 dark:text-white text-sm lg:text-base">백 (선공)</span>
                             </button>
-                            <button onClick={() => startGame('black')} className="flex flex-col items-center gap-2 p-6 bg-slate-100 dark:bg-slate-700 rounded-xl hover:bg-lime-100 dark:hover:bg-lime-900 transition-colors border-2 border-transparent hover:border-lime-500">
-                                <img src="/chess1/imgi_47_bk.png" alt="Black King" className="w-16 h-16" />
-                                <span className="font-bold text-slate-700 dark:text-white">흑 (후공)</span>
+                            <button onClick={() => startGame('black')} className="flex flex-col items-center gap-2 p-4 lg:p-6 bg-slate-100 dark:bg-slate-700 rounded-xl hover:bg-lime-100 dark:hover:bg-lime-900 transition-colors border-2 border-transparent hover:border-lime-500">
+                                <img src="/chess1/imgi_47_bk.png" alt="Black King" className="w-12 h-12 lg:w-16 lg:h-16" />
+                                <span className="font-bold text-slate-700 dark:text-white text-sm lg:text-base">흑 (후공)</span>
                             </button>
                         </div>
                     </div>
                 </div>
             )}
 
-            {/* Info Panel */}
-            <div className="flex lg:flex-col gap-3 items-center">
-                <div className="bg-white dark:bg-slate-800 rounded-lg p-3 shadow-lg border border-slate-200 dark:border-slate-700">
-                    <div className="text-xs font-bold text-slate-500 dark:text-slate-400 mb-1">잡은 기물 (AI)</div>
-                    <div className="flex flex-wrap gap-1 min-h-[24px]">
-                        {(playerColor === 'white' ? capturedWhite : capturedBlack).map((p, i) => <img key={i} src={getPieceImage(p) || ''} alt="" className="w-6 h-6" />)}
-                    </div>
-                </div>
-                <div className={`px-3 py-1.5 rounded-lg font-bold text-sm text-center ${status === 'checkmate' ? 'bg-red-500 text-white' :
+            {/* Left Panel - Controls (hidden on mobile, shows at bottom) */}
+            <div className="hidden lg:flex flex-col gap-3 items-center w-36">
+                <button onClick={resetGame} className="w-full px-3 py-2 bg-lime-600 text-white rounded-lg font-bold text-sm hover:bg-lime-700 transition-colors shadow-lg">
+                    새 게임
+                </button>
+                <div className={`w-full px-2 py-1.5 rounded-lg font-bold text-xs text-center ${status === 'checkmate' ? 'bg-red-500 text-white' :
                     status === 'check' ? 'bg-yellow-500 text-white' :
                         thinking ? 'bg-purple-500 text-white animate-pulse' :
                             'bg-lime-600 text-white'}`}>
                     {playerColor ? getStatusText() : '색상 선택 대기'}
                 </div>
-                <div className="bg-white dark:bg-slate-800 rounded-lg p-3 shadow-lg border border-slate-200 dark:border-slate-700">
+                <div className="w-full bg-white dark:bg-slate-800 rounded-lg p-2 shadow-lg border border-slate-200 dark:border-slate-700">
+                    <div className="text-xs font-bold text-slate-500 dark:text-slate-400 mb-1">잡은 기물 (AI)</div>
+                    <div className="flex flex-wrap gap-0.5 min-h-[20px]">
+                        {(playerColor === 'white' ? capturedWhite : capturedBlack).map((p, i) => <img key={i} src={getPieceImage(p) || ''} alt="" className="w-5 h-5" />)}
+                    </div>
+                </div>
+                <div className="w-full bg-white dark:bg-slate-800 rounded-lg p-2 shadow-lg border border-slate-200 dark:border-slate-700">
                     <div className="text-xs font-bold text-slate-500 dark:text-slate-400 mb-1">잡은 기물 (나)</div>
-                    <div className="flex flex-wrap gap-1 min-h-[24px]">
-                        {(playerColor === 'white' ? capturedBlack : capturedWhite).map((p, i) => <img key={i} src={getPieceImage(p) || ''} alt="" className="w-6 h-6" />)}
+                    <div className="flex flex-wrap gap-0.5 min-h-[20px]">
+                        {(playerColor === 'white' ? capturedBlack : capturedWhite).map((p, i) => <img key={i} src={getPieceImage(p) || ''} alt="" className="w-5 h-5" />)}
                     </div>
                 </div>
             </div>
 
-            {/* Chess Board */}
-            <div className="relative">
-                <div className="grid grid-cols-8 border-4 border-lime-800 dark:border-lime-600 rounded-lg overflow-hidden shadow-2xl" style={{ width: '400px', height: '400px' }}>
+            {/* Chess Board - Fully Responsive */}
+            <div className="flex-shrink-0" style={{ width: 'min(calc(100vh - 180px), calc(100vw - 32px), 720px)', height: 'min(calc(100vh - 180px), calc(100vw - 32px), 720px)' }}>
+                <div className="grid grid-cols-8 border-2 lg:border-4 border-lime-800 dark:border-lime-600 rounded-lg overflow-hidden shadow-2xl w-full h-full">
                     {(playerColor === 'black' ? [...board].reverse().map(row => [...row].reverse()) : board).map((row, displayR) => row.map((piece, displayC) => {
                         const r = playerColor === 'black' ? 7 - displayR : displayR;
                         const c = playerColor === 'black' ? 7 - displayC : displayC;
@@ -1360,13 +1425,13 @@ const ChessGame = () => {
                                 onClick={() => handleClick(r, c)}
                                 onDragOver={(e) => { e.preventDefault(); }}
                                 onDrop={() => handleDrop(r, c)}
-                                className={`w-[50px] h-[50px] flex items-center justify-center cursor-pointer relative
+                                className={`aspect-square flex items-center justify-center cursor-pointer relative
                                     ${isLight ? 'bg-[#ebecd0]' : 'bg-[#779556]'}
-                                    ${isSelectedCell ? 'ring-4 ring-yellow-400 ring-inset' : ''}
-                                    ${hasEnemy ? 'ring-4 ring-red-500 ring-inset' : ''}`}
+                                    ${isSelectedCell ? 'ring-2 lg:ring-4 ring-yellow-400 ring-inset' : ''}
+                                    ${hasEnemy ? 'ring-2 lg:ring-4 ring-red-500 ring-inset' : ''}`}
                             >
                                 {isValidMoveCell && !board[r][c] && (
-                                    <div className="absolute w-4 h-4 bg-black/20 rounded-full" />
+                                    <div className="absolute w-1/4 h-1/4 bg-black/20 rounded-full" />
                                 )}
                                 {pieceImg && (
                                     <img
@@ -1375,7 +1440,7 @@ const ChessGame = () => {
                                         draggable={!!canDrag}
                                         onDragStart={() => handleDragStart(r, c)}
                                         onDragEnd={handleDragEnd}
-                                        className={`w-[42px] h-[42px] object-contain select-none ${canDrag ? 'cursor-grab active:cursor-grabbing' : ''} ${dragging?.row === r && dragging?.col === c ? 'opacity-50' : ''}`}
+                                        className={`w-[85%] h-[85%] object-contain select-none ${canDrag ? 'cursor-grab active:cursor-grabbing' : ''} ${dragging?.row === r && dragging?.col === c ? 'opacity-50' : ''}`}
                                     />
                                 )}
                             </div>
@@ -1384,10 +1449,47 @@ const ChessGame = () => {
                 </div>
             </div>
 
-            {/* Reset Button */}
-            <button onClick={resetGame} className="px-4 py-2 bg-lime-600 text-white rounded-lg font-bold text-sm hover:bg-lime-700 transition-colors shadow-lg">
-                새 게임
-            </button>
+            {/* Right Panel - Move History (hidden on mobile) */}
+            <div className="hidden lg:flex flex-col w-44" style={{ height: 'min(calc(100vh - 180px), 720px)' }}>
+                <div className="bg-white dark:bg-slate-800 rounded-lg shadow-lg border border-slate-200 dark:border-slate-700 flex-1 overflow-hidden flex flex-col">
+                    <div className="text-sm font-bold text-slate-600 dark:text-slate-300 p-2 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900">
+                        기보
+                    </div>
+                    <div className="flex-1 overflow-y-auto p-1">
+                        {moveHistory.length === 0 ? (
+                            <div className="text-xs text-slate-400 dark:text-slate-500 text-center py-4">아직 수가 없습니다</div>
+                        ) : (
+                            <table className="w-full text-xs">
+                                <tbody>
+                                    {moveHistory.map((move, i) => (
+                                        <tr key={i} className={`${i % 2 === 0 ? 'bg-slate-50 dark:bg-slate-800' : ''}`}>
+                                            <td className="py-0.5 px-1 text-slate-400 dark:text-slate-500 w-6">{i + 1}.</td>
+                                            <td className="py-0.5 px-1 text-slate-700 dark:text-slate-200 font-mono">{move.white}</td>
+                                            <td className="py-0.5 px-1 text-slate-700 dark:text-slate-200 font-mono">{move.black}</td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        )}
+                    </div>
+                </div>
+            </div>
+
+            {/* Mobile Bottom Bar */}
+            <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-white dark:bg-slate-800 border-t border-slate-200 dark:border-slate-700 p-2 flex items-center justify-between gap-2 z-40">
+                <button onClick={resetGame} className="px-4 py-2 bg-lime-600 text-white rounded-lg font-bold text-sm hover:bg-lime-700 transition-colors shadow-lg">
+                    새 게임
+                </button>
+                <div className={`flex-1 px-2 py-1.5 rounded-lg font-bold text-xs text-center ${status === 'checkmate' ? 'bg-red-500 text-white' :
+                    status === 'check' ? 'bg-yellow-500 text-white' :
+                        thinking ? 'bg-purple-500 text-white animate-pulse' :
+                            'bg-lime-600 text-white'}`}>
+                    {playerColor ? getStatusText() : '색상 선택'}
+                </div>
+                <div className="flex gap-1">
+                    {(playerColor === 'white' ? capturedBlack : capturedWhite).slice(-3).map((p, i) => <img key={i} src={getPieceImage(p) || ''} alt="" className="w-6 h-6" />)}
+                </div>
+            </div>
         </div>
     );
 };
@@ -1403,8 +1505,32 @@ const GameZone: React.FC = () => {
         return false;
     });
 
-    const openGame = (game: Game) => setActiveGame(game);
+    const openGame = (game: Game) => {
+        setActiveGame(game);
+        window.history.pushState({ game: game.title }, '', '');
+    };
     const closeGame = () => setActiveGame(null);
+
+    // ESC key and back button handler
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.key === 'Escape' && activeGame) {
+                closeGame();
+            }
+        };
+        const handlePopState = () => {
+            if (activeGame) {
+                closeGame();
+            }
+        };
+        window.addEventListener('keydown', handleKeyDown);
+        window.addEventListener('popstate', handlePopState);
+        return () => {
+            window.removeEventListener('keydown', handleKeyDown);
+            window.removeEventListener('popstate', handlePopState);
+        };
+    }, [activeGame]);
+
     const toggleDarkMode = () => {
         const newMode = !isDarkMode;
         setIsDarkMode(newMode);
