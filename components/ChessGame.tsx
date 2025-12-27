@@ -379,7 +379,7 @@ const ChessGame: React.FC = () => {
             </div>
 
             {/* Chess Board */}
-            <div className="flex-shrink-0" style={{ width: 'min(calc(100vh - 100px), calc(100vw - 400px), 800px)', height: 'min(calc(100vh - 100px), calc(100vw - 400px), 800px)', contain: 'strict' }}>
+            <div className="flex-shrink-0 w-[95vw] aspect-square lg:w-[min(calc(100vh-100px),calc(100vw-400px),800px)] lg:h-[min(calc(100vh-100px),calc(100vw-400px),800px)] relative">
                 <div className="grid grid-cols-8 grid-rows-8 border-2 lg:border-4 border-lime-800 dark:border-lime-600 rounded-lg overflow-hidden shadow-2xl w-full h-full" style={{ contain: 'layout' }}>
                     {(playerColor === 'b' ? [...board].reverse().map(row => [...row].reverse()) : board).map((row, displayR) => row.map((piece, displayC) => {
                         const r = playerColor === 'b' ? 7 - displayR : displayR;
