@@ -4,6 +4,7 @@ import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
 import Home from './pages/Home';
 import Community from './pages/Community';
 import Guestbook from './pages/Guestbook';
+import GameZone from './pages/GameZone';
 import { Search, Bell } from 'lucide-react';
 
 const App: React.FC = () => {
@@ -28,6 +29,7 @@ const App: React.FC = () => {
               <Link to="/" className="text-xs font-bold text-slate-500 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">전체보기</Link>
               <Link to="/community" className="text-xs font-bold text-slate-500 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">커뮤니티</Link>
               <Link to="/guestbook" className="text-xs font-bold text-slate-500 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">방명록</Link>
+              <Link to="/gamezone" className="text-xs font-bold text-slate-500 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">Game Zone</Link>
             </nav>
             <div className="flex items-center gap-2">
               <button className="p-2 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-lg text-slate-400"><Bell size={18} /></button>
@@ -41,6 +43,7 @@ const App: React.FC = () => {
             <Route path="/" element={<Home />} />
             <Route path="/community" element={<Community />} />
             <Route path="/guestbook" element={<Guestbook />} />
+            <Route path="/gamezone" element={<GameZone />} />
           </Routes>
         </main>
       </div>

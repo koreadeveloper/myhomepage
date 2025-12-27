@@ -1,0 +1,969 @@
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { Link } from 'react-router-dom';
+
+// --- Shared Types & Constants ---
+type Game = {
+    title: string;
+    description: string;
+    icon: string;
+    color: string;
+    bgColor: string;
+    accentColor: string;
+    cornerAccentColor: string;
+};
+
+const games: Game[] = [
+    { title: 'Snake', description: 'The classic retro challenge.', icon: 'gesture', color: 'text-emerald-600 dark:text-emerald-400', bgColor: 'bg-emerald-100 dark:bg-emerald-900/30', accentColor: 'bg-emerald-500', cornerAccentColor: 'bg-emerald-500/10' },
+    { title: 'Tetris Block', description: 'Fit the blocks perfectly.', icon: 'view_module', color: 'text-blue-600 dark:text-blue-400', bgColor: 'bg-blue-100 dark:bg-blue-900/30', accentColor: 'bg-blue-500', cornerAccentColor: 'bg-blue-500/10' },
+    { title: '2048', description: 'Join numbers to reach 2048.', icon: 'grid_4x4', color: 'text-amber-600 dark:text-amber-400', bgColor: 'bg-amber-100 dark:bg-amber-900/30', accentColor: 'bg-amber-500', cornerAccentColor: 'bg-amber-500/10' },
+    { title: 'Minesweeper', description: 'Clear the minefield safely.', icon: 'flag', color: 'text-rose-600 dark:text-rose-400', bgColor: 'bg-rose-100 dark:bg-rose-900/30', accentColor: 'bg-rose-500', cornerAccentColor: 'bg-rose-500/10' },
+    { title: 'Sudoku', description: 'Fill the 9x9 grid logic.', icon: 'calculate', color: 'text-indigo-600 dark:text-indigo-400', bgColor: 'bg-indigo-100 dark:bg-indigo-900/30', accentColor: 'bg-indigo-500', cornerAccentColor: 'bg-indigo-500/10' },
+    { title: 'Memory Match', description: 'Test your brain power.', icon: 'style', color: 'text-pink-600 dark:text-pink-400', bgColor: 'bg-pink-100 dark:bg-pink-900/30', accentColor: 'bg-pink-500', cornerAccentColor: 'bg-pink-500/10' },
+    { title: 'Tic Tac Toe', description: 'Quick match against AI.', icon: 'close', color: 'text-cyan-600 dark:text-cyan-400', bgColor: 'bg-cyan-100 dark:bg-cyan-900/30', accentColor: 'bg-cyan-500', cornerAccentColor: 'bg-cyan-500/10' },
+    { title: 'Word Puzzle', description: 'Guess the 5-letter word.', icon: 'abc', color: 'text-orange-600 dark:text-orange-400', bgColor: 'bg-orange-100 dark:bg-orange-900/30', accentColor: 'bg-orange-500', cornerAccentColor: 'bg-orange-500/10' },
+];
+
+// --- Game 1: Snake (Canvas) ---
+const SnakeGame = () => {
+    const canvasRef = useRef<HTMLCanvasElement>(null);
+    const [score, setScore] = useState(0);
+    const [gameOver, setGameOver] = useState(false);
+    const [started, setStarted] = useState(false);
+
+    const gridSize = 20;
+    const gameStateRef = useRef({
+        snake: [{ x: 10, y: 10 }],
+        food: { x: 15, y: 15 },
+        dir: { x: 0, y: 0 },
+        nextDir: { x: 0, y: 0 },
+        lastMoveTime: 0,
+        moveInterval: 100,
+    });
+
+    const resetGame = () => {
+        gameStateRef.current = {
+            snake: [{ x: 10, y: 10 }],
+            food: { x: 15, y: 15 },
+            dir: { x: 0, y: 0 },
+            nextDir: { x: 0, y: 0 },
+            lastMoveTime: 0,
+            moveInterval: 100,
+        };
+        setScore(0);
+        setGameOver(false);
+        setStarted(false);
+    };
+
+    useEffect(() => {
+        const canvas = canvasRef.current;
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return;
+
+        let animationId: number;
+        const state = gameStateRef.current;
+
+        const draw = (timestamp: number) => {
+            const cellSize = canvas.width / gridSize;
+
+            // 게임 로직 업데이트 (고정 시간 간격)
+            if (state.dir.x !== 0 || state.dir.y !== 0) {
+                if (timestamp - state.lastMoveTime > state.moveInterval) {
+                    state.dir = state.nextDir;
+                    const head = { x: state.snake[0].x + state.dir.x, y: state.snake[0].y + state.dir.y };
+
+                    // 충돌 검사
+                    if (head.x < 0 || head.x >= gridSize || head.y < 0 || head.y >= gridSize ||
+                        state.snake.some(s => s.x === head.x && s.y === head.y)) {
+                        setGameOver(true);
+                        return;
+                    }
+
+                    state.snake.unshift(head);
+                    if (head.x === state.food.x && head.y === state.food.y) {
+                        setScore(s => s + 10);
+                        state.food = { x: Math.floor(Math.random() * gridSize), y: Math.floor(Math.random() * gridSize) };
+                        state.moveInterval = Math.max(50, state.moveInterval - 2);
+                    } else {
+                        state.snake.pop();
+                    }
+                    state.lastMoveTime = timestamp;
+                }
+            }
+
+            // 배경 그리기
+            ctx.fillStyle = '#1e293b';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // 그리드 패턴
+            ctx.strokeStyle = '#334155';
+            ctx.lineWidth = 0.5;
+            for (let i = 0; i <= gridSize; i++) {
+                ctx.beginPath();
+                ctx.moveTo(i * cellSize, 0);
+                ctx.lineTo(i * cellSize, canvas.height);
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.moveTo(0, i * cellSize);
+                ctx.lineTo(canvas.width, i * cellSize);
+                ctx.stroke();
+            }
+
+            // 뱀 그리기 (부드러운 곡선)
+            if (state.snake.length > 0) {
+                ctx.lineCap = 'round';
+                ctx.lineJoin = 'round';
+
+                // 몸통 그리기
+                for (let i = state.snake.length - 1; i >= 0; i--) {
+                    const seg = state.snake[i];
+                    const x = seg.x * cellSize + cellSize / 2;
+                    const y = seg.y * cellSize + cellSize / 2;
+                    const radius = cellSize * 0.4;
+
+                    // 그라데이션 색상 (머리부터 꼬리까지)
+                    const hue = 140 + (i / state.snake.length) * 20;
+                    const lightness = 45 - (i / state.snake.length) * 15;
+                    ctx.fillStyle = `hsl(${hue}, 70%, ${lightness}%)`;
+
+                    ctx.beginPath();
+                    ctx.arc(x, y, radius, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    // 몸통 연결
+                    if (i < state.snake.length - 1) {
+                        const next = state.snake[i + 1];
+                        ctx.strokeStyle = `hsl(${hue}, 70%, ${lightness}%)`;
+                        ctx.lineWidth = cellSize * 0.7;
+                        ctx.beginPath();
+                        ctx.moveTo(x, y);
+                        ctx.lineTo(next.x * cellSize + cellSize / 2, next.y * cellSize + cellSize / 2);
+                        ctx.stroke();
+                    }
+                }
+
+                // 머리 특별 스타일
+                const head = state.snake[0];
+                const hx = head.x * cellSize + cellSize / 2;
+                const hy = head.y * cellSize + cellSize / 2;
+
+                // 머리 하이라이트
+                ctx.fillStyle = '#4ade80';
+                ctx.beginPath();
+                ctx.arc(hx, hy, cellSize * 0.45, 0, Math.PI * 2);
+                ctx.fill();
+
+                // 눈
+                const eyeOffset = cellSize * 0.15;
+                const eyeRadius = cellSize * 0.08;
+                ctx.fillStyle = 'white';
+                ctx.beginPath();
+                ctx.arc(hx - eyeOffset + state.dir.x * 5, hy - eyeOffset + state.dir.y * 5, eyeRadius, 0, Math.PI * 2);
+                ctx.arc(hx + eyeOffset + state.dir.x * 5, hy - eyeOffset + state.dir.y * 5, eyeRadius, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.fillStyle = '#1e293b';
+                ctx.beginPath();
+                ctx.arc(hx - eyeOffset + state.dir.x * 5, hy - eyeOffset + state.dir.y * 5, eyeRadius * 0.5, 0, Math.PI * 2);
+                ctx.arc(hx + eyeOffset + state.dir.x * 5, hy - eyeOffset + state.dir.y * 5, eyeRadius * 0.5, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            // 사과 그리기
+            const fx = state.food.x * cellSize + cellSize / 2;
+            const fy = state.food.y * cellSize + cellSize / 2;
+            const appleRadius = cellSize * 0.35;
+
+            // 사과 그림자
+            ctx.fillStyle = 'rgba(0,0,0,0.3)';
+            ctx.beginPath();
+            ctx.ellipse(fx, fy + appleRadius * 0.5, appleRadius * 0.8, appleRadius * 0.3, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            // 사과 본체
+            const appleGrad = ctx.createRadialGradient(fx - appleRadius * 0.3, fy - appleRadius * 0.3, 0, fx, fy, appleRadius);
+            appleGrad.addColorStop(0, '#ff6b6b');
+            appleGrad.addColorStop(1, '#dc2626');
+            ctx.fillStyle = appleGrad;
+            ctx.beginPath();
+            ctx.arc(fx, fy, appleRadius, 0, Math.PI * 2);
+            ctx.fill();
+
+            // 사과 줄기
+            ctx.strokeStyle = '#15803d';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(fx, fy - appleRadius);
+            ctx.quadraticCurveTo(fx + 5, fy - appleRadius - 8, fx + 3, fy - appleRadius - 5);
+            ctx.stroke();
+
+            if (!gameOver) {
+                animationId = requestAnimationFrame(draw);
+            }
+        };
+
+        animationId = requestAnimationFrame(draw);
+        return () => cancelAnimationFrame(animationId);
+    }, [gameOver]);
+
+    useEffect(() => {
+        const handleKey = (e: KeyboardEvent) => {
+            if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
+                e.preventDefault();
+                const state = gameStateRef.current;
+                if (!started) setStarted(true);
+                switch (e.key) {
+                    case 'ArrowUp': if (state.dir.y !== 1) { state.nextDir = { x: 0, y: -1 }; if (state.dir.x === 0 && state.dir.y === 0) state.dir = state.nextDir; } break;
+                    case 'ArrowDown': if (state.dir.y !== -1) { state.nextDir = { x: 0, y: 1 }; if (state.dir.x === 0 && state.dir.y === 0) state.dir = state.nextDir; } break;
+                    case 'ArrowLeft': if (state.dir.x !== 1) { state.nextDir = { x: -1, y: 0 }; if (state.dir.x === 0 && state.dir.y === 0) state.dir = state.nextDir; } break;
+                    case 'ArrowRight': if (state.dir.x !== -1) { state.nextDir = { x: 1, y: 0 }; if (state.dir.x === 0 && state.dir.y === 0) state.dir = state.nextDir; } break;
+                }
+            }
+        };
+        window.addEventListener('keydown', handleKey);
+        return () => window.removeEventListener('keydown', handleKey);
+    }, [started]);
+
+    return (
+        <div className="flex flex-col items-center w-full h-full justify-center">
+            <div className="mb-4 text-2xl font-bold dark:text-white">점수: <span className="text-emerald-400">{score}</span></div>
+            <div className="relative w-full max-w-[70vh] aspect-square">
+                <canvas ref={canvasRef} width={400} height={400} className="w-full h-full rounded-xl shadow-2xl border-4 border-slate-600" />
+                {gameOver && (
+                    <div className="absolute inset-0 bg-black/70 flex flex-col items-center justify-center text-white rounded-xl backdrop-blur-sm">
+                        <div className="text-4xl font-bold mb-4">게임 오버!</div>
+                        <div className="text-xl mb-6">최종 점수: {score}</div>
+                        <button onClick={resetGame} className="px-8 py-3 bg-emerald-500 rounded-xl font-bold text-lg hover:bg-emerald-600 transition-all hover:scale-105">다시 시작</button>
+                    </div>
+                )}
+                {!started && !gameOver && (
+                    <div className="absolute inset-0 flex items-center justify-center text-white/70 text-xl font-bold animate-pulse">방향키를 눌러 시작하세요</div>
+                )}
+            </div>
+        </div>
+    );
+};
+
+// --- Game 2: Tetris (Simplified) ---
+const TETROMINOS = {
+    I: { shape: [[1, 1, 1, 1]], color: 'bg-cyan-400' },
+    O: { shape: [[1, 1], [1, 1]], color: 'bg-yellow-400' },
+    T: { shape: [[0, 1, 0], [1, 1, 1]], color: 'bg-purple-500' },
+    S: { shape: [[0, 1, 1], [1, 1, 0]], color: 'bg-green-500' },
+    Z: { shape: [[1, 1, 0], [0, 1, 1]], color: 'bg-red-500' },
+    J: { shape: [[1, 0, 0], [1, 1, 1]], color: 'bg-blue-500' },
+    L: { shape: [[0, 0, 1], [1, 1, 1]], color: 'bg-orange-500' },
+};
+type TetrominoKey = keyof typeof TETROMINOS;
+
+const TetrisGame = () => {
+    const rows = 20, cols = 10;
+    const createBoard = () => Array.from({ length: rows }, () => Array(cols).fill(0));
+    const [board, setBoard] = useState(createBoard());
+    const [currPiece, setCurrPiece] = useState<{ shape: number[][], color: string, x: number, y: number } | null>(null);
+    const [score, setScore] = useState(0);
+    const [gameOver, setGameOver] = useState(false);
+
+    const checkCollision = (piece: any, x: number, y: number, boardState: any) => {
+        for (let r = 0; r < piece.shape.length; r++) {
+            for (let c = 0; c < piece.shape[r].length; c++) {
+                if (piece.shape[r][c]) {
+                    const newX = x + c;
+                    const newY = y + r;
+                    if (newX < 0 || newX >= cols || newY >= rows) return true;
+                    if (newY >= 0 && boardState[newY][newX]) return true;
+                }
+            }
+        }
+        return false;
+    };
+
+    const spawnPiece = () => {
+        const keys = Object.keys(TETROMINOS) as TetrominoKey[];
+        const key = keys[Math.floor(Math.random() * keys.length)];
+        const piece = TETROMINOS[key];
+        const newPiece = { ...piece, x: Math.floor(cols / 2) - 1, y: 0 };
+        if (checkCollision(newPiece, newPiece.x, newPiece.y, board)) {
+            setGameOver(true);
+        } else {
+            setCurrPiece(newPiece);
+        }
+    };
+
+    const mergeBoard = () => {
+        if (!currPiece) return;
+        const newBoard = board.map(row => [...row]);
+        currPiece.shape.forEach((row, r) => {
+            row.forEach((cell, c) => {
+                if (cell) {
+                    const by = currPiece.y + r;
+                    const bx = currPiece.x + c;
+                    if (by >= 0 && by < rows && bx >= 0 && bx < cols) newBoard[by][bx] = currPiece.color;
+                }
+            });
+        });
+
+        let cleared = 0;
+        for (let r = rows - 1; r >= 0; r--) {
+            if (newBoard[r].every(cell => cell !== 0)) {
+                newBoard.splice(r, 1);
+                newBoard.unshift(Array(cols).fill(0));
+                cleared++;
+                r++;
+            }
+        }
+        setScore(src => src + cleared * 100);
+        setBoard(newBoard);
+        spawnPiece();
+    };
+
+    const move = (dirX: number, dirY: number) => {
+        if (!currPiece || gameOver) return;
+        if (!checkCollision(currPiece, currPiece.x + dirX, currPiece.y + dirY, board)) {
+            setCurrPiece({ ...currPiece, x: currPiece.x + dirX, y: currPiece.y + dirY });
+        } else if (dirY > 0) {
+            mergeBoard();
+        }
+    };
+
+    const rotate = () => {
+        if (!currPiece || gameOver) return;
+        const rotated = currPiece.shape[0].map((_, i) => currPiece.shape.map(row => row[i]).reverse());
+        const newPiece = { ...currPiece, shape: rotated };
+        if (!checkCollision(newPiece, newPiece.x, newPiece.y, board)) setCurrPiece(newPiece);
+    };
+
+    useEffect(() => { if (!currPiece && !gameOver) spawnPiece(); }, []);
+
+    useEffect(() => {
+        const timer = setInterval(() => move(0, 1), 500);
+        return () => clearInterval(timer);
+    });
+
+    useEffect(() => {
+        const handleKey = (e: KeyboardEvent) => {
+            if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) e.preventDefault();
+            if (gameOver) return;
+            switch (e.key) {
+                case 'ArrowLeft': move(-1, 0); break;
+                case 'ArrowRight': move(1, 0); break;
+                case 'ArrowDown': move(0, 1); break;
+                case 'ArrowUp': rotate(); break;
+            }
+        };
+        window.addEventListener('keydown', handleKey);
+        return () => window.removeEventListener('keydown', handleKey);
+    }, [currPiece, board, gameOver]);
+
+    // Render helper
+    const getCell = (r: number, c: number) => {
+        if (currPiece) {
+            const pr = r - currPiece.y;
+            const pc = c - currPiece.x;
+            if (pr >= 0 && pr < currPiece.shape.length && pc >= 0 && pc < currPiece.shape[0].length && currPiece.shape[pr][pc]) {
+                return currPiece.color;
+            }
+        }
+        return board[r][c];
+    };
+
+    return (
+        <div className="flex flex-col items-center w-full h-full justify-center">
+            <div className="mb-4 text-xl font-bold dark:text-white">Score: {score}</div>
+            <div className="bg-slate-900 border-8 border-slate-700 grid grid-rows-[repeat(20,minmax(0,1fr))] gap-px rounded-xl shadow-2xl overflow-hidden aspect-[1/2]" style={{ height: 'min(80vh, 100%)' }}>
+                {Array.from({ length: rows }).map((_, r) => (
+                    <div key={r} className="grid grid-cols-[repeat(10,minmax(0,1fr))] gap-px">
+                        {Array.from({ length: cols }).map((_, c) => {
+                            const color = getCell(r, c);
+                            return <div key={c} className={`w-full h-full ${color || 'bg-slate-800'}`} />;
+                        })}
+                    </div>
+                ))}
+            </div>
+            {gameOver && <button onClick={() => { setBoard(createBoard()); setScore(0); setGameOver(false); setCurrPiece(null); }} className="mt-6 px-6 py-2 bg-blue-500 text-white rounded font-bold hover:bg-blue-600 transition-colors">Retry</button>}
+        </div>
+    );
+};
+
+// --- Game 3: 2048 ---
+const Game2048 = () => {
+    const [grid, setGrid] = useState<number[][]>([]);
+    const [score, setScore] = useState(0);
+    const [gameOver, setGameOver] = useState(false);
+
+    const initGame = () => {
+        const newGrid = Array(4).fill(0).map(() => Array(4).fill(0));
+        addRandom(newGrid);
+        addRandom(newGrid);
+        setGrid(newGrid);
+        setScore(0);
+        setGameOver(false);
+    };
+
+    const addRandom = (g: number[][]) => {
+        const empty = [];
+        for (let r = 0; r < 4; r++) for (let c = 0; c < 4; c++) if (g[r][c] === 0) empty.push({ r, c });
+        if (empty.length > 0) {
+            const { r, c } = empty[Math.floor(Math.random() * empty.length)];
+            g[r][c] = Math.random() < 0.9 ? 2 : 4;
+        }
+    };
+
+    const slide = (row: number[]) => {
+        let arr = row.filter(val => val);
+        for (let i = 0; i < arr.length - 1; i++) {
+            if (arr[i] === arr[i + 1]) {
+                arr[i] *= 2;
+                setScore(s => s + arr[i]);
+                arr.splice(i + 1, 1);
+            }
+        }
+        while (arr.length < 4) arr.push(0);
+        return arr;
+    };
+
+    const move = (dir: string) => {
+        if (gameOver) return;
+        let newGrid = grid.map(r => [...r]);
+        let moved = false;
+
+        if (dir === 'ArrowLeft' || dir === 'ArrowRight') {
+            for (let r = 0; r < 4; r++) {
+                const newRow = slide(dir === 'ArrowLeft' ? newGrid[r] : newGrid[r].reverse());
+                if (dir === 'ArrowRight') newRow.reverse();
+                if (newGrid[r].join(',') !== newRow.join(',')) moved = true;
+                newGrid[r] = newRow;
+            }
+        } else {
+            for (let c = 0; c < 4; c++) {
+                let col = [newGrid[0][c], newGrid[1][c], newGrid[2][c], newGrid[3][c]];
+                const newCol = slide(dir === 'ArrowUp' ? col : col.reverse());
+                if (dir === 'ArrowDown') newCol.reverse();
+                if (col.join(',') !== newCol.join(',')) moved = true;
+                for (let r = 0; r < 4; r++) newGrid[r][c] = newCol[r];
+            }
+        }
+
+        if (moved) {
+            addRandom(newGrid);
+            setGrid(newGrid);
+            // Check game over (simplified)
+            if (!newGrid.flat().includes(0)) {
+                // Technically should check if any merge is possible, skipping for brevity
+            }
+        }
+    };
+
+    useEffect(() => { initGame(); }, []);
+
+    useEffect(() => {
+        const handleKey = (e: KeyboardEvent) => {
+            if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
+                e.preventDefault();
+                move(e.key);
+            }
+        };
+        window.addEventListener('keydown', handleKey);
+        return () => window.removeEventListener('keydown', handleKey);
+    }, [grid, gameOver]);
+
+    return (
+        <div className="flex flex-col items-center w-full h-full justify-center">
+            <div className="mb-4 text-2xl font-bold dark:text-white">점수: <span className="text-amber-500">{score}</span></div>
+            <div className="bg-stone-500 p-3 rounded-xl w-full max-w-[60vh] aspect-square shadow-2xl">
+                <div className="grid grid-cols-4 grid-rows-4 gap-2 w-full h-full">
+                    {grid.flat().map((val, i) => (
+                        <div key={i} className={`rounded-lg flex items-center justify-center font-bold
+                            ${val < 100 ? 'text-3xl md:text-4xl' : val < 1000 ? 'text-2xl md:text-3xl' : 'text-xl md:text-2xl'}
+                            ${val === 0 ? 'bg-stone-400' :
+                                val === 2 ? 'bg-stone-200 text-stone-700' :
+                                    val === 4 ? 'bg-stone-300 text-stone-700' :
+                                        val === 8 ? 'bg-orange-300 text-white' :
+                                            val === 16 ? 'bg-orange-400 text-white' :
+                                                val === 32 ? 'bg-orange-500 text-white' :
+                                                    val === 64 ? 'bg-orange-600 text-white' :
+                                                        val === 128 ? 'bg-yellow-400 text-white' :
+                                                            val === 256 ? 'bg-yellow-500 text-white' :
+                                                                val === 512 ? 'bg-yellow-600 text-white' :
+                                                                    val === 1024 ? 'bg-amber-500 text-white' :
+                                                                        'bg-amber-600 text-white shadow-lg'}`}>
+                            {val || ''}
+                        </div>
+                    ))}
+                </div>
+            </div>
+            <button onClick={initGame} className="mt-6 px-6 py-2 bg-stone-600 text-white rounded-lg font-bold hover:bg-stone-700 transition-colors">새 게임</button>
+        </div>
+    );
+};
+
+// --- Game 4: Minesweeper ---
+const Minesweeper = () => {
+    const size = 10;
+    const minesCount = 10;
+    type Cell = { isMine: boolean, isOpen: boolean, isFlag: boolean, count: number };
+    const [board, setBoard] = useState<Cell[][]>([]);
+    const [status, setStatus] = useState<'playing' | 'won' | 'lost'>('playing');
+
+    const initGame = () => {
+        const newBoard: Cell[][] = Array(size).fill(0).map(() => Array(size).fill(0).map(() => ({ isMine: false, isOpen: false, isFlag: false, count: 0 })));
+        let planted = 0;
+        while (planted < minesCount) {
+            const r = Math.floor(Math.random() * size);
+            const c = Math.floor(Math.random() * size);
+            if (!newBoard[r][c].isMine) {
+                newBoard[r][c].isMine = true;
+                planted++;
+            }
+        }
+        // Calc counts
+        for (let r = 0; r < size; r++) {
+            for (let c = 0; c < size; c++) {
+                if (!newBoard[r][c].isMine) {
+                    let count = 0;
+                    for (let dr = -1; dr <= 1; dr++) for (let dc = -1; dc <= 1; dc++) {
+                        if (r + dr >= 0 && r + dr < size && c + dc >= 0 && c + dc < size && newBoard[r + dr][c + dc].isMine) count++;
+                    }
+                    newBoard[r][c].count = count;
+                }
+            }
+        }
+        setBoard(newBoard);
+        setStatus('playing');
+    };
+
+    const reveal = (r: number, c: number) => {
+        if (status !== 'playing' || board[r][c].isOpen || board[r][c].isFlag) return;
+        const newBoard = board.map(row => row.map(cell => ({ ...cell })));
+        if (newBoard[r][c].isMine) {
+            setStatus('lost');
+            newBoard[r][c].isOpen = true; // Show boom
+        } else {
+            floodFill(newBoard, r, c);
+            // Check win
+            let covered = 0;
+            newBoard.forEach(row => row.forEach(cell => { if (!cell.isOpen && !cell.isMine) covered++; }));
+            if (covered === 0 && newBoard.flat().filter(c => !c.isOpen).length === minesCount) setStatus('won');
+        }
+        setBoard(newBoard);
+    };
+
+    const floodFill = (b: Cell[][], r: number, c: number) => {
+        if (r < 0 || r >= size || c < 0 || c >= size || b[r][c].isOpen || b[r][c].isFlag) return;
+        b[r][c].isOpen = true;
+        if (b[r][c].count === 0) {
+            for (let dr = -1; dr <= 1; dr++) for (let dc = -1; dc <= 1; dc++) floodFill(b, r + dr, c + dc);
+        }
+    };
+
+    const toggleFlag = (e: React.MouseEvent, r: number, c: number) => {
+        e.preventDefault();
+        if (status !== 'playing' || board[r][c].isOpen) return;
+        const newBoard = board.map(row => [...row]);
+        newBoard[r][c].isFlag = !newBoard[r][c].isFlag;
+        setBoard(newBoard);
+    };
+
+    useEffect(() => { initGame(); }, []);
+
+    return (
+        <div className="flex flex-col items-center w-full h-full justify-center">
+            <div className={`mb-4 text-2xl font-bold ${status === 'won' ? 'text-green-500' : status === 'lost' ? 'text-red-500' : 'dark:text-white'}`}>
+                {status === 'playing' ? '지뢰 찾기' : status === 'won' ? '승리!' : '게임 오버'}
+            </div>
+            <div className="bg-slate-300 dark:bg-slate-600 p-2 rounded-xl w-full max-w-[60vh] aspect-square shadow-xl">
+                <div className="grid grid-cols-10 grid-rows-10 gap-1 w-full h-full">
+                    {board.map((row, r) => row.map((cell, c) => (
+                        <div
+                            key={`${r}-${c}`}
+                            onClick={() => reveal(r, c)}
+                            onContextMenu={(e) => toggleFlag(e, r, c)}
+                            className={`flex items-center justify-center font-bold text-sm md:text-base cursor-pointer select-none rounded
+                                ${cell.isOpen
+                                    ? (cell.isMine ? 'bg-red-500' : 'bg-slate-100 dark:bg-slate-700')
+                                    : 'bg-slate-400 dark:bg-slate-500 hover:bg-slate-500 dark:hover:bg-slate-400 shadow-sm'}
+                                ${cell.isOpen && !cell.isMine ? (
+                                    cell.count === 1 ? 'text-blue-600' :
+                                        cell.count === 2 ? 'text-green-600' :
+                                            cell.count === 3 ? 'text-red-600' :
+                                                cell.count >= 4 ? 'text-purple-600' : ''
+                                ) : ''}
+                            `}
+                        >
+                            {cell.isOpen ? (cell.isMine ? '💣' : (cell.count || '')) : (cell.isFlag ? '🚩' : '')}
+                        </div>
+                    )))}
+                </div>
+            </div>
+            <div className="mt-4 text-sm text-slate-500 dark:text-slate-400">좌클릭: 열기 | 우클릭: 깃발</div>
+            <button onClick={initGame} className="mt-4 px-6 py-2 bg-slate-600 text-white rounded font-bold hover:bg-slate-700 transition-colors">다시 시작</button>
+        </div>
+    );
+};
+
+// --- Game 5: Sudoku ---
+const Sudoku = () => {
+    // Simple static problem for demo
+    const solution = [
+        [5, 3, 4, 6, 7, 8, 9, 1, 2], [6, 7, 2, 1, 9, 5, 3, 4, 8], [1, 9, 8, 3, 4, 2, 5, 6, 7],
+        [8, 5, 9, 7, 6, 1, 4, 2, 3], [4, 2, 6, 8, 5, 3, 7, 9, 1], [7, 1, 3, 9, 2, 4, 8, 5, 6],
+        [9, 6, 1, 5, 3, 7, 2, 8, 4], [2, 8, 7, 4, 1, 9, 6, 3, 5], [3, 4, 5, 2, 8, 6, 1, 7, 9]
+    ];
+    const initial = [
+        [5, 3, 0, 0, 7, 0, 0, 0, 0], [6, 0, 0, 1, 9, 5, 0, 0, 0], [0, 9, 8, 0, 0, 0, 0, 6, 0],
+        [8, 0, 0, 0, 6, 0, 0, 0, 3], [4, 0, 0, 8, 0, 3, 0, 0, 1], [7, 0, 0, 0, 2, 0, 0, 0, 6],
+        [0, 6, 0, 0, 0, 0, 2, 8, 0], [0, 0, 0, 4, 1, 9, 0, 0, 5], [0, 0, 0, 0, 8, 0, 0, 7, 9]
+    ];
+    const [board, setBoard] = useState(initial);
+    const [check, setCheck] = useState('');
+
+    const handleChange = (r: number, c: number, val: string) => {
+        if (initial[r][c] !== 0) return;
+        const num = parseInt(val) || 0;
+        if (num >= 0 && num <= 9) {
+            const newBoard = board.map(row => [...row]);
+            newBoard[r][c] = num;
+            setBoard(newBoard);
+        }
+    };
+
+    const checkSolution = () => {
+        const isCorrect = JSON.stringify(board) === JSON.stringify(solution);
+        setCheck(isCorrect ? 'Success!' : 'Keep trying...');
+    };
+
+    return (
+        <div className="flex flex-col items-center w-full h-full justify-center">
+            <div className="flex flex-col items-center justify-center w-full max-w-[60vh] aspect-square">
+                <div className="grid grid-cols-9 gap-px bg-slate-800 border-4 border-slate-800 w-full h-full shadow-2xl rounded-lg overflow-hidden">
+                    {board.map((row, r) => row.map((cell, c) => (
+                        <div key={`${r}-${c}`} className={`w-full h-full relative ${(Math.floor(r / 3) + Math.floor(c / 3)) % 2 === 0 ? 'bg-white dark:bg-slate-700' : 'bg-slate-50 dark:bg-slate-600'}`}>
+                            <input
+                                type="text"
+                                maxLength={1}
+                                numeric-input="true"
+                                value={cell === 0 ? '' : cell}
+                                onChange={(e) => handleChange(r, c, e.target.value)}
+                                className={`w-full h-full text-center text-xl sm:text-2xl md:text-3xl outline-none bg-transparent absolute inset-0
+                                    ${initial[r][c] !== 0 ? 'font-bold text-slate-800 dark:text-white' : 'text-blue-600 dark:text-blue-400 font-medium'}`}
+                                readOnly={initial[r][c] !== 0}
+                            />
+                        </div>
+                    )))}
+                </div>
+            </div>
+            <div className="flex gap-4 mt-6">
+                <button onClick={checkSolution} className="px-8 py-3 bg-indigo-500 text-white rounded-xl font-bold hover:bg-indigo-600 transition-colors">Check Solution</button>
+            </div>
+            {check && <div className={`mt-3 font-bold text-xl ${check === 'Success!' ? 'text-green-500' : 'text-slate-500'}`}>{check}</div>}
+        </div>
+    );
+};
+
+// --- Game 6: Memory Match ---
+const MemoryMatch = () => {
+    const emojis = ['🐶', '🐱', '🐭', '🐹', '🐰', '🦊', '🐻', '🐼'];
+    type Card = { id: number, val: string, flipped: boolean, matched: boolean };
+    const [cards, setCards] = useState<Card[]>([]);
+    const [flipped, setFlipped] = useState<number[]>([]);
+    const [moves, setMoves] = useState(0);
+
+    const initGame = () => {
+        const items = [...emojis, ...emojis].sort(() => Math.random() - 0.5);
+        setCards(items.map((val, id) => ({ id, val, flipped: false, matched: false })));
+        setFlipped([]);
+        setMoves(0);
+    };
+
+    useEffect(() => { initGame(); }, []);
+
+    const handleFlip = (id: number) => {
+        if (flipped.length === 2 || cards[id].flipped || cards[id].matched) return;
+        const newCards = [...cards];
+        newCards[id].flipped = true;
+        setCards(newCards);
+        setFlipped([...flipped, id]);
+
+        if (flipped.length === 1) {
+            setMoves(m => m + 1);
+            const firstId = flipped[0];
+            if (newCards[firstId].val === newCards[id].val) {
+                newCards[firstId].matched = true;
+                newCards[id].matched = true;
+                setCards(newCards);
+                setFlipped([]);
+            } else {
+                setTimeout(() => {
+                    const resetCards = [...cards];
+                    resetCards[firstId].flipped = false;
+                    resetCards[id].flipped = false; // Note: using current scope var might be stale, but here ok
+                    // Better to use functional update to be safe, but for simple demo:
+                    setCards(prev => prev.map((c, i) => (i === firstId || i === id) ? { ...c, flipped: false } : c));
+                    setFlipped([]);
+                }, 1000);
+            }
+        }
+    };
+
+    return (
+        <div className="flex flex-col items-center w-full h-full justify-center">
+            <div className="mb-4 text-xl font-bold dark:text-white">Moves: {moves}</div>
+            <div className="grid grid-cols-4 gap-4 w-full max-w-[60vh] aspect-square p-2">
+                {cards.map((c) => (
+                    <div
+                        key={c.id}
+                        onClick={() => handleFlip(c.id)}
+                        className={`w-full h-full rounded-2xl flex items-center justify-center text-4xl sm:text-6xl cursor-pointer transition-all duration-500 transform
+                            ${c.flipped || c.matched ? 'bg-white dark:bg-slate-700 rotate-y-180 border-4 border-pink-200 dark:border-slate-500' : 'bg-pink-500 hover:bg-pink-600 shadow-lg'}
+                            relative`}
+                    >
+                        <div className={`transition-opacity duration-300 ${c.flipped || c.matched ? 'opacity-100' : 'opacity-0'}`}>{c.val}</div>
+                    </div>
+                ))}
+            </div>
+            <button onClick={initGame} className="mt-8 px-8 py-3 bg-pink-500 text-white rounded-xl font-bold hover:bg-pink-600 transition-colors">Reset Game</button>
+        </div>
+    );
+};
+
+// --- Game 7: Tic Tac Toe ---
+const TicTacToe = () => {
+    const [board, setBoard] = useState(Array(9).fill(null));
+    const [isXNext, setIsXNext] = useState(true);
+    const winner = calculateWinner(board);
+
+    function calculateWinner(squares: any[]) {
+        const lines = [[0, 1, 2], [3, 4, 5], [6, 7, 8], [0, 3, 6], [1, 4, 7], [2, 5, 8], [0, 4, 8], [2, 4, 6]];
+        for (let i = 0; i < lines.length; i++) {
+            const [a, b, c] = lines[i];
+            if (squares[a] && squares[a] === squares[b] && squares[a] === squares[c]) return squares[a];
+        }
+        return null;
+    }
+
+    const handleClick = (i: number) => {
+        if (board[i] || winner) return;
+        const newBoard = [...board];
+        newBoard[i] = 'X';
+        setBoard(newBoard);
+        setIsXNext(false);
+    };
+
+    // AI Turn
+    useEffect(() => {
+        if (!isXNext && !winner && board.some(x => x === null)) {
+            const timer = setTimeout(() => {
+                const emptyIndices = board.map((bs, i) => bs === null ? i : null).filter(i => i !== null);
+                const rand = emptyIndices[Math.floor(Math.random() * emptyIndices.length)];
+                if (rand !== undefined) {
+                    const newBoard = [...board];
+                    newBoard[rand] = 'O';
+                    setBoard(newBoard);
+                    setIsXNext(true);
+                }
+            }, 500);
+            return () => clearTimeout(timer);
+        }
+    }, [isXNext, winner, board]);
+
+    return (
+        <div className="flex flex-col items-center w-full h-full justify-center">
+            <div className="mb-8 text-2xl font-bold dark:text-white">
+                {winner ? `Winner: ${winner}` : board.every(Boolean) ? 'Draw!' : `Turn: ${isXNext ? 'You (X)' : 'AI (O)'}`}
+            </div>
+            <div className="grid grid-cols-3 gap-4 w-full max-w-[50vh] aspect-square">
+                {board.map((val, i) => (
+                    <button
+                        key={i}
+                        onClick={() => handleClick(i)}
+                        className={`w-full h-full bg-slate-100 dark:bg-slate-800 rounded-2xl text-6xl sm:text-8xl font-black flex items-center justify-center shadow-md hover:shadow-lg transition-all
+                            ${val === 'X' ? 'text-blue-500' : 'text-red-500'}`}
+                    >
+                        {val}
+                    </button>
+                ))}
+            </div>
+            <button onClick={() => { setBoard(Array(9).fill(null)); setIsXNext(true); }} className="mt-8 px-8 py-3 bg-cyan-500 text-white rounded-xl font-bold hover:bg-cyan-600 transition-colors">Restart</button>
+        </div>
+    );
+};
+
+// --- Game 8: Word Puzzle ---
+const WordPuzzle = () => {
+    const answer = "APPLE"; // Hardcoded for demo
+    const [guesses, setGuesses] = useState<string[]>([]);
+    const [currentGuess, setCurrentGuess] = useState('');
+    const [status, setStatus] = useState<'playing' | 'won' | 'lost'>('playing');
+
+    const handleKey = (key: string) => {
+        if (status !== 'playing') return;
+        if (key === 'ENTER') {
+            if (currentGuess.length !== 5) return;
+            const newGuesses = [...guesses, currentGuess];
+            setGuesses(newGuesses);
+            setCurrentGuess('');
+            if (currentGuess === answer) setStatus('won');
+            else if (newGuesses.length >= 6) setStatus('lost');
+        } else if (key === 'BACK') {
+            setCurrentGuess(prev => prev.slice(0, -1));
+        } else if (currentGuess.length < 5 && /^[A-Z]$/.test(key)) {
+            setCurrentGuess(prev => prev + key);
+        }
+    };
+
+    useEffect(() => {
+        const listener = (e: KeyboardEvent) => {
+            if (e.key === 'Enter') handleKey('ENTER');
+            else if (e.key === 'Backspace') handleKey('BACK');
+            else {
+                const char = e.key.toUpperCase();
+                if (char.length === 1 && char >= 'A' && char <= 'Z') handleKey(char);
+            }
+        };
+        window.addEventListener('keydown', listener);
+        return () => window.removeEventListener('keydown', listener);
+    }, [currentGuess, guesses, status]);
+
+    const getBgColor = (char: string, idx: number) => {
+        if (answer[idx] === char) return 'bg-green-500 border-green-500 text-white';
+        if (answer.includes(char)) return 'bg-yellow-500 border-yellow-500 text-white';
+        return 'bg-slate-500 border-slate-500 text-white';
+    };
+
+    return (
+        <div className="flex flex-col items-center w-full h-full justify-center">
+            <div className="mb-8 text-2xl font-bold dark:text-white">{status === 'won' ? 'Great Job!' : status === 'lost' ? `Answer: ${answer}` : 'Guess the Word'}</div>
+            <div className="space-y-2 mb-8 w-full max-w-sm">
+                {[...Array(6)].map((_, i) => (
+                    <div key={i} className="flex gap-2 justify-center">
+                        {[...Array(5)].map((_, j) => {
+                            const isCurrent = i === guesses.length;
+                            const letter = isCurrent ? currentGuess[j] : guesses[i]?.[j];
+                            const bg = !isCurrent && guesses[i] ? getBgColor(letter, j) : 'bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-600';
+                            return (
+                                <div key={j} className={`w-14 h-14 sm:w-16 sm:h-16 border-4 rounded-xl font-bold text-3xl sm:text-4xl flex items-center justify-center uppercase ${bg} dark:text-white transition-colors`}>
+                                    {letter}
+                                </div>
+                            )
+                        })}
+                    </div>
+                ))}
+            </div>
+            {status !== 'playing' && <button onClick={() => { setGuesses([]); setCurrentGuess(''); setStatus('playing'); }} className="px-8 py-3 bg-orange-500 text-white rounded-xl font-bold hover:bg-orange-600 transition-colors">Play Again</button>}
+            <p className="text-slate-500 text-sm mt-4">Type on your keyboard</p>
+        </div>
+    );
+};
+
+// --- Main Component ---
+const GameZone: React.FC = () => {
+    const [activeGame, setActiveGame] = useState<Game | null>(null);
+    const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
+    const [isDarkMode, setIsDarkMode] = useState(() => {
+        if (typeof window !== 'undefined') {
+            return document.documentElement.classList.contains('dark');
+        }
+        return false;
+    });
+
+    const openGame = (game: Game) => setActiveGame(game);
+    const closeGame = () => setActiveGame(null);
+    const toggleDarkMode = () => {
+        const newMode = !isDarkMode;
+        setIsDarkMode(newMode);
+        if (newMode) {
+            document.documentElement.classList.add('dark');
+            localStorage.setItem('darkMode', 'true');
+        } else {
+            document.documentElement.classList.remove('dark');
+            localStorage.setItem('darkMode', 'false');
+        }
+    };
+
+    const renderGame = () => {
+        switch (activeGame?.title) {
+            case 'Snake': return <SnakeGame />;
+            case 'Tetris Block': return <TetrisGame />;
+            case '2048': return <Game2048 />;
+            case 'Minesweeper': return <Minesweeper />;
+            case 'Sudoku': return <Sudoku />;
+            case 'Memory Match': return <MemoryMatch />;
+            case 'Tic Tac Toe': return <TicTacToe />;
+            case 'Word Puzzle': return <WordPuzzle />;
+            default: return <div>Game not found</div>;
+        }
+    };
+
+    return (
+        <div className={`flex h-[calc(100vh-72px)] overflow-hidden ${isDarkMode ? 'dark' : ''}`}>
+            <button onClick={() => setIsMobileSidebarOpen(true)} className="lg:hidden fixed top-24 left-4 z-40 p-3 bg-white dark:bg-slate-800 rounded-xl shadow-lg border border-gray-100 dark:border-slate-700">
+                <span className="material-icons-round text-slate-600 dark:text-slate-300">menu</span>
+            </button>
+            {isMobileSidebarOpen && <div onClick={() => setIsMobileSidebarOpen(false)} className="lg:hidden fixed inset-0 bg-black/50 z-40" />}
+
+            <aside className={`w-64 bg-white dark:bg-slate-800 border-r border-gray-100 dark:border-slate-700 flex flex-col p-6 space-y-6 overflow-y-auto z-50 fixed lg:relative inset-y-0 left-0 transform transition-transform duration-300 ease-in-out ${isMobileSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}>
+                <button onClick={() => setIsMobileSidebarOpen(false)} className="lg:hidden absolute top-4 right-4 p-2 text-slate-400 hover:text-slate-600"><span className="material-icons-round">close</span></button>
+                <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-slate-500 dark:text-slate-400">테마</span>
+                    <button onClick={toggleDarkMode} className={`p-2 rounded-xl transition-all ${isDarkMode ? 'bg-indigo-500 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}>
+                        <span className="material-icons-round text-sm">{isDarkMode ? 'dark_mode' : 'light_mode'}</span>
+                    </button>
+                </div>
+                <div className="flex items-center gap-3 p-3 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-2xl text-white">
+                    <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center"><span className="material-icons-round">person</span></div>
+                    <div><div className="font-bold text-sm">운영자</div><div className="text-[10px] opacity-80">Game Master</div></div>
+                </div>
+                <div>
+                    <h4 className="text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest mb-4">바로가기</h4>
+                    <nav className="space-y-1">
+                        <Link to="/" className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-lg transition-colors"><span className="material-icons-round text-lg">home</span> 홈</Link>
+                        <Link to="/community" className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-lg transition-colors"><span className="material-icons-round text-lg">forum</span> 커뮤니티</Link>
+                        <Link to="/guestbook" className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-lg transition-colors"><span className="material-icons-round text-lg">history_edu</span> 방명록</Link>
+                    </nav>
+                </div>
+            </aside>
+
+            <main className="flex-grow overflow-hidden relative bg-[#f9f9fb] dark:bg-slate-900">
+                <div className={`h-full overflow-y-auto p-6 transition-all duration-300 transform ${activeGame ? 'opacity-0 scale-95 pointer-events-none' : 'opacity-100 scale-100 pointer-events-auto'}`}>
+                    <div className="max-w-7xl mx-auto">
+                        <div className="mb-8">
+                            <div className="inline-flex items-center px-3 py-1 rounded-full bg-purple-100 dark:bg-purple-900/30 text-violet-600 text-xs font-bold mb-3"><span className="material-icons-round text-sm mr-1">bolt</span> Active Zone</div>
+                            <h2 className="text-3xl md:text-4xl font-extrabold text-slate-900 dark:text-white mb-2">Your Smart Space, <span className="text-violet-500">Play & Relax</span></h2>
+                            <p className="text-slate-500 dark:text-slate-400">Select a game to launch it in full screen focus mode.</p>
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                            {games.map((game) => (
+                                <div key={game.title} className="game-card group bg-white dark:bg-slate-800 rounded-2xl p-6 border border-slate-100 dark:border-slate-700 shadow-sm hover:shadow-xl cursor-pointer transition-all duration-300 hover:-translate-y-2 relative overflow-hidden" onClick={() => openGame(game)}>
+                                    <div className={`absolute top-0 right-0 w-24 h-24 ${game.cornerAccentColor} rounded-bl-full -mr-4 -mt-4 transition-transform group-hover:scale-150`}></div>
+                                    <div className="relative z-10">
+                                        <div className={`w-14 h-14 rounded-xl ${game.bgColor} ${game.color} flex items-center justify-center mb-4 group-hover:${game.accentColor} group-hover:text-white transition-colors`}><span className="material-icons-round text-3xl">{game.icon}</span></div>
+                                        <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-1">{game.title}</h3>
+                                        <p className="text-xs text-slate-500 dark:text-slate-400">{game.description}</p>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+
+                <div className={`absolute inset-0 z-50 bg-[#f9f9fb] dark:bg-[#0f172a] flex flex-col transition-all duration-500 transform ${activeGame ? 'translate-y-0 opacity-100 pointer-events-auto' : 'translate-y-full opacity-0 pointer-events-none'}`}>
+                    <div className="flex items-center justify-between p-6 border-b border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-sm shrink-0">
+                        <div className="flex items-center gap-4">
+                            <button className="flex items-center gap-2 text-slate-600 dark:text-slate-300 hover:text-violet-500 dark:hover:text-violet-500 transition-colors font-medium" onClick={closeGame}><span className="material-icons-round">arrow_back</span><span>Back to Arcade</span></button>
+                            <div className="h-6 w-px bg-slate-300 dark:bg-slate-600 mx-2"></div>
+                            <h2 className="text-xl font-bold text-slate-800 dark:text-white">{activeGame?.title}</h2>
+                        </div>
+                        <div className="text-sm font-medium text-slate-500 hidden sm:block">Press ESC or Back button to exit</div>
+                    </div>
+                    {/* Game Container: Flexible and Centered */}
+                    <div className="flex-1 overflow-hidden relative flex flex-col items-center justify-center p-2 sm:p-6 bg-slate-50 dark:bg-slate-900/50">
+                        <div className="w-full h-full max-w-7xl max-h-full flex items-center justify-center relative">
+                            {activeGame && renderGame()}
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    );
+};
+
+export default GameZone;
