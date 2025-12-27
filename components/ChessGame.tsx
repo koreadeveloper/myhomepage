@@ -1,6 +1,7 @@
 // ChessGame component using chess.js library
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Chess, Square, Move } from 'chess.js';
+import { StockfishEngine } from '../lib/StockfishEngine';
 
 const ChessGame: React.FC = () => {
     // Image paths for pieces
@@ -20,9 +21,12 @@ const ChessGame: React.FC = () => {
     const [dragging, setDragging] = useState<Square | null>(null);
     const [playerColor, setPlayerColor] = useState<'w' | 'b' | null>(null);
     const [moveHistory, setMoveHistory] = useState<{ white: string; black: string }[]>([]);
-    const [aiMode, setAiMode] = useState<'simple' | 'gemini' | null>(null);
+    const [aiMode, setAiMode] = useState<'simple' | 'gemini' | 'stockfish' | null>(null);
     const [gameStarted, setGameStarted] = useState(false);
     const [aiRating, setAiRating] = useState(800);
+
+    // Stockfish engine ref
+    const stockfishRef = useRef<StockfishEngine | null>(null);
 
     const getPieceImage = (piece: { type: string; color: 'w' | 'b' } | null) => {
         if (!piece) return null;
@@ -141,7 +145,41 @@ const ChessGame: React.FC = () => {
 
                 let bestMove: Move;
 
-                if (aiMode === 'gemini') {
+                if (aiMode === 'stockfish') {
+                    // Use Stockfish engine
+                    if (!stockfishRef.current) {
+                        console.log('Creating new Stockfish engine with rating:', aiRating);
+                        stockfishRef.current = new StockfishEngine();
+                        stockfishRef.current.setDifficulty(aiRating);
+                        // Wait for engine to initialize
+                        await new Promise(resolve => setTimeout(resolve, 1000));
+                    }
+
+                    try {
+                        console.log('Requesting move from Stockfish, FEN:', game.fen());
+                        const moveStr = await stockfishRef.current.getBestMove(game.fen());
+                        console.log('Stockfish returned:', moveStr);
+                        if (moveStr && moveStr.length >= 4) {
+                            const from = moveStr.substring(0, 2) as Square;
+                            const to = moveStr.substring(2, 4) as Square;
+                            const promotion = moveStr.length > 4 ? moveStr[4] : undefined;
+                            const found = moves.find(m => m.from === from && m.to === to);
+                            if (found) {
+                                console.log('Valid move found:', found);
+                                bestMove = found;
+                            } else {
+                                console.log('Move not found in legal moves, using random');
+                                bestMove = moves[Math.floor(Math.random() * moves.length)];
+                            }
+                        } else {
+                            console.log('Invalid move from Stockfish, using random');
+                            bestMove = moves[Math.floor(Math.random() * moves.length)];
+                        }
+                    } catch (err) {
+                        console.error('Stockfish error:', err);
+                        bestMove = moves[Math.floor(Math.random() * moves.length)];
+                    }
+                } else if (aiMode === 'gemini') {
                     // Call Gemini API
                     const validMovesStr = moves.map(m => m.from + m.to).join(', ');
                     try {
@@ -234,9 +272,14 @@ const ChessGame: React.FC = () => {
         setAiMode(null);
         setGameStarted(false);
         setAiRating(800);
+        // Terminate Stockfish engine if exists
+        if (stockfishRef.current) {
+            stockfishRef.current.terminate();
+            stockfishRef.current = null;
+        }
     };
 
-    const selectAiMode = (mode: 'simple' | 'gemini') => setAiMode(mode);
+    const selectAiMode = (mode: 'simple' | 'gemini' | 'stockfish') => setAiMode(mode);
 
     const startGame = (color: 'w' | 'b') => {
         setPlayerColor(color);
@@ -276,7 +319,14 @@ const ChessGame: React.FC = () => {
                                 <span className="text-3xl">✨</span>
                                 <div className="text-left">
                                     <span className="font-bold text-white text-sm lg:text-base block">Gemini AI</span>
-                                    <span className="text-xs text-blue-100">난이도 조절 가능</span>
+                                    <span className="text-xs text-blue-100">Google AI 기반</span>
+                                </div>
+                            </button>
+                            <button onClick={() => selectAiMode('stockfish')} className="flex items-center gap-3 p-4 lg:p-5 bg-gradient-to-r from-green-500 to-teal-600 rounded-xl hover:from-green-600 hover:to-teal-700 transition-colors border-2 border-transparent hover:border-white">
+                                <span className="text-3xl">🐟</span>
+                                <div className="text-left">
+                                    <span className="font-bold text-white text-sm lg:text-base block">Stockfish AI</span>
+                                    <span className="text-xs text-green-100">세계 최강 체스 엔진</span>
                                 </div>
                             </button>
                         </div>
@@ -312,6 +362,43 @@ const ChessGame: React.FC = () => {
                                 <span className="font-bold text-slate-700 dark:text-white text-sm">백</span>
                             </button>
                             <button onClick={() => startGame('b')} className="flex flex-col items-center gap-2 p-4 lg:p-5 bg-slate-100 dark:bg-slate-700 rounded-xl hover:bg-lime-100 dark:hover:bg-lime-900 transition-colors border-2 border-transparent hover:border-lime-500">
+                                <img src="/chess1/imgi_47_bk.png" alt="Black" className="w-10 h-10 lg:w-12 lg:h-12" />
+                                <span className="font-bold text-slate-700 dark:text-white text-sm">흑</span>
+                            </button>
+                        </div>
+                        <button onClick={() => setAiMode(null)} className="mt-4 text-sm text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200">← AI 모드 다시 선택</button>
+                    </div>
+                </div>
+            )}
+
+            {/* Stockfish Rating Selection */}
+            {aiMode === 'stockfish' && !playerColor && (
+                <div className="absolute inset-0 bg-black/50 z-50 flex items-center justify-center">
+                    <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 lg:p-8 shadow-2xl text-center mx-4 w-80 lg:w-96">
+                        <div className="text-xs text-slate-500 dark:text-slate-400 mb-2">🐟 Stockfish AI</div>
+                        <h2 className="text-xl lg:text-2xl font-bold text-slate-800 dark:text-white mb-2">난이도 선택</h2>
+                        <p className="text-xs text-slate-500 dark:text-slate-400 mb-4">세계 최강 체스 엔진 Elo 설정</p>
+
+                        <div className="mb-6">
+                            <div className="flex justify-between items-center mb-2">
+                                <span className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-green-500 to-teal-600">{aiRating}</span>
+                                <span className="text-sm text-slate-500 dark:text-slate-400">
+                                    {aiRating < 400 ? '🐣 완전 초보' : aiRating < 600 ? '🐥 입문자' : aiRating < 900 ? '🎮 초급' : aiRating < 1200 ? '♟️ 중급' : aiRating < 1500 ? '🏆 클럽 수준' : aiRating < 1800 ? '⚔️ 강한 클럽' : aiRating < 2100 ? '🎯 전문가' : aiRating < 2500 ? '👑 마스터' : '🤖 엔진 풀파워'}
+                                </span>
+                            </div>
+                            <input type="range" min="300" max="3000" step="100" value={aiRating} onChange={(e) => setAiRating(Number(e.target.value))} className="w-full h-3 rounded-lg appearance-none cursor-pointer" style={{ background: 'linear-gradient(to right, #4ade80 0%, #2dd4bf 33%, #0d9488 66%, #14b8a6 100%)' }} />
+                            <div className="flex justify-between text-xs text-slate-400 mt-1">
+                                <span>300</span><span>1200</span><span>2000</span><span>3000</span>
+                            </div>
+                        </div>
+
+                        <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-3">색상 선택</h3>
+                        <div className="flex gap-3 lg:gap-4 justify-center">
+                            <button onClick={() => startGame('w')} className="flex flex-col items-center gap-2 p-4 lg:p-5 bg-slate-100 dark:bg-slate-700 rounded-xl hover:bg-green-100 dark:hover:bg-green-900 transition-colors border-2 border-transparent hover:border-green-500">
+                                <img src="/chess1/imgi_54_wk.png" alt="White" className="w-10 h-10 lg:w-12 lg:h-12" />
+                                <span className="font-bold text-slate-700 dark:text-white text-sm">백</span>
+                            </button>
+                            <button onClick={() => startGame('b')} className="flex flex-col items-center gap-2 p-4 lg:p-5 bg-slate-100 dark:bg-slate-700 rounded-xl hover:bg-green-100 dark:hover:bg-green-900 transition-colors border-2 border-transparent hover:border-green-500">
                                 <img src="/chess1/imgi_47_bk.png" alt="Black" className="w-10 h-10 lg:w-12 lg:h-12" />
                                 <span className="font-bold text-slate-700 dark:text-white text-sm">흑</span>
                             </button>

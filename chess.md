@@ -172,3 +172,152 @@ Tailwind CSS로 스타일링.
 50수 규칙 (50-Move Rule): 50수 동안 폰의 이동이 없고, 기물을 잡는 행위가 없었다면 무승부를 요청할 수 있습니다.
 
 합의 무승부: 양 플레이어가 서로 무승부에 동의하는 경우입니다.
+
+---
+
+## 5. Stockfish 체스 엔진 통합 계획 🐟
+
+### 5.1 개요
+
+Stockfish는 세계 최강의 오픈소스 체스 엔진으로, Elo 3500+ 수준의 플레이가 가능합니다. 웹 브라우저에서 WebAssembly(WASM)로 실행할 수 있어 서버 없이도 강력한 AI를 구현할 수 있습니다.
+
+### 5.2 구현 방식
+
+| 방식 | 설명 | 장점 | 단점 |
+|------|------|------|------|
+| **stockfish.js (WASM)** | 브라우저에서 직접 실행 | 서버 불필요, 무료, 빠름 | 번들 +4MB, 초기 로딩 |
+| **stockfish.online API** | 외부 API 호출 | 간단한 통합 | 외부 의존성, 레이트 제한 |
+| **서버사이드 Stockfish** | 백엔드에서 실행 | 클라이언트 부담 없음 | 서버 비용, 지연 시간 |
+
+**권장:** stockfish.js (WASM) + Web Worker
+
+### 5.3 리소스 요구사항
+
+#### GitHub/Vercel 영향
+| 항목 | 크기/시간 | 제한 | 상태 |
+|------|-----------|------|------|
+| stockfish.js | ~1.5MB | 100MB/파일 | ✅ OK |
+| stockfish.wasm | ~2.5MB | 100MB/파일 | ✅ OK |
+| 빌드 시간 | +3-5초 | 45분 | ✅ OK |
+
+#### 클라이언트 (브라우저) 영향
+| 항목 | 수치 | 비고 |
+|------|------|------|
+| 초기 다운로드 | ~1.5MB (gzip) | 체스 선택 시 레이지 로딩 |
+| WASM 초기화 | ~500ms | 첫 로드 시에만 |
+| 메모리 사용 | 50-100MB | 탐색 중 |
+| CPU 사용 | 30-100% | 탐색 중, Web Worker로 분리 |
+
+### 5.4 난이도 조절 방법
+
+Stockfish UCI 명령어를 통해 정확한 난이도 조절이 가능합니다:
+
+```
+setoption name Skill Level value 10        // 0-20 (0=매우 약함, 20=최강)
+setoption name UCI_LimitStrength value true
+setoption name UCI_Elo value 1200          // 직접 Elo 레이팅 설정
+```
+
+#### 레이팅별 설정 가이드
+| 레이팅 | Skill Level | 탐색 깊이 | 시간 제한 | 설명 |
+|--------|-------------|-----------|-----------|------|
+| 300-600 | 0-3 | 1-3 | 50ms | 🐣 완전 초보 |
+| 600-1000 | 4-8 | 4-6 | 100ms | 🐥 입문자 |
+| 1000-1500 | 9-14 | 7-10 | 300ms | ♟️ 클럽 수준 |
+| 1500-2000 | 15-18 | 11-15 | 500ms | ⚔️ 강한 클럽 |
+| 2000+ | 19-20 | 16+ | 1000ms+ | 👑 마스터 |
+
+### 5.5 구현 단계
+
+1. **패키지 설치**
+   ```bash
+   npm install stockfish
+   ```
+
+2. **Web Worker 생성** (메인 스레드 블로킹 방지)
+   ```typescript
+   // public/stockfish-worker.js
+   importScripts('https://cdn.jsdelivr.net/npm/stockfish@16/stockfish.js');
+   ```
+
+3. **Stockfish 래퍼 클래스**
+   ```typescript
+   class StockfishEngine {
+     private worker: Worker;
+     
+     constructor() {
+       this.worker = new Worker('/stockfish-worker.js');
+       this.worker.postMessage('uci');
+       this.worker.postMessage('isready');
+     }
+     
+     setDifficulty(elo: number) {
+       this.worker.postMessage(`setoption name UCI_LimitStrength value true`);
+       this.worker.postMessage(`setoption name UCI_Elo value ${elo}`);
+     }
+     
+     async getBestMove(fen: string, depth: number): Promise<string> {
+       return new Promise((resolve) => {
+         this.worker.onmessage = (e) => {
+           if (e.data.startsWith('bestmove')) {
+             resolve(e.data.split(' ')[1]);
+           }
+         };
+         this.worker.postMessage(`position fen ${fen}`);
+         this.worker.postMessage(`go depth ${depth}`);
+       });
+     }
+   }
+   ```
+
+4. **레이지 로딩 적용** (체스 선택 시에만 로드)
+   ```typescript
+   const loadStockfish = async () => {
+     const engine = await import('./StockfishEngine');
+     return new engine.default();
+   };
+   ```
+
+5. **chess.js와 통합**
+   - FEN 위치 문자열 전달
+   - bestmove 응답 수신
+   - chess.js로 이동 실행
+
+### 5.6 성능 최적화
+
+```typescript
+// 기기 성능에 따른 탐색 깊이 자동 조절
+const getDepthByDevice = () => {
+  const memory = navigator.deviceMemory || 4; // GB
+  const cores = navigator.hardwareConcurrency || 4;
+  
+  if (memory < 2 || cores < 2) return 5;  // 저사양
+  if (memory < 4 || cores < 4) return 10; // 중급
+  return 15; // 고사양
+};
+
+// CDN에서 로드하여 번들 크기 절약
+const worker = new Worker('https://cdn.jsdelivr.net/npm/stockfish@16/stockfish.js');
+```
+
+### 5.7 Gemini AI vs Stockfish 비교
+
+| 항목 | Gemini AI | Stockfish |
+|------|-----------|-----------|
+| **정확도** | 낮음 (LLM 기반) | 매우 높음 (Elo 3500+) |
+| **응답 속도** | 1-3초 (API 호출) | 즉시 (로컬 WASM) |
+| **난이도 조절** | 프롬프트 기반 (부정확) | UCI Elo 설정 (정확) |
+| **서버 의존성** | 있음 (API) | 없음 (클라이언트) |
+| **비용** | API 호출 비용 | 무료 |
+| **번들 크기** | 0MB | +4MB |
+| **오프라인** | ❌ 불가 | ✅ 가능 |
+
+### 5.8 예상 결과
+
+Stockfish 통합 후:
+- ✅ 정확한 Elo 레이팅 기반 난이도 조절 (300-2500+)
+- ✅ 즉각적인 응답 (API 호출 지연 없음)
+- ✅ 완벽한 체스 규칙 준수
+- ✅ 오프라인 플레이 가능
+- ⚠️ 초기 로딩 +1-2초
+- ⚠️ 저사양 기기에서 탐색 깊이 제한 필요
