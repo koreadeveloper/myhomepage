@@ -21,9 +21,10 @@ const ChessGame: React.FC = () => {
     const [dragging, setDragging] = useState<Square | null>(null);
     const [playerColor, setPlayerColor] = useState<'w' | 'b' | null>(null);
     const [moveHistory, setMoveHistory] = useState<{ white: string; black: string }[]>([]);
-    const [aiMode, setAiMode] = useState<'simple' | 'gemini' | 'stockfish' | null>(null);
+    const [aiMode, setAiMode] = useState<'simple' | 'stockfish' | null>(null);
     const [gameStarted, setGameStarted] = useState(false);
     const [aiRating, setAiRating] = useState(800);
+    const [lastMove, setLastMove] = useState<{ from: Square; to: Square } | null>(null);
 
     // Stockfish engine ref
     const stockfishRef = useRef<StockfishEngine | null>(null);
@@ -107,6 +108,7 @@ const ChessGame: React.FC = () => {
                 setGame(new Chess(game.fen()));
                 setSelected(null);
                 setValidMoves([]);
+                setLastMove({ from, to }); // Track last move
             }
         } catch (e) {
             console.error('Invalid move:', e);
@@ -179,37 +181,6 @@ const ChessGame: React.FC = () => {
                         console.error('Stockfish error:', err);
                         bestMove = moves[Math.floor(Math.random() * moves.length)];
                     }
-                } else if (aiMode === 'gemini') {
-                    // Call Gemini API
-                    const validMovesStr = moves.map(m => m.from + m.to).join(', ');
-                    try {
-                        const response = await fetch('/api/chess-ai', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({
-                                fen: game.fen(),
-                                color: aiColor === 'w' ? 'white' : 'black',
-                                validMoves: validMovesStr,
-                                rating: aiRating
-                            })
-                        });
-                        const data = await response.json();
-                        const moveStr = data?.move;
-                        if (moveStr && moveStr.length >= 4) {
-                            const from = moveStr.substring(0, 2) as Square;
-                            const to = moveStr.substring(2, 4) as Square;
-                            const found = moves.find(m => m.from === from && m.to === to);
-                            if (found) {
-                                bestMove = found;
-                            } else {
-                                bestMove = moves[Math.floor(Math.random() * moves.length)];
-                            }
-                        } else {
-                            bestMove = moves[Math.floor(Math.random() * moves.length)];
-                        }
-                    } catch {
-                        bestMove = moves[Math.floor(Math.random() * moves.length)];
-                    }
                 } else {
                     // Simple AI: prioritize captures
                     const captures = moves.filter(m => m.captured);
@@ -250,11 +221,12 @@ const ChessGame: React.FC = () => {
                     }
 
                     setGame(new Chess(game.fen()));
+                    setLastMove({ from: move.from as Square, to: move.to as Square }); // Track last move
                 }
                 setThinking(false);
             };
 
-            const timer = setTimeout(executeAiMove, aiMode === 'gemini' ? 100 : 500);
+            const timer = setTimeout(executeAiMove, 500);
             return () => clearTimeout(timer);
         }
     }, [game, playerColor, gameStarted, aiMode, aiRating]);
@@ -272,6 +244,7 @@ const ChessGame: React.FC = () => {
         setAiMode(null);
         setGameStarted(false);
         setAiRating(800);
+        setLastMove(null);
         // Terminate Stockfish engine if exists
         if (stockfishRef.current) {
             stockfishRef.current.terminate();
@@ -279,7 +252,7 @@ const ChessGame: React.FC = () => {
         }
     };
 
-    const selectAiMode = (mode: 'simple' | 'gemini' | 'stockfish') => setAiMode(mode);
+    const selectAiMode = (mode: 'simple' | 'stockfish') => setAiMode(mode);
 
     const startGame = (color: 'w' | 'b') => {
         setPlayerColor(color);
@@ -315,13 +288,6 @@ const ChessGame: React.FC = () => {
                                     <span className="text-xs text-slate-500 dark:text-slate-400">기본 규칙 기반 AI</span>
                                 </div>
                             </button>
-                            <button onClick={() => selectAiMode('gemini')} className="flex items-center gap-3 p-4 lg:p-5 bg-gradient-to-r from-blue-500 to-purple-600 rounded-xl hover:from-blue-600 hover:to-purple-700 transition-colors border-2 border-transparent hover:border-white">
-                                <span className="text-3xl">✨</span>
-                                <div className="text-left">
-                                    <span className="font-bold text-white text-sm lg:text-base block">Gemini AI</span>
-                                    <span className="text-xs text-blue-100">Google AI 기반</span>
-                                </div>
-                            </button>
                             <button onClick={() => selectAiMode('stockfish')} className="flex items-center gap-3 p-4 lg:p-5 bg-gradient-to-r from-green-500 to-teal-600 rounded-xl hover:from-green-600 hover:to-teal-700 transition-colors border-2 border-transparent hover:border-white">
                                 <span className="text-3xl">🐟</span>
                                 <div className="text-left">
@@ -330,43 +296,6 @@ const ChessGame: React.FC = () => {
                                 </div>
                             </button>
                         </div>
-                    </div>
-                </div>
-            )}
-
-            {/* Gemini Rating Selection */}
-            {aiMode === 'gemini' && !playerColor && (
-                <div className="absolute inset-0 bg-black/50 z-50 flex items-center justify-center">
-                    <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 lg:p-8 shadow-2xl text-center mx-4 w-80 lg:w-96">
-                        <div className="text-xs text-slate-500 dark:text-slate-400 mb-2">✨ Gemini AI</div>
-                        <h2 className="text-xl lg:text-2xl font-bold text-slate-800 dark:text-white mb-2">난이도 선택</h2>
-                        <p className="text-xs text-slate-500 dark:text-slate-400 mb-4">Chess.com 레이팅 기준</p>
-
-                        <div className="mb-6">
-                            <div className="flex justify-between items-center mb-2">
-                                <span className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-500 to-purple-600">{aiRating}</span>
-                                <span className="text-sm text-slate-500 dark:text-slate-400">
-                                    {aiRating < 400 ? '🐣 완전 초보' : aiRating < 600 ? '🐥 입문자' : aiRating < 900 ? '🎮 초급' : aiRating < 1200 ? '♟️ 중급' : aiRating < 1500 ? '🏆 클럽 수준' : aiRating < 1800 ? '⚔️ 강한 클럽' : aiRating < 2100 ? '🎯 전문가' : '👑 마스터'}
-                                </span>
-                            </div>
-                            <input type="range" min="300" max="2500" step="100" value={aiRating} onChange={(e) => setAiRating(Number(e.target.value))} className="w-full h-3 rounded-lg appearance-none cursor-pointer" style={{ background: 'linear-gradient(to right, #4ade80 0%, #facc15 33%, #fb923c 66%, #ef4444 100%)' }} />
-                            <div className="flex justify-between text-xs text-slate-400 mt-1">
-                                <span>300</span><span>1000</span><span>1800</span><span>2500</span>
-                            </div>
-                        </div>
-
-                        <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-3">색상 선택</h3>
-                        <div className="flex gap-3 lg:gap-4 justify-center">
-                            <button onClick={() => startGame('w')} className="flex flex-col items-center gap-2 p-4 lg:p-5 bg-slate-100 dark:bg-slate-700 rounded-xl hover:bg-lime-100 dark:hover:bg-lime-900 transition-colors border-2 border-transparent hover:border-lime-500">
-                                <img src="/chess1/imgi_54_wk.png" alt="White" className="w-10 h-10 lg:w-12 lg:h-12" />
-                                <span className="font-bold text-slate-700 dark:text-white text-sm">백</span>
-                            </button>
-                            <button onClick={() => startGame('b')} className="flex flex-col items-center gap-2 p-4 lg:p-5 bg-slate-100 dark:bg-slate-700 rounded-xl hover:bg-lime-100 dark:hover:bg-lime-900 transition-colors border-2 border-transparent hover:border-lime-500">
-                                <img src="/chess1/imgi_47_bk.png" alt="Black" className="w-10 h-10 lg:w-12 lg:h-12" />
-                                <span className="font-bold text-slate-700 dark:text-white text-sm">흑</span>
-                            </button>
-                        </div>
-                        <button onClick={() => setAiMode(null)} className="mt-4 text-sm text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200">← AI 모드 다시 선택</button>
                     </div>
                 </div>
             )}
@@ -450,8 +379,8 @@ const ChessGame: React.FC = () => {
             </div>
 
             {/* Chess Board */}
-            <div className="flex-shrink-0" style={{ width: 'min(calc(100vh - 100px), calc(100vw - 400px), 800px)', height: 'min(calc(100vh - 100px), calc(100vw - 400px), 800px)' }}>
-                <div className="grid grid-cols-8 border-2 lg:border-4 border-lime-800 dark:border-lime-600 rounded-lg overflow-hidden shadow-2xl w-full h-full">
+            <div className="flex-shrink-0" style={{ width: 'min(calc(100vh - 100px), calc(100vw - 400px), 800px)', height: 'min(calc(100vh - 100px), calc(100vw - 400px), 800px)', contain: 'strict' }}>
+                <div className="grid grid-cols-8 grid-rows-8 border-2 lg:border-4 border-lime-800 dark:border-lime-600 rounded-lg overflow-hidden shadow-2xl w-full h-full" style={{ contain: 'layout' }}>
                     {(playerColor === 'b' ? [...board].reverse().map(row => [...row].reverse()) : board).map((row, displayR) => row.map((piece, displayC) => {
                         const r = playerColor === 'b' ? 7 - displayR : displayR;
                         const c = playerColor === 'b' ? 7 - displayC : displayC;
@@ -462,6 +391,13 @@ const ChessGame: React.FC = () => {
                         const hasEnemy = piece && piece.color !== playerColor && isValidMove;
                         const pieceImg = getPieceImage(piece);
                         const canDrag = piece && piece.color === playerColor && game.turn() === playerColor && !thinking;
+                        const isLastMoveSquare = lastMove && (lastMove.from === square || lastMove.to === square);
+
+                        // Show rank label on first column, file label on last row
+                        const showRank = displayC === 0;
+                        const showFile = displayR === 7;
+                        const rankLabel = playerColor === 'b' ? String(displayR + 1) : String(8 - displayR);
+                        const fileLabel = playerColor === 'b' ? files[7 - displayC] : files[displayC];
 
                         return (
                             <div
@@ -469,11 +405,23 @@ const ChessGame: React.FC = () => {
                                 onClick={() => handleClick(square)}
                                 onDragOver={(e) => e.preventDefault()}
                                 onDrop={() => handleDrop(square)}
-                                className={`aspect-square flex items-center justify-center cursor-pointer relative
-                                    ${isLight ? 'bg-[#ebecd0]' : 'bg-[#779556]'}
+                                className={`w-full h-full flex items-center justify-center cursor-pointer relative
+                                    ${isLastMoveSquare ? (isLight ? 'bg-[#f5f682]' : 'bg-[#baca44]') : (isLight ? 'bg-[#ebecd0]' : 'bg-[#779556]')}
                                     ${isSelected ? 'ring-2 lg:ring-4 ring-yellow-400 ring-inset' : ''}
                                     ${hasEnemy ? 'ring-2 lg:ring-4 ring-red-500 ring-inset' : ''}`}
                             >
+                                {/* Rank label (1-8) on left side */}
+                                {showRank && (
+                                    <span className={`absolute top-0.5 left-0.5 text-[9px] lg:text-xs font-bold ${isLastMoveSquare ? (isLight ? 'text-[#8b8c4d]' : 'text-[#7d8a32]') : (isLight ? 'text-[#779556]' : 'text-[#ebecd0]')}`}>
+                                        {rankLabel}
+                                    </span>
+                                )}
+                                {/* File label (a-h) on bottom */}
+                                {showFile && (
+                                    <span className={`absolute bottom-0.5 right-0.5 text-[9px] lg:text-xs font-bold ${isLastMoveSquare ? (isLight ? 'text-[#8b8c4d]' : 'text-[#7d8a32]') : (isLight ? 'text-[#779556]' : 'text-[#ebecd0]')}`}>
+                                        {fileLabel}
+                                    </span>
+                                )}
                                 {isValidMove && !piece && <div className="absolute w-1/4 h-1/4 bg-black/20 rounded-full" />}
                                 {pieceImg && (
                                     <img

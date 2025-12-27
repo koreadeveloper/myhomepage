@@ -1,6 +1,19 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import ChessGameNew from '../components/ChessGame';
+import PacmanGame from '../components/PacmanGame';
+import BreakoutGame from '../components/BreakoutGame';
+import PongGame from '../components/PongGame';
+import FlappyBirdGame from '../components/FlappyBirdGame';
+import SpaceInvadersGame from '../components/SpaceInvadersGame';
+import DinoJumpGame from '../components/DinoJumpGame';
+import HangmanGame from '../components/HangmanGame';
+import GomokuGame from '../components/GomokuGame';
+import ReactionTest from '../components/ReactionTest';
+import TypingGame from '../components/TypingGame';
+import BlackjackGame from '../components/BlackjackGame';
+import QuizGame from '../components/QuizGame';
+import MathGame from '../components/MathGame';
 
 // --- Shared Types & Constants ---
 type Game = {
@@ -24,6 +37,21 @@ const games: Game[] = [
     { title: '카드 뒤집기', description: '두뇌력을 테스트하라', icon: 'style', color: 'text-pink-600 dark:text-pink-400', bgColor: 'bg-pink-100 dark:bg-pink-900/30', accentColor: 'bg-pink-500', cornerAccentColor: 'bg-pink-500/10' },
     { title: '틱택토', description: 'AI와 빠른 대결', icon: 'close', color: 'text-cyan-600 dark:text-cyan-400', bgColor: 'bg-cyan-100 dark:bg-cyan-900/30', accentColor: 'bg-cyan-500', cornerAccentColor: 'bg-cyan-500/10' },
     { title: '단어 퍼즐', description: '5글자 영단어를 맞춰라', icon: 'abc', color: 'text-orange-600 dark:text-orange-400', bgColor: 'bg-orange-100 dark:bg-orange-900/30', accentColor: 'bg-orange-500', cornerAccentColor: 'bg-orange-500/10' },
+    // New classic games
+    { title: '팩맨', description: '유령을 피해 점을 먹어라', icon: 'radio_button_checked', color: 'text-yellow-500 dark:text-yellow-400', bgColor: 'bg-yellow-100 dark:bg-yellow-900/30', accentColor: 'bg-yellow-500', cornerAccentColor: 'bg-yellow-500/10' },
+    { title: '브레이크아웃', description: '공으로 벽돌을 깨부숴라', icon: 'view_compact', color: 'text-red-500 dark:text-red-400', bgColor: 'bg-red-100 dark:bg-red-900/30', accentColor: 'bg-red-500', cornerAccentColor: 'bg-red-500/10' },
+    { title: '핑퐁', description: 'AI와 탁구 대결', icon: 'sports_tennis', color: 'text-green-500 dark:text-green-400', bgColor: 'bg-green-100 dark:bg-green-900/30', accentColor: 'bg-green-500', cornerAccentColor: 'bg-green-500/10' },
+    { title: '플래피버드', description: '장애물을 피해 날아라', icon: 'flutter_dash', color: 'text-sky-500 dark:text-sky-400', bgColor: 'bg-sky-100 dark:bg-sky-900/30', accentColor: 'bg-sky-500', cornerAccentColor: 'bg-sky-500/10' },
+    { title: '스페이스 인베이더', description: '외계인 침략을 막아라', icon: 'rocket_launch', color: 'text-purple-500 dark:text-purple-400', bgColor: 'bg-purple-100 dark:bg-purple-900/30', accentColor: 'bg-purple-500', cornerAccentColor: 'bg-purple-500/10' },
+    { title: '점프 다이노', description: '장애물을 뛰어넘어라', icon: 'pets', color: 'text-slate-600 dark:text-slate-400', bgColor: 'bg-slate-100 dark:bg-slate-800/50', accentColor: 'bg-slate-600', cornerAccentColor: 'bg-slate-500/10' },
+    { title: '행맨', description: '단어를 맞춰 목숨을 구해라', icon: 'person', color: 'text-teal-500 dark:text-teal-400', bgColor: 'bg-teal-100 dark:bg-teal-900/30', accentColor: 'bg-teal-500', cornerAccentColor: 'bg-teal-500/10' },
+    // New games - Wave 2
+    { title: '오목', description: 'AI와 5목 대결', icon: 'blur_on', color: 'text-amber-600 dark:text-amber-400', bgColor: 'bg-amber-100 dark:bg-amber-900/30', accentColor: 'bg-amber-600', cornerAccentColor: 'bg-amber-500/10' },
+    { title: '반응속도', description: '얼마나 빠르게 반응하나?', icon: 'speed', color: 'text-red-500 dark:text-red-400', bgColor: 'bg-red-100 dark:bg-red-900/30', accentColor: 'bg-red-500', cornerAccentColor: 'bg-red-500/10' },
+    { title: '타자연습', description: '한국어 타이핑 실력 테스트', icon: 'keyboard', color: 'text-green-600 dark:text-green-400', bgColor: 'bg-green-100 dark:bg-green-900/30', accentColor: 'bg-green-600', cornerAccentColor: 'bg-green-500/10' },
+    { title: '블랙잭', description: '21을 향한 카드 게임', icon: 'casino', color: 'text-violet-600 dark:text-violet-400', bgColor: 'bg-violet-100 dark:bg-violet-900/30', accentColor: 'bg-violet-600', cornerAccentColor: 'bg-violet-500/10' },
+    { title: '퀴즈', description: '어려운 상식 문제 도전', icon: 'quiz', color: 'text-fuchsia-600 dark:text-fuchsia-400', bgColor: 'bg-fuchsia-100 dark:bg-fuchsia-900/30', accentColor: 'bg-fuchsia-600', cornerAccentColor: 'bg-fuchsia-500/10' },
+    { title: '암산', description: '60초 수학 계산 챌린지', icon: 'functions', color: 'text-blue-600 dark:text-blue-400', bgColor: 'bg-blue-100 dark:bg-blue-900/30', accentColor: 'bg-blue-600', cornerAccentColor: 'bg-blue-500/10' },
 ];
 
 // --- Game 1: Snake (Canvas) ---
@@ -1796,6 +1824,19 @@ const GameZone: React.FC = () => {
             case '카드 뒤집기': return <MemoryMatch />;
             case '틱택토': return <TicTacToe />;
             case '단어 퍼즐': return <WordPuzzle />;
+            case '팩맨': return <PacmanGame />;
+            case '브레이크아웃': return <BreakoutGame />;
+            case '핑퐁': return <PongGame />;
+            case '플래피버드': return <FlappyBirdGame />;
+            case '스페이스 인베이더': return <SpaceInvadersGame />;
+            case '점프 다이노': return <DinoJumpGame />;
+            case '행맨': return <HangmanGame />;
+            case '오목': return <GomokuGame />;
+            case '반응속도': return <ReactionTest />;
+            case '타자연습': return <TypingGame />;
+            case '블랙잭': return <BlackjackGame />;
+            case '퀴즈': return <QuizGame />;
+            case '암산': return <MathGame />;
             default: return <div>게임을 찾을 수 없습니다</div>;
         }
     };
