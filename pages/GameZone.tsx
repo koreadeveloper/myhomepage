@@ -890,7 +890,7 @@ const ChessGame = () => {
     const [selected, setSelected] = useState<Position | null>(null);
     const [validMoves, setValidMoves] = useState<Position[]>([]);
     const [turn, setTurn] = useState<'white' | 'black'>('white');
-    const [status, setStatus] = useState<'playing' | 'check' | 'checkmate' | 'stalemate'>('playing');
+    const [status, setStatus] = useState<'playing' | 'check' | 'checkmate' | 'stalemate' | 'insufficient' | 'fifty-move'>('playing');
     const [thinking, setThinking] = useState(false);
     const [capturedWhite, setCapturedWhite] = useState<string[]>([]);
     const [capturedBlack, setCapturedBlack] = useState<string[]>([]);
@@ -899,6 +899,9 @@ const ChessGame = () => {
     const [enPassant, setEnPassant] = useState<Position | null>(null);
     const [castlingRights, setCastlingRights] = useState<CastlingRights>({ whiteKing: true, whiteQueen: true, blackKing: true, blackQueen: true });
     const [moveHistory, setMoveHistory] = useState<{ white: string; black: string }[]>([]);
+    const [halfMoveClock, setHalfMoveClock] = useState(0); // For 50-move rule
+    const [aiMode, setAiMode] = useState<'simple' | 'gemini' | null>(null); // AI mode selection
+    const [gameStarted, setGameStarted] = useState(false); // Track if game has started
 
     const isWhite = (piece: Piece) => piece !== null && piece === piece.toUpperCase();
     const isBlack = (piece: Piece) => piece !== null && piece === piece.toLowerCase();
@@ -1072,8 +1075,53 @@ const ChessGame = () => {
         return moves;
     };
 
+    // Check for insufficient material draw
+    const isInsufficientMaterial = (b: Board): boolean => {
+        const pieces: string[] = [];
+        for (let r = 0; r < 8; r++) {
+            for (let c = 0; c < 8; c++) {
+                const piece = b[r][c];
+                if (piece && piece.toLowerCase() !== 'k') {
+                    pieces.push(piece.toLowerCase());
+                }
+            }
+        }
+        // King vs King
+        if (pieces.length === 0) return true;
+        // King + Bishop vs King or King + Knight vs King
+        if (pieces.length === 1 && (pieces[0] === 'b' || pieces[0] === 'n')) return true;
+        // King + Bishop vs King + Bishop (same color bishops)
+        if (pieces.length === 2 && pieces.every(p => p === 'b')) {
+            // Check if bishops are on same color squares
+            const bishopPositions: Position[] = [];
+            for (let r = 0; r < 8; r++) {
+                for (let c = 0; c < 8; c++) {
+                    if (b[r][c]?.toLowerCase() === 'b') {
+                        bishopPositions.push({ row: r, col: c });
+                    }
+                }
+            }
+            if (bishopPositions.length === 2) {
+                const color1 = (bishopPositions[0].row + bishopPositions[0].col) % 2;
+                const color2 = (bishopPositions[1].row + bishopPositions[1].col) % 2;
+                if (color1 === color2) return true;
+            }
+        }
+        return false;
+    };
+
     // Check game status
-    const checkGameStatus = useCallback((b: Board, color: 'white' | 'black') => {
+    const checkGameStatus = useCallback((b: Board, color: 'white' | 'black', currentHalfMoveClock: number = halfMoveClock) => {
+        // Check 50-move rule first
+        if (currentHalfMoveClock >= 100) { // 100 half-moves = 50 full moves
+            setStatus('fifty-move');
+            return;
+        }
+        // Check insufficient material
+        if (isInsufficientMaterial(b)) {
+            setStatus('insufficient');
+            return;
+        }
         const moves = getAllValidMoves(b, color);
         const inCheck = isInCheck(b, color);
         if (moves.length === 0) {
@@ -1083,7 +1131,7 @@ const ChessGame = () => {
         } else {
             setStatus('playing');
         }
-    }, []);
+    }, [halfMoveClock]);
 
     // Make a move
     const getMoveNotation = (piece: Piece, from: Position, to: Position, captured: Piece, isCastling: boolean) => {
@@ -1179,36 +1227,122 @@ const ChessGame = () => {
             });
         }
 
+        // Update half-move clock (reset on pawn move or capture)
+        const newHalfMoveClock = (pieceType === 'p' || captured) ? 0 : halfMoveClock + 1;
+        setHalfMoveClock(newHalfMoveClock);
+
         setBoard(newBoard);
         setSelected(null);
         setValidMoves([]);
 
         const nextTurn = turn === 'white' ? 'black' : 'white';
         setTurn(nextTurn);
-        checkGameStatus(newBoard, nextTurn);
+        checkGameStatus(newBoard, nextTurn, newHalfMoveClock);
 
         return newBoard;
     };
 
+    // Convert board to FEN notation for AI
+    const boardToFen = (b: Board): string => {
+        let fen = '';
+        for (let r = 0; r < 8; r++) {
+            let empty = 0;
+            for (let c = 0; c < 8; c++) {
+                const piece = b[r][c];
+                if (piece) {
+                    if (empty > 0) { fen += empty; empty = 0; }
+                    fen += piece;
+                } else {
+                    empty++;
+                }
+            }
+            if (empty > 0) fen += empty;
+            if (r < 7) fen += '/';
+        }
+        return fen;
+    };
+
+    // Call Gemini API through serverless function (API key hidden on server)
+    const getGeminiMove = async (b: Board, color: 'white' | 'black', validMovesList: { from: Position; to: Position }[]): Promise<{ from: Position; to: Position } | null> => {
+        const fenPosition = boardToFen(b);
+        const files = 'abcdefgh';
+        const ranks = '87654321';
+        const validMovesStr = validMovesList.map(m =>
+            `${files[m.from.col]}${ranks[m.from.row]}${files[m.to.col]}${ranks[m.to.row]}`
+        ).join(', ');
+
+        try {
+            const response = await fetch('/api/chess-ai', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    fen: fenPosition,
+                    color: color,
+                    validMoves: validMovesStr
+                })
+            });
+
+            const data = await response.json();
+            const moveText = data?.move;
+
+            if (moveText && moveText.length >= 4) {
+                const fromCol = files.indexOf(moveText[0]);
+                const fromRow = ranks.indexOf(moveText[1]);
+                const toCol = files.indexOf(moveText[2]);
+                const toRow = ranks.indexOf(moveText[3]);
+
+                if (fromCol >= 0 && fromRow >= 0 && toCol >= 0 && toRow >= 0) {
+                    const move = { from: { row: fromRow, col: fromCol }, to: { row: toRow, col: toCol } };
+                    // Validate the move is legal
+                    if (validMovesList.some(m => m.from.row === move.from.row && m.from.col === move.from.col && m.to.row === move.to.row && m.to.col === move.to.col)) {
+                        return move;
+                    }
+                }
+            }
+        } catch (error) {
+            console.error('Chess AI API error:', error);
+        }
+        return null;
+    };
+
     // AI move
     useEffect(() => {
-        if (!playerColor) return;
+        if (!playerColor || !gameStarted) return;
         const aiColor = playerColor === 'white' ? 'black' : 'white';
         if (turn === aiColor && (status === 'playing' || status === 'check')) {
             setThinking(true);
-            const timer = setTimeout(() => {
+
+            const executeAiMove = async () => {
                 const moves = getAllValidMoves(board, aiColor);
                 if (moves.length === 0) return;
 
-                // Score moves by capture value
-                const scoredMoves = moves.map(m => {
-                    const target = board[m.to.row][m.to.col];
-                    const captureValue = target ? PIECE_VALUES[target.toLowerCase()] || 0 : 0;
-                    return { ...m, score: captureValue + Math.random() * 0.5 };
-                });
+                let best: { from: Position; to: Position; piece: string };
 
-                scoredMoves.sort((a, b) => b.score - a.score);
-                const best = scoredMoves[0];
+                if (aiMode === 'gemini') {
+                    // Try Gemini AI first
+                    const geminiMove = await getGeminiMove(board, aiColor, moves);
+                    if (geminiMove) {
+                        best = { ...geminiMove, piece: board[geminiMove.from.row][geminiMove.from.col] || '' };
+                    } else {
+                        // Fallback to simple AI
+                        const scoredMoves = moves.map(m => {
+                            const target = board[m.to.row][m.to.col];
+                            const captureValue = target ? PIECE_VALUES[target.toLowerCase()] || 0 : 0;
+                            return { ...m, score: captureValue + Math.random() * 0.5 };
+                        });
+                        scoredMoves.sort((a, b) => b.score - a.score);
+                        best = scoredMoves[0];
+                    }
+                } else {
+                    // Simple AI: Score moves by capture value
+                    const scoredMoves = moves.map(m => {
+                        const target = board[m.to.row][m.to.col];
+                        const captureValue = target ? PIECE_VALUES[target.toLowerCase()] || 0 : 0;
+                        return { ...m, score: captureValue + Math.random() * 0.5 };
+                    });
+                    scoredMoves.sort((a, b) => b.score - a.score);
+                    best = scoredMoves[0];
+                }
 
                 const newBoard = board.map(r => [...r]);
                 const piece = newBoard[best.from.row][best.from.col];
@@ -1257,15 +1391,22 @@ const ChessGame = () => {
                     });
                 }
 
+                // Update half-move clock for AI
+                const aiPieceType = piece?.toLowerCase();
+                const newAiHalfMoveClock = (aiPieceType === 'p' || captured) ? 0 : halfMoveClock + 1;
+                setHalfMoveClock(newAiHalfMoveClock);
+
                 setEnPassant(null);
                 setBoard(newBoard);
                 setTurn(playerColor);
                 setThinking(false);
-                checkGameStatus(newBoard, playerColor);
-            }, 700);
+                checkGameStatus(newBoard, playerColor, newAiHalfMoveClock);
+            };
+
+            const timer = setTimeout(executeAiMove, aiMode === 'gemini' ? 100 : 700);
             return () => clearTimeout(timer);
         }
-    }, [turn, board, status, playerColor]);
+    }, [turn, board, status, playerColor, halfMoveClock, aiMode, gameStarted]);
 
     const isPlayerPiece = (piece: Piece) => {
         if (!playerColor || !piece) return false;
@@ -1273,7 +1414,7 @@ const ChessGame = () => {
     };
 
     const handleClick = (row: number, col: number) => {
-        if (!playerColor || turn !== playerColor || thinking || status === 'checkmate' || status === 'stalemate') return;
+        if (!playerColor || turn !== playerColor || thinking || status === 'checkmate' || status === 'stalemate' || status === 'insufficient' || status === 'fifty-move') return;
 
         const piece = board[row][col];
 
@@ -1331,10 +1472,18 @@ const ChessGame = () => {
         setEnPassant(null);
         setCastlingRights({ whiteKing: true, whiteQueen: true, blackKing: true, blackQueen: true });
         setMoveHistory([]);
+        setHalfMoveClock(0);
+        setAiMode(null);
+        setGameStarted(false);
+    };
+
+    const selectAiMode = (mode: 'simple' | 'gemini') => {
+        setAiMode(mode);
     };
 
     const startGame = (color: 'white' | 'black') => {
         setPlayerColor(color);
+        setGameStarted(true);
         if (color === 'black') {
             // AI plays first as white
             setTurn('white');
@@ -1344,6 +1493,8 @@ const ChessGame = () => {
     const getStatusText = () => {
         if (status === 'checkmate') return turn === playerColor ? '체크메이트! AI 승리' : '체크메이트! 당신이 이겼습니다!';
         if (status === 'stalemate') return '스테일메이트! 무승부';
+        if (status === 'insufficient') return '기물부족! 무승부';
+        if (status === 'fifty-move') return '50수 규칙! 무승부';
         if (thinking) return 'AI가 생각 중...';
         if (status === 'check') return turn === playerColor ? '체크! 당신의 차례' : '체크!';
         return turn === playerColor ? `당신의 차례 (${playerColor === 'white' ? '백' : '흑'})` : `AI 차례 (${playerColor === 'white' ? '흑' : '백'})`;
@@ -1362,10 +1513,38 @@ const ChessGame = () => {
 
     return (
         <div className="flex flex-col lg:flex-row items-center justify-center w-full h-full p-2 lg:p-4 gap-2 lg:gap-4">
-            {/* Color Selection Screen */}
-            {!playerColor && (
+            {/* AI Mode Selection Screen */}
+            {!aiMode && (
                 <div className="absolute inset-0 bg-black/50 z-50 flex items-center justify-center">
                     <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 lg:p-8 shadow-2xl text-center mx-4">
+                        <h2 className="text-xl lg:text-2xl font-bold text-slate-800 dark:text-white mb-4 lg:mb-6">AI 모드 선택</h2>
+                        <div className="flex flex-col gap-3 lg:gap-4">
+                            <button onClick={() => selectAiMode('simple')} className="flex items-center gap-3 p-4 lg:p-5 bg-slate-100 dark:bg-slate-700 rounded-xl hover:bg-blue-100 dark:hover:bg-blue-900 transition-colors border-2 border-transparent hover:border-blue-500">
+                                <span className="text-3xl">🤖</span>
+                                <div className="text-left">
+                                    <span className="font-bold text-slate-700 dark:text-white text-sm lg:text-base block">간단한 AI</span>
+                                    <span className="text-xs text-slate-500 dark:text-slate-400">기본 규칙 기반 AI</span>
+                                </div>
+                            </button>
+                            <button onClick={() => selectAiMode('gemini')} className="flex items-center gap-3 p-4 lg:p-5 bg-gradient-to-r from-blue-500 to-purple-600 rounded-xl hover:from-blue-600 hover:to-purple-700 transition-colors border-2 border-transparent hover:border-white">
+                                <span className="text-3xl">✨</span>
+                                <div className="text-left">
+                                    <span className="font-bold text-white text-sm lg:text-base block">Gemini AI</span>
+                                    <span className="text-xs text-blue-100">Google AI 기반 강력한 AI</span>
+                                </div>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Color Selection Screen */}
+            {aiMode && !playerColor && (
+                <div className="absolute inset-0 bg-black/50 z-50 flex items-center justify-center">
+                    <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 lg:p-8 shadow-2xl text-center mx-4">
+                        <div className="text-xs text-slate-500 dark:text-slate-400 mb-2">
+                            {aiMode === 'gemini' ? '✨ Gemini AI' : '🤖 간단한 AI'}
+                        </div>
                         <h2 className="text-xl lg:text-2xl font-bold text-slate-800 dark:text-white mb-4 lg:mb-6">색상을 선택하세요</h2>
                         <div className="flex gap-3 lg:gap-4">
                             <button onClick={() => startGame('white')} className="flex flex-col items-center gap-2 p-4 lg:p-6 bg-slate-100 dark:bg-slate-700 rounded-xl hover:bg-lime-100 dark:hover:bg-lime-900 transition-colors border-2 border-transparent hover:border-lime-500">
@@ -1377,6 +1556,9 @@ const ChessGame = () => {
                                 <span className="font-bold text-slate-700 dark:text-white text-sm lg:text-base">흑 (후공)</span>
                             </button>
                         </div>
+                        <button onClick={() => setAiMode(null)} className="mt-4 text-sm text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200">
+                            ← AI 모드 다시 선택
+                        </button>
                     </div>
                 </div>
             )}
@@ -1406,8 +1588,8 @@ const ChessGame = () => {
                 </div>
             </div>
 
-            {/* Chess Board - Fully Responsive */}
-            <div className="flex-shrink-0" style={{ width: 'min(calc(100vh - 180px), calc(100vw - 32px), 720px)', height: 'min(calc(100vh - 180px), calc(100vw - 32px), 720px)' }}>
+            {/* Chess Board - Fully Responsive - Maximum Size */}
+            <div className="flex-shrink-0" style={{ width: 'min(calc(100vh - 100px), calc(100vw - 400px), 800px)', height: 'min(calc(100vh - 100px), calc(100vw - 400px), 800px)' }}>
                 <div className="grid grid-cols-8 border-2 lg:border-4 border-lime-800 dark:border-lime-600 rounded-lg overflow-hidden shadow-2xl w-full h-full">
                     {(playerColor === 'black' ? [...board].reverse().map(row => [...row].reverse()) : board).map((row, displayR) => row.map((piece, displayC) => {
                         const r = playerColor === 'black' ? 7 - displayR : displayR;
@@ -1450,7 +1632,7 @@ const ChessGame = () => {
             </div>
 
             {/* Right Panel - Move History (hidden on mobile) */}
-            <div className="hidden lg:flex flex-col w-44" style={{ height: 'min(calc(100vh - 180px), 720px)' }}>
+            <div className="hidden lg:flex flex-col w-44" style={{ height: 'min(calc(100vh - 100px), 800px)' }}>
                 <div className="bg-white dark:bg-slate-800 rounded-lg shadow-lg border border-slate-200 dark:border-slate-700 flex-1 overflow-hidden flex flex-col">
                     <div className="text-sm font-bold text-slate-600 dark:text-slate-300 p-2 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900">
                         기보
