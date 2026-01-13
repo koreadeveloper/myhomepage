@@ -12,6 +12,8 @@ import GomokuGame from '../components/GomokuGame';
 import ReactionTest from '../components/ReactionTest';
 import TypingGame from '../components/TypingGame';
 import BlackjackGame from '../components/BlackjackGame';
+import PokerGame from '../components/PokerGame';
+import GoStopGame from '../components/GoStopGame';
 import QuizGame from '../components/QuizGame';
 import MathGame from '../components/MathGame';
 import MobileControls from '../components/MobileControls';
@@ -30,6 +32,8 @@ type Game = {
 
 const games: Game[] = [
     { title: '체스', description: 'AI와 대전하는 클래식 전략 게임', icon: 'grid_on', color: 'text-lime-700 dark:text-lime-400', bgColor: 'bg-lime-100 dark:bg-lime-900/30', accentColor: 'bg-lime-600', cornerAccentColor: 'bg-lime-600/10' },
+    { title: '포커', description: 'AI와 텍사스 홀덤 대결', icon: 'casino', color: 'text-red-600 dark:text-red-400', bgColor: 'bg-red-100 dark:bg-red-900/30', accentColor: 'bg-red-600', cornerAccentColor: 'bg-red-600/10' },
+    { title: '고스톱', description: 'AI와 1:1 맞고 대결', icon: 'filter_vintage', color: 'text-orange-600 dark:text-orange-400', bgColor: 'bg-orange-100 dark:bg-orange-900/30', accentColor: 'bg-orange-600', cornerAccentColor: 'bg-orange-600/10' },
     { title: '스네이크', description: '클래식 레트로 도전 게임', icon: 'gesture', color: 'text-emerald-600 dark:text-emerald-400', bgColor: 'bg-emerald-100 dark:bg-emerald-900/30', accentColor: 'bg-emerald-500', cornerAccentColor: 'bg-emerald-500/10' },
     { title: '테트리스', description: '블록을 완벽하게 맞춰라', icon: 'view_module', color: 'text-blue-600 dark:text-blue-400', bgColor: 'bg-blue-100 dark:bg-blue-900/30', accentColor: 'bg-blue-500', cornerAccentColor: 'bg-blue-500/10' },
     { title: '2048', description: '숫자를 합쳐 2048을 만들어라', icon: 'grid_4x4', color: 'text-amber-600 dark:text-amber-400', bgColor: 'bg-amber-100 dark:bg-amber-900/30', accentColor: 'bg-amber-500', cornerAccentColor: 'bg-amber-500/10' },
@@ -1867,6 +1871,8 @@ const GameZone: React.FC = () => {
     const renderGame = () => {
         switch (activeGame?.title) {
             case '체스': return <ChessGameNew />;
+            case '포커': return <PokerGame />;
+            case '고스톱': return <GoStopGame />;
             case '스네이크': return <SnakeGame />;
             case '테트리스': return <TetrisGame />;
             case '2048': return <Game2048 />;
