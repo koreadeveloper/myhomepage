@@ -1961,7 +1961,7 @@ const GameZone: React.FC = () => {
                         <div className="text-sm font-medium text-slate-500 hidden sm:block">ESC 또는 뒤로가기 버튼으로 나가기</div>
                     </div>
                     {/* Game Container: Flexible and Centered */}
-                    <div className="flex-1 overflow-y-auto relative flex flex-col items-center p-2 sm:p-6 bg-slate-50 dark:bg-slate-900/50">
+                    <div className="flex-1 overflow-y-auto relative flex flex-col items-center px-2 py-20 sm:p-6 bg-slate-50 dark:bg-slate-900/50">
                         <div className="w-full min-h-full max-w-7xl flex items-center justify-center relative">
                             {activeGame && renderGame()}
                         </div>
