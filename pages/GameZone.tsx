@@ -16,6 +16,14 @@ import PokerGame from '../components/PokerGame';
 import GoStopGame from '../components/GoStopGame';
 import QuizGame from '../components/QuizGame';
 import MathGame from '../components/MathGame';
+import SlidingPuzzleGame from '../components/SlidingPuzzleGame';
+import DartsGame from '../components/DartsGame';
+import CheckersGame from '../components/CheckersGame';
+import SolitaireGame from '../components/SolitaireGame';
+import FreecellGame from '../components/FreecellGame';
+import PoolGame from '../components/PoolGame';
+import GoGame from '../components/GoGame';
+import RubiksCubeGame from '../components/RubiksCubeGame';
 import MobileControls from '../components/MobileControls';
 
 // --- Shared Types & Constants ---
@@ -57,6 +65,14 @@ const games: Game[] = [
     { title: '블랙잭', description: '21을 향한 카드 게임', icon: 'casino', color: 'text-violet-600 dark:text-violet-400', bgColor: 'bg-violet-100 dark:bg-violet-900/30', accentColor: 'bg-violet-600', cornerAccentColor: 'bg-violet-500/10' },
     { title: '퀴즈', description: '어려운 상식 문제 도전', icon: 'quiz', color: 'text-fuchsia-600 dark:text-fuchsia-400', bgColor: 'bg-fuchsia-100 dark:bg-fuchsia-900/30', accentColor: 'bg-fuchsia-600', cornerAccentColor: 'bg-fuchsia-500/10' },
     { title: '암산', description: '60초 수학 계산 챌린지', icon: 'functions', color: 'text-blue-600 dark:text-blue-400', bgColor: 'bg-blue-100 dark:bg-blue-900/30', accentColor: 'bg-blue-600', cornerAccentColor: 'bg-blue-500/10' },
+    { title: '슬라이딩 퍼즐', description: '숫자 타일을 순서대로 정렬', icon: 'grid_4x4', color: 'text-indigo-600 dark:text-indigo-400', bgColor: 'bg-indigo-100 dark:bg-indigo-900/30', accentColor: 'bg-indigo-600', cornerAccentColor: 'bg-indigo-500/10' },
+    { title: '다트', description: '정확하게 과녁을 맞춰라', icon: 'gps_fixed', color: 'text-red-600 dark:text-red-400', bgColor: 'bg-red-100 dark:bg-red-900/30', accentColor: 'bg-red-600', cornerAccentColor: 'bg-red-500/10' },
+    { title: '체커', description: '점프로 상대를 잡아라', icon: 'grid_view', color: 'text-amber-600 dark:text-amber-400', bgColor: 'bg-amber-100 dark:bg-amber-900/30', accentColor: 'bg-amber-600', cornerAccentColor: 'bg-amber-500/10' },
+    { title: '솔리테어', description: '클래식 카드 정리 게임', icon: 'style', color: 'text-green-600 dark:text-green-400', bgColor: 'bg-green-100 dark:bg-green-900/30', accentColor: 'bg-green-600', cornerAccentColor: 'bg-green-500/10' },
+    { title: '프리셀', description: '모든 카드가 보이는 전략 게임', icon: 'view_column', color: 'text-blue-600 dark:text-blue-400', bgColor: 'bg-blue-100 dark:bg-blue-900/30', accentColor: 'bg-blue-600', cornerAccentColor: 'bg-blue-500/10' },
+    { title: '당구', description: '2D 당구 시뮬레이션', icon: 'sports_baseball', color: 'text-emerald-600 dark:text-emerald-400', bgColor: 'bg-emerald-100 dark:bg-emerald-900/30', accentColor: 'bg-emerald-600', cornerAccentColor: 'bg-emerald-500/10' },
+    { title: '바둑', description: 'AI와 고대 전략 대결', icon: 'blur_on', color: 'text-slate-700 dark:text-slate-300', bgColor: 'bg-slate-100 dark:bg-slate-800/50', accentColor: 'bg-slate-700', cornerAccentColor: 'bg-slate-500/10' },
+    { title: '루빅스 큐브', description: '3D 큐브 퍼즐 도전', icon: 'view_in_ar', color: 'text-purple-600 dark:text-purple-400', bgColor: 'bg-purple-100 dark:bg-purple-900/30', accentColor: 'bg-purple-600', cornerAccentColor: 'bg-purple-500/10' },
 ];
 
 // --- Game 1: Snake (Canvas) ---
@@ -1894,6 +1910,14 @@ const GameZone: React.FC = () => {
             case '블랙잭': return <BlackjackGame />;
             case '퀴즈': return <QuizGame />;
             case '암산': return <MathGame />;
+            case '슬라이딩 퍼즐': return <SlidingPuzzleGame />;
+            case '다트': return <DartsGame />;
+            case '체커': return <CheckersGame />;
+            case '솔리테어': return <SolitaireGame />;
+            case '프리셀': return <FreecellGame />;
+            case '당구': return <PoolGame />;
+            case '바둑': return <GoGame />;
+            case '루빅스 큐브': return <RubiksCubeGame />;
             default: return <div>게임을 찾을 수 없습니다</div>;
         }
     };

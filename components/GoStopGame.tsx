@@ -73,7 +73,7 @@ const createHwatuDeck = (): HwatuCard[] => {
         // 12월 비
         { month: 12, type: 'gwang', name: '비 광' },
         { month: 12, type: 'yul', name: '비 열끗' },
-        { month: 12, type: 'tti', tti: 'hong', name: '비 홍단' }, // 비에 홍단 없음, 초단으로 변경
+        { month: 12, type: 'tti', tti: null, name: '비 띠' }, // 비 띠는 특수 족보(홍/청/초)에 포함되지 않음
         { month: 12, type: 'pi', isDouble: true, name: '비 쌍피' },
     ];
     return deck.map((card, idx) => ({ ...card, id: idx }));
@@ -1060,7 +1060,7 @@ const GoStopGame: React.FC = () => {
                             : card.type === 'tti' ? 'text-green-600'
                                 : 'text-gray-600'
                     }`}>
-                    {card.type === 'gwang' ? '光' : card.type === 'yul' ? '열' : card.type === 'tti' ? (card.tti === 'hong' ? '홍' : card.tti === 'cheong' ? '청' : '초') : '피'}
+                    {card.type === 'gwang' ? '光' : card.type === 'yul' ? '열' : card.type === 'tti' ? (card.tti === 'hong' ? '홍' : card.tti === 'cheong' ? '청' : card.tti === 'cho' ? '초' : '띠') : '피'}
                 </span>
             </div>
         );
