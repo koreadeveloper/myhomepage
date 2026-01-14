@@ -150,3 +150,27 @@ export const getTopScores = async (gameId: string, limit = 10) => {
   return data || [];
 };
 
+/**
+ * Securely verify if a password matches for a specific item (post, comment, guestbook)
+ * using the database RCP function.
+ */
+export const verifyItemPassword = async (table: 'posts' | 'comments' | 'guestbook', id: string, password: string): Promise<boolean> => {
+  try {
+    const { data, error } = await supabase.rpc('verify_item_password', {
+      p_table: table,
+      p_id: id,
+      p_password: password
+    });
+
+    if (error) {
+      console.error('Password verification RPC error:', error);
+      return false;
+    }
+
+    return !!data;
+  } catch (e) {
+    console.error('Password verification exception:', e);
+    return false;
+  }
+};
+

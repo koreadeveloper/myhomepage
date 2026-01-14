@@ -6,6 +6,7 @@ const AdminLogin: React.FC = () => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [loading, setLoading] = useState(false);
+    const [rateLimit, setRateLimit] = useState(false); // Rate limiting state
     const [errorMsg, setErrorMsg] = useState<string | null>(null);
     const navigate = useNavigate();
 
@@ -21,8 +22,18 @@ const AdminLogin: React.FC = () => {
 
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
+
+        if (rateLimit) return; // Prevent brute force script
+
         setLoading(true);
         setErrorMsg(null);
+
+        // Basic validation
+        if (!email.includes('@') || password.length < 6) {
+            setErrorMsg('올바른 이메일과 비밀번호를 입력해주세요.');
+            setLoading(false);
+            return;
+        }
 
         try {
             // 1. 로그인
@@ -32,7 +43,7 @@ const AdminLogin: React.FC = () => {
             });
 
             if (error) throw error;
-            if (!user) throw new Error('사용자 정보를 찾을 수 없습니다.');
+            if (!user) throw new Error('Auth failed'); // Generic internal error
 
             // 2. 관리자 권한 확인
             const { data: adminData, error: adminError } = await supabase
@@ -43,15 +54,20 @@ const AdminLogin: React.FC = () => {
 
             if (adminError || !adminData) {
                 await supabase.auth.signOut();
-                throw new Error('관리자 권한이 없습니다.');
+                throw new Error('Unauthorized'); // Generic internal error
             }
 
             // 3. 대시보드로 이동
             navigate('/admin/dashboard');
 
         } catch (err: any) {
-            console.error('Login failed:', err);
-            setErrorMsg(err.message || '로그인에 실패했습니다.');
+            console.error('Login attempt failed'); // Don't log specific error to console in production if possible, or keep internal
+            // SECURITY: Use generic error message to prevent user enumeration
+            setErrorMsg('이메일 또는 비밀번호가 잘못되었거나 접근 권한이 없습니다.');
+
+            // Rate limiting: Lock button for 3 seconds
+            setRateLimit(true);
+            setTimeout(() => setRateLimit(false), 3000);
         } finally {
             setLoading(false);
         }
@@ -90,17 +106,18 @@ const AdminLogin: React.FC = () => {
                     </div>
 
                     {errorMsg && (
-                        <div className="p-3 bg-red-500/10 border border-red-500/50 rounded-lg text-red-500 text-sm font-medium text-center">
+                        <div className="p-3 bg-red-500/10 border border-red-500/50 rounded-lg text-red-500 text-sm font-medium text-center animate-shake">
                             {errorMsg}
+                            {rateLimit && <div className="text-xs mt-1 text-red-400">잠시 후 다시 시도해주세요.</div>}
                         </div>
                     )}
 
                     <button
                         type="submit"
-                        disabled={loading}
-                        className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-lg transition-all transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                        disabled={loading || rateLimit}
+                        className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-lg transition-all transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100"
                     >
-                        {loading ? '인증 중...' : '시스템 접속 🚀'}
+                        {loading ? '인증 중...' : rateLimit ? '잠시 대기...' : '시스템 접속 🚀'}
                     </button>
                 </form>
 
