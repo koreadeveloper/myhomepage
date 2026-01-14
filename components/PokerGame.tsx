@@ -331,16 +331,22 @@ const PokerGame: React.FC = () => {
     );
 
     return (
-        <div className="flex flex-col lg:flex-row gap-4 w-full min-h-screen p-2 sm:p-4 overflow-y-auto pb-24">
+        <div className="flex flex-col lg:flex-row gap-4 w-full min-h-screen p-2 sm:p-4 pt-8 sm:pt-10 overflow-y-auto pb-24">
             {/* 메인 게임 영역 */}
-            <div className="flex-1 flex flex-col items-center gap-4 sm:gap-6 max-w-4xl mx-auto">
+            <div className="flex-1 flex flex-col items-center gap-4 sm:gap-6 max-w-4xl mx-auto pt-2">
                 {/* 칩 & 팟 정보 + 모바일 가이드 버튼 */}
-                <div className="flex justify-between items-center w-full px-4">
-                    <div className="text-2xl sm:text-3xl font-bold text-yellow-500 drop-shadow-lg">💰 {chips}</div>
+                <div className="flex justify-between items-center w-full px-4 bg-white/80 dark:bg-slate-800/80 rounded-xl py-3 shadow-md">
+                    <div className="flex flex-col items-center">
+                        <span className="text-xs text-slate-500 dark:text-slate-400">보유 칩</span>
+                        <span className="text-2xl sm:text-3xl font-bold text-yellow-500 drop-shadow-lg">💰 {chips}</span>
+                    </div>
                     <button onClick={() => setShowMobileModal(true)} className="lg:hidden flex items-center gap-1 px-3 py-2 bg-gradient-to-r from-purple-500 to-indigo-500 text-white rounded-lg font-bold text-sm shadow-lg active:scale-95">
                         <span>📖</span><span>가이드</span>
                     </button>
-                    <div className="text-2xl sm:text-3xl font-bold text-green-500 drop-shadow-lg">🏆 {pot}</div>
+                    <div className="flex flex-col items-center">
+                        <span className="text-xs text-slate-500 dark:text-slate-400">현재 팟</span>
+                        <span className="text-2xl sm:text-3xl font-bold text-green-500 drop-shadow-lg">🏆 {pot}</span>
+                    </div>
                 </div>
 
                 {/* 딜러 영역 */}
@@ -377,6 +383,9 @@ const PokerGame: React.FC = () => {
                     <div className="flex flex-col items-center gap-4">
                         {chips > 0 ? (
                             <>
+                                <div className="bg-yellow-100 dark:bg-yellow-900/30 px-6 py-2 rounded-xl mb-2">
+                                    <span className="text-lg font-bold text-yellow-700 dark:text-yellow-400">💰 보유: {chips} 칩</span>
+                                </div>
                                 <div className="flex items-center gap-4">
                                     <button onClick={() => setBetAmount(b => Math.max(50, b - 50))} className="px-5 py-3 bg-slate-600 text-white text-lg rounded-xl font-bold active:bg-slate-500 shadow-lg">-50</button>
                                     <span className="text-xl sm:text-2xl font-bold text-slate-800 dark:text-white min-w-[100px] text-center">베팅: {betAmount}</span>
