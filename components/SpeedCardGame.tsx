@@ -171,20 +171,20 @@ const SpeedCardGame: React.FC = () => {
                 {centerPiles.map((card, idx) => (
                     <div
                         key={idx}
-                        className="w-20 h-28 bg-white rounded-xl shadow-lg flex flex-col items-center justify-center
+                        className="w-24 h-36 bg-white rounded-xl shadow-lg flex flex-col items-center justify-center
                             border-4 border-slate-300"
                     >
                         {card ? (
                             <>
-                                <span className={`text-2xl font-bold ${getCardColor(card.suit)}`}>
+                                <span className={`text-3xl font-bold ${getCardColor(card.suit)}`}>
                                     {card.value}
                                 </span>
-                                <span className={`text-3xl ${getCardColor(card.suit)}`}>
+                                <span className={`text-4xl ${getCardColor(card.suit)}`}>
                                     {card.suit}
                                 </span>
                             </>
                         ) : (
-                            <span className="text-slate-300 text-2xl">?</span>
+                            <span className="text-slate-300 text-3xl">?</span>
                         )}
                     </div>
                 ))}
@@ -200,14 +200,14 @@ const SpeedCardGame: React.FC = () => {
                     return (
                         <div key={card.id} className="flex flex-col gap-1">
                             <div
-                                className={`w-14 h-20 bg-white rounded-lg shadow flex flex-col items-center justify-center
+                                className={`w-16 h-24 bg-white rounded-lg shadow flex flex-col items-center justify-center
                                     cursor-pointer transition-all
                                     ${playable ? 'hover:scale-110 ring-2 ring-green-400' : 'opacity-70'}`}
                             >
-                                <span className={`text-lg font-bold ${getCardColor(card.suit)}`}>
+                                <span className={`text-xl font-bold ${getCardColor(card.suit)}`}>
                                     {card.value}
                                 </span>
-                                <span className={`text-xl ${getCardColor(card.suit)}`}>
+                                <span className={`text-2xl ${getCardColor(card.suit)}`}>
                                     {card.suit}
                                 </span>
                             </div>

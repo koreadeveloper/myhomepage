@@ -271,7 +271,7 @@ const GoGame: React.FC = () => {
     };
 
     const score = getScore();
-    const cellSize = boardSize === 9 ? 44 : boardSize === 13 ? 34 : 24;
+    const cellSize = boardSize === 9 ? 52 : boardSize === 13 ? 40 : 28;
 
     return (
         <div className="flex flex-col items-center justify-center w-full h-full p-4 gap-4">

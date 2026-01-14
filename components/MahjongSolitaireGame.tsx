@@ -179,14 +179,14 @@ const MahjongSolitaireGame: React.FC = () => {
                 <div
                     key={tile.id}
                     onClick={() => handleTileClick(tile)}
-                    className={`absolute w-10 h-14 sm:w-12 sm:h-16 flex items-center justify-center
-                        text-2xl sm:text-3xl rounded cursor-pointer transition-all
+                    className={`absolute w-12 h-16 sm:w-14 sm:h-20 flex items-center justify-center
+                        text-3xl sm:text-4xl rounded cursor-pointer transition-all
                         ${isSelected ? 'ring-4 ring-yellow-400 z-50' : ''}
                         ${isFree ? 'bg-amber-50 hover:bg-amber-100 shadow-lg' : 'bg-gray-200 cursor-not-allowed opacity-70'}
                         border-2 border-amber-700`}
                     style={{
-                        left: `${tile.col * 48 + tile.layer * 8}px`,
-                        top: `${tile.row * 56 + tile.layer * 8}px`,
+                        left: `${tile.col * 54 + tile.layer * 8}px`,
+                        top: `${tile.row * 70 + tile.layer * 8}px`,
                         zIndex: tile.layer * 10 + tile.row,
                     }}
                 >

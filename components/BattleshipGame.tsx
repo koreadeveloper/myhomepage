@@ -182,7 +182,7 @@ const BattleshipGame: React.FC = () => {
                         <div
                             key={`${rowIdx}-${colIdx}`}
                             onClick={() => isEnemy ? handleEnemyBoardClick(rowIdx, colIdx) : handlePlayerBoardClick(rowIdx, colIdx)}
-                            className={`w-6 h-6 sm:w-7 sm:h-7 flex items-center justify-center text-xs cursor-pointer transition-all
+                            className={`w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center text-xs cursor-pointer transition-all
                                 ${cell === 'empty' ? 'bg-blue-400 hover:bg-blue-300' : ''}
                                 ${cell === 'ship' && !isEnemy ? 'bg-gray-500' : ''}
                                 ${cell === 'hit' ? 'bg-red-500' : ''}

@@ -207,7 +207,7 @@ const YachtGame: React.FC = () => {
                     <div
                         key={idx}
                         onClick={() => toggleHold(idx)}
-                        className={`w-14 h-14 sm:w-16 sm:h-16 flex items-center justify-center text-3xl sm:text-4xl
+                        className={`w-16 h-16 sm:w-20 sm:h-20 flex items-center justify-center text-4xl sm:text-5xl
                             bg-white rounded-xl shadow-lg cursor-pointer transition-all
                             ${held[idx] ? 'ring-4 ring-green-500 bg-green-50' : 'hover:bg-slate-50'}
                             ${die === 0 ? 'text-slate-300' : ''}`}

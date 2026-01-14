@@ -157,8 +157,8 @@ const ConnectFourGame: React.FC = () => {
 
             {winner && (
                 <div className={`px-6 py-3 rounded-xl font-bold text-white ${winner === 'red' ? 'bg-gradient-to-r from-red-500 to-orange-500' :
-                        winner === 'yellow' ? 'bg-gradient-to-r from-yellow-500 to-amber-500' :
-                            'bg-gradient-to-r from-gray-500 to-slate-500'
+                    winner === 'yellow' ? 'bg-gradient-to-r from-yellow-500 to-amber-500' :
+                        'bg-gradient-to-r from-gray-500 to-slate-500'
                     }`}>
                     {winner === 'red' ? '🎉 승리!' : winner === 'yellow' ? '😢 AI 승리!' : '🤝 무승부!'}
                 </div>
@@ -171,12 +171,12 @@ const ConnectFourGame: React.FC = () => {
                             <div
                                 key={`${rowIdx}-${colIdx}`}
                                 onClick={() => handleClick(colIdx)}
-                                className={`w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center cursor-pointer
+                                className={`w-14 h-14 sm:w-18 sm:h-18 rounded-full flex items-center justify-center cursor-pointer
                                     bg-blue-800 hover:bg-blue-700 transition-all
                                     ${isWinning(rowIdx, colIdx) ? 'animate-pulse ring-4 ring-green-400' : ''}`}
                             >
                                 {cell && (
-                                    <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-full shadow-lg
+                                    <div className={`w-12 h-12 sm:w-16 sm:h-16 rounded-full shadow-lg
                                         ${cell === 'red'
                                             ? 'bg-gradient-to-br from-red-400 to-red-600'
                                             : 'bg-gradient-to-br from-yellow-300 to-yellow-500'}`}

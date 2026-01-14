@@ -147,7 +147,7 @@ const SimonGame: React.FC = () => {
             </div>
 
             {/* Simon 보드 */}
-            <div className="grid grid-cols-2 gap-3 p-4 bg-slate-900 rounded-full w-64 h-64 sm:w-80 sm:h-80">
+            <div className="grid grid-cols-2 gap-3 p-4 bg-slate-900 rounded-full w-80 h-80 sm:w-96 sm:h-96">
                 {colors.map((color, idx) => (
                     <button
                         key={color}

@@ -257,7 +257,7 @@ const JanggiGame: React.FC = () => {
 
     const getPieceDisplay = (piece: Piece) => {
         return (
-            <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center font-bold text-sm
+            <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center font-bold text-lg
                 border-2 shadow-md
                 ${piece.player === 'cho'
                     ? 'bg-green-100 border-green-600 text-green-700'
@@ -299,7 +299,7 @@ const JanggiGame: React.FC = () => {
                                     <div
                                         key={colIdx}
                                         onClick={() => handleClick(rowIdx, colIdx)}
-                                        className={`w-10 h-10 sm:w-11 sm:h-11 flex items-center justify-center cursor-pointer
+                                        className={`w-12 h-12 sm:w-14 sm:h-14 flex items-center justify-center cursor-pointer
                                             border border-amber-700/30 relative
                                             ${isSelected ? 'bg-yellow-300' : ''}
                                             ${isValid ? 'bg-green-200' : ''}`}

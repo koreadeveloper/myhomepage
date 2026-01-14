@@ -12,6 +12,8 @@ interface HwatuCard {
     isDouble?: boolean; // 쌍피
 }
 
+type GamePhase = 'ready' | 'playing' | 'selectMatch' | 'finished' | 'goOrStop';
+
 // 화투 48장 정의
 const createHwatuDeck = (): HwatuCard[] => {
     const deck: HwatuCard[] = [

@@ -196,7 +196,7 @@ const WordSearchGame: React.FC = () => {
                                 key={`${rowIdx}-${colIdx}`}
                                 onMouseDown={() => handleCellMouseDown(rowIdx, colIdx)}
                                 onMouseEnter={() => handleCellMouseEnter(rowIdx, colIdx)}
-                                className={`w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center font-bold text-sm sm:text-base
+                                className={`w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center font-bold text-base sm:text-lg
                                     cursor-pointer transition-all select-none rounded
                                     ${isFound(rowIdx, colIdx)
                                         ? 'bg-green-500 text-white'

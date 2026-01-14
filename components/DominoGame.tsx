@@ -229,12 +229,12 @@ const DominoGame: React.FC = () => {
                         <div
                             key={domino.id}
                             onClick={() => handleDominoClick(domino)}
-                            className={`bg-white rounded-lg px-3 py-2 shadow-lg text-center font-bold cursor-pointer transition-all
-                                ${playable ? 'hover:ring-2 hover:ring-green-500 hover:scale-105' : 'opacity-60'}`}
+                            className={`bg-white rounded-lg w-16 h-28 flex flex-col items-center justify-center shadow-lg font-bold cursor-pointer transition-all
+                                ${playable ? 'hover:ring-4 hover:ring-green-500 hover:scale-105' : 'opacity-60'}`}
                         >
-                            <div className="text-lg">{domino.top}</div>
-                            <div className="border-t-2 border-slate-400 my-1 w-6 mx-auto"></div>
-                            <div className="text-lg">{domino.bottom}</div>
+                            <div className="text-3xl">{domino.top}</div>
+                            <div className="border-t-4 border-slate-400 my-1 w-10 mx-auto"></div>
+                            <div className="text-3xl">{domino.bottom}</div>
                         </div>
                     );
                 })}

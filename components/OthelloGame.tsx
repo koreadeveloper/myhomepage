@@ -194,12 +194,12 @@ const OthelloGame: React.FC = () => {
                             <div
                                 key={`${rowIdx}-${colIdx}`}
                                 onClick={() => handleClick(rowIdx, colIdx)}
-                                className={`w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center cursor-pointer transition-all
+                                className={`w-12 h-12 sm:w-16 sm:h-16 flex items-center justify-center cursor-pointer transition-all
                                     bg-green-600 hover:bg-green-500
                                     ${isValid(rowIdx, colIdx) ? 'ring-2 ring-yellow-400 ring-inset' : ''}`}
                             >
                                 {cell && (
-                                    <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-full shadow-lg transition-all
+                                    <div className={`w-10 h-10 sm:w-14 sm:h-14 rounded-full shadow-lg transition-all
                                         ${cell === 'black'
                                             ? 'bg-gradient-to-br from-gray-700 to-black'
                                             : 'bg-gradient-to-br from-white to-gray-200 border border-gray-300'}`}

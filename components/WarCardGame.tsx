@@ -152,15 +152,15 @@ const WarCardGame: React.FC = () => {
         <div className="flex flex-col items-center gap-2">
             <div className="text-sm text-slate-500">{label}</div>
             <div
-                className={`w-20 h-28 sm:w-24 sm:h-32 rounded-xl shadow-lg flex flex-col items-center justify-center
+                className={`w-24 h-36 sm:w-32 sm:h-44 rounded-xl shadow-lg flex flex-col items-center justify-center
                     ${card ? 'bg-white' : 'bg-gradient-to-br from-blue-600 to-blue-800'} border-4 border-slate-300`}
             >
                 {card ? (
                     <>
-                        <span className={`text-2xl sm:text-3xl font-bold ${getCardColor(card.suit)}`}>
+                        <span className={`text-3xl sm:text-4xl font-bold ${getCardColor(card.suit)}`}>
                             {card.value}
                         </span>
-                        <span className={`text-3xl sm:text-4xl ${getCardColor(card.suit)}`}>
+                        <span className={`text-4xl sm:text-5xl ${getCardColor(card.suit)}`}>
                             {card.suit}
                         </span>
                     </>
@@ -204,14 +204,14 @@ const WarCardGame: React.FC = () => {
             {/* 덱 */}
             <div
                 onClick={flipCard}
-                className={`w-24 h-32 rounded-xl shadow-lg flex items-center justify-center cursor-pointer
+                className={`w-32 h-44 rounded-xl shadow-lg flex items-center justify-center cursor-pointer
                     bg-gradient-to-br from-indigo-600 to-purple-700 border-4 border-indigo-400
                     hover:scale-105 transition-transform
                     ${gameOver ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
                 <div className="text-center text-white">
-                    <div className="text-3xl">🃏</div>
-                    <div className="text-xs mt-1">클릭!</div>
+                    <div className="text-4xl">🃏</div>
+                    <div className="text-sm mt-1">클릭!</div>
                 </div>
             </div>
 
