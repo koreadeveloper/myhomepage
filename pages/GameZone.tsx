@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Link } from 'react-router-dom';
+import Sidebar from '../components/Sidebar';
 import ChessGameNew from '../components/ChessGame';
 import PacmanGame from '../components/PacmanGame';
 import BreakoutGame from '../components/BreakoutGame';
@@ -1960,32 +1961,12 @@ const GameZone: React.FC = () => {
 
     return (
         <div className={`flex h-[calc(100vh-72px)] overflow-hidden ${isDarkMode ? 'dark' : ''}`}>
-            <button onClick={() => setIsMobileSidebarOpen(true)} className="lg:hidden fixed top-24 left-4 z-40 p-3 bg-white dark:bg-slate-800 rounded-xl shadow-lg border border-gray-100 dark:border-slate-700">
-                <span className="material-icons-round text-slate-600 dark:text-slate-300">menu</span>
-            </button>
-            {isMobileSidebarOpen && <div onClick={() => setIsMobileSidebarOpen(false)} className="lg:hidden fixed inset-0 bg-black/50 z-40" />}
-
-            <aside className={`w-64 bg-white dark:bg-slate-800 border-r border-gray-100 dark:border-slate-700 flex flex-col p-6 space-y-6 overflow-y-auto z-50 fixed lg:relative inset-y-0 left-0 transform transition-transform duration-300 ease-in-out ${isMobileSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}>
-                <button onClick={() => setIsMobileSidebarOpen(false)} className="lg:hidden absolute top-4 right-4 p-2 text-slate-400 hover:text-slate-600"><span className="material-icons-round">close</span></button>
-                <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-slate-500 dark:text-slate-400">테마</span>
-                    <button onClick={toggleDarkMode} className={`p-2 rounded-xl transition-all ${isDarkMode ? 'bg-indigo-500 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}>
-                        <span className="material-icons-round text-sm">{isDarkMode ? 'dark_mode' : 'light_mode'}</span>
-                    </button>
-                </div>
-                <div className="flex items-center gap-3 p-3 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-2xl text-white">
-                    <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center"><span className="material-icons-round">person</span></div>
-                    <div><div className="font-bold text-sm">운영자</div><div className="text-[10px] opacity-80">게임 마스터</div></div>
-                </div>
-                <div>
-                    <h4 className="text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest mb-4">바로가기</h4>
-                    <nav className="space-y-1">
-                        <Link to="/" className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-lg transition-colors"><span className="material-icons-round text-lg">home</span> 홈</Link>
-                        <Link to="/community" className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-lg transition-colors"><span className="material-icons-round text-lg">forum</span> 커뮤니티</Link>
-                        <Link to="/guestbook" className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-lg transition-colors"><span className="material-icons-round text-lg">history_edu</span> 방명록</Link>
-                    </nav>
-                </div>
-            </aside>
+            <Sidebar
+                isDarkMode={isDarkMode}
+                toggleDarkMode={toggleDarkMode}
+                isMobileSidebarOpen={isMobileSidebarOpen}
+                setIsMobileSidebarOpen={setIsMobileSidebarOpen}
+            />
 
             <main className="flex-grow overflow-hidden relative bg-[#f9f9fb] dark:bg-slate-900">
                 <div className={`h-full overflow-y-auto p-6 transition-all duration-300 transform ${activeGame ? 'opacity-0 scale-95 pointer-events-none' : 'opacity-100 scale-100 pointer-events-auto'}`}>
