@@ -885,6 +885,7 @@ const MemoryMatch = () => {
 const TicTacToe = () => {
     const [board, setBoard] = useState(Array(9).fill(null));
     const [isXNext, setIsXNext] = useState(true);
+    const [isAiThinking, setIsAiThinking] = useState(false); // Prevent rapid clicks
     const winner = calculateWinner(board);
 
     function calculateWinner(squares: any[]) {
@@ -897,16 +898,18 @@ const TicTacToe = () => {
     }
 
     const handleClick = (i: number) => {
-        if (board[i] || winner) return;
+        // Block if: cell occupied, game over, not player's turn, AI is thinking
+        if (board[i] || winner || !isXNext || isAiThinking) return;
         const newBoard = [...board];
         newBoard[i] = 'X';
         setBoard(newBoard);
         setIsXNext(false);
+        setIsAiThinking(true);
     };
 
     // AI Turn
     useEffect(() => {
-        if (!isXNext && !winner && board.some(x => x === null)) {
+        if (!isXNext && !winner && board.some(x => x === null) && isAiThinking) {
             const timer = setTimeout(() => {
                 const emptyIndices = board.map((bs, i) => bs === null ? i : null).filter(i => i !== null);
                 const rand = emptyIndices[Math.floor(Math.random() * emptyIndices.length)];
@@ -915,30 +918,34 @@ const TicTacToe = () => {
                     newBoard[rand] = 'O';
                     setBoard(newBoard);
                     setIsXNext(true);
+                    setIsAiThinking(false);
                 }
             }, 500);
             return () => clearTimeout(timer);
         }
-    }, [isXNext, winner, board]);
+    }, [isXNext, winner, board, isAiThinking]);
 
     return (
         <div className="flex flex-col items-center w-full h-full justify-center">
             <div className="mb-8 text-2xl font-bold dark:text-white">
                 {winner ? `승자: ${winner}` : board.every(Boolean) ? '무승부!' : `차례: ${isXNext ? '당신 (X)' : 'AI (O)'}`}
             </div>
-            <div className="grid grid-cols-3 gap-4 w-full max-w-[50vh] aspect-square">
+            <div className="grid grid-cols-3 gap-3 w-full max-w-xs sm:max-w-sm aspect-square">
                 {board.map((val, i) => (
                     <button
                         key={i}
                         onClick={() => handleClick(i)}
-                        className={`w-full h-full bg-slate-100 dark:bg-slate-800 rounded-2xl text-6xl sm:text-8xl font-black flex items-center justify-center shadow-md hover:shadow-lg transition-all
-                            ${val === 'X' ? 'text-blue-500' : 'text-red-500'}`}
+                        disabled={!isXNext || isAiThinking || !!board[i] || !!winner}
+                        className={`aspect-square w-full bg-slate-100 dark:bg-slate-800 rounded-2xl text-5xl sm:text-6xl font-black flex items-center justify-center shadow-md transition-all
+                            ${val === 'X' ? 'text-blue-500' : 'text-red-500'}
+                            ${!isXNext || isAiThinking ? 'cursor-not-allowed opacity-80' : 'hover:shadow-lg cursor-pointer'}`}
+                        style={{ minWidth: '80px', minHeight: '80px' }}
                     >
                         {val}
                     </button>
                 ))}
             </div>
-            <button onClick={() => { setBoard(Array(9).fill(null)); setIsXNext(true); }} className="mt-8 px-8 py-3 bg-cyan-500 text-white rounded-xl font-bold hover:bg-cyan-600 transition-colors">다시 시작</button>
+            <button onClick={() => { setBoard(Array(9).fill(null)); setIsXNext(true); setIsAiThinking(false); }} className="mt-8 px-8 py-3 bg-cyan-500 text-white rounded-xl font-bold hover:bg-cyan-600 transition-colors">다시 시작</button>
         </div>
     );
 };

@@ -17,14 +17,23 @@ const MathGame = () => {
     const inputRef = useRef<HTMLInputElement>(null);
 
     const generateQuestion = useCallback(() => {
-        const operations: Operation[] = ['+', '-'];
-        if (level >= 2) operations.push('×');
-        if (level >= 3) operations.push('÷');
+        // Progressive difficulty based on level (increases every 5 correct answers)
+        // Level 1: Single digit addition only
+        // Level 2: Single digit add/subtract
+        // Level 3: Two digit add/subtract
+        // Level 4+: Includes multiplication
+        // Level 6+: Includes division
+        const operations: Operation[] = level <= 2 ? ['+'] : ['+', '-'];
+        if (level >= 4) operations.push('×');
+        if (level >= 6) operations.push('÷');
 
         const op = operations[Math.floor(Math.random() * operations.length)];
         let num1: number, num2: number, answer: number;
 
-        const maxNum = Math.min(10 + level * 5, 100);
+        // Difficulty scaling
+        const singleDigitMax = 9;
+        const twoDigitMax = level >= 3 ? 50 : singleDigitMax;
+        const maxNum = level >= 5 ? 99 : twoDigitMax;
 
         switch (op) {
             case '+':
@@ -38,13 +47,13 @@ const MathGame = () => {
                 answer = num1 - num2;
                 break;
             case '×':
-                num1 = Math.floor(Math.random() * Math.min(12, maxNum / 2)) + 1;
-                num2 = Math.floor(Math.random() * Math.min(12, maxNum / 2)) + 1;
+                num1 = Math.floor(Math.random() * Math.min(9, maxNum / 2)) + 2;
+                num2 = Math.floor(Math.random() * Math.min(9, maxNum / 2)) + 2;
                 answer = num1 * num2;
                 break;
             case '÷':
-                num2 = Math.floor(Math.random() * 10) + 2;
-                answer = Math.floor(Math.random() * 10) + 1;
+                num2 = Math.floor(Math.random() * 9) + 2;
+                answer = Math.floor(Math.random() * 9) + 2;
                 num1 = num2 * answer;
                 break;
             default:

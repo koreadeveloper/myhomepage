@@ -15,11 +15,11 @@ const FlappyBirdGame = () => {
         frameCount: 0,
     });
 
-    const GRAVITY = 0.35;
-    const JUMP_FORCE = -7;
+    const GRAVITY = 0.25;
+    const JUMP_FORCE = -6;
     const PIPE_WIDTH = 70;
-    const PIPE_GAP = 180;
-    const PIPE_SPEED = 2.5;
+    const PIPE_GAP = 220;
+    const PIPE_SPEED = 2;
 
     const initGame = useCallback(() => {
         gameStateRef.current = {

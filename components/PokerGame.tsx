@@ -15,7 +15,7 @@ const handRankingsData = [
 ];
 
 // 미니 카드 컴포넌트 (외부)
-const MiniCardComponent = ({ v, s }: { v: string; s: string }) => {
+const MiniCardComponent: React.FC<{ v: string; s: string }> = ({ v, s }) => {
     const isRed = s === '♥' || s === '♦';
     return (
         <div className={`w-7 h-10 sm:w-8 sm:h-11 rounded flex flex-col items-center justify-center text-xs font-bold bg-white border border-slate-300 shadow-sm ${isRed ? 'text-red-500' : 'text-slate-800'}`}>
@@ -172,7 +172,7 @@ const PokerGame: React.FC = () => {
     const [playerRank, setPlayerRank] = useState<HandRank | null>(null);
     const [dealerRank, setDealerRank] = useState<HandRank | null>(null);
     const [message, setMessage] = useState('');
-    const [betAmount, setBetAmount] = useState(20);
+    const [betAmount, setBetAmount] = useState(50);
 
     // 가이드 상태
     const [showHandRankings, setShowHandRankings] = useState(true);
@@ -296,6 +296,7 @@ const PokerGame: React.FC = () => {
     const handleRaise = () => { const ra = betAmount; const tb = dealerBet + ra - currentBet; if (tb > chips) return; setChips(c => c - tb); const np = pot + tb; setPot(np); const npb = dealerBet + ra; setCurrentBet(npb); const ai = Math.random(); if (ai < 0.2 && phase !== 'preflop') { setMessage('딜러가 폴드!'); setResult('win'); setChips(c => c + np); setPhase('result'); } else if (ai < 0.5) { setDealerBet(npb + ra); setPot(p => p + ra); setMessage('딜러가 레이즈!'); } else { setDealerBet(npb); switch (phase) { case 'preflop': goToFlop(); break; case 'flop': goToTurn(); break; case 'turn': goToRiver(); break; case 'river': setCommunityCards(p => { goToShowdown(playerHand, dealerHand, p, np); return p; }); break; } } };
     const handleFold = () => { setResult('lose'); setMessage('폴드...'); setPhase('result'); };
     const resetGame = () => { setPhase('betting'); setPlayerHand([]); setDealerHand([]); setCommunityCards([]); setPot(0); setCurrentBet(0); setDealerBet(0); setResult(null); setPlayerRank(null); setDealerRank(null); setMessage(''); deckRef.current = []; };
+    const fullRestart = () => { setChips(1000); resetGame(); };
 
     // 카드 렌더링
     const renderCard = (card: Card, hidden = false, isSmall = false) => {
@@ -374,14 +375,25 @@ const PokerGame: React.FC = () => {
                 {/* 컨트롤 */}
                 {phase === 'betting' && (
                     <div className="flex flex-col items-center gap-4">
-                        <div className="flex items-center gap-4">
-                            <button onClick={() => setBetAmount(b => Math.max(10, b - 10))} className="px-5 py-3 bg-slate-600 text-white text-lg rounded-xl font-bold active:bg-slate-500 shadow-lg">-10</button>
-                            <span className="text-xl sm:text-2xl font-bold text-slate-800 dark:text-white min-w-[100px] text-center">베팅: {betAmount}</span>
-                            <button onClick={() => setBetAmount(b => Math.min(chips, b + 10))} className="px-5 py-3 bg-slate-600 text-white text-lg rounded-xl font-bold active:bg-slate-500 shadow-lg">+10</button>
-                        </div>
-                        <button onClick={startGame} disabled={betAmount > chips || chips <= 0} className="px-10 py-4 bg-gradient-to-r from-green-500 to-emerald-500 text-white text-xl font-bold rounded-xl hover:from-green-400 hover:to-emerald-400 disabled:from-slate-400 disabled:to-slate-500 shadow-xl transition-all hover:scale-105">
-                            {chips <= 0 ? '게임 오버' : '🎴 게임 시작'}
-                        </button>
+                        {chips > 0 ? (
+                            <>
+                                <div className="flex items-center gap-4">
+                                    <button onClick={() => setBetAmount(b => Math.max(50, b - 50))} className="px-5 py-3 bg-slate-600 text-white text-lg rounded-xl font-bold active:bg-slate-500 shadow-lg">-50</button>
+                                    <span className="text-xl sm:text-2xl font-bold text-slate-800 dark:text-white min-w-[100px] text-center">베팅: {betAmount}</span>
+                                    <button onClick={() => setBetAmount(b => Math.min(chips, b + 50))} className="px-5 py-3 bg-slate-600 text-white text-lg rounded-xl font-bold active:bg-slate-500 shadow-lg">+50</button>
+                                </div>
+                                <button onClick={startGame} disabled={betAmount > chips} className="px-10 py-4 bg-gradient-to-r from-green-500 to-emerald-500 text-white text-xl font-bold rounded-xl hover:from-green-400 hover:to-emerald-400 disabled:from-slate-400 disabled:to-slate-500 shadow-xl transition-all hover:scale-105">
+                                    🎴 게임 시작
+                                </button>
+                            </>
+                        ) : (
+                            <div className="flex flex-col items-center gap-4">
+                                <div className="text-2xl font-bold text-red-500">💸 칩이 없습니다!</div>
+                                <button onClick={fullRestart} className="px-10 py-4 bg-gradient-to-r from-indigo-500 to-purple-500 text-white text-xl font-bold rounded-xl shadow-xl transition-all hover:scale-105">
+                                    🔄 게임 다시 시작 (1000)
+                                </button>
+                            </div>
+                        )}
                     </div>
                 )}
 
@@ -395,7 +407,13 @@ const PokerGame: React.FC = () => {
                 )}
 
                 {phase === 'showdown' && <div className="text-xl text-slate-500 dark:text-slate-400 animate-pulse font-semibold">⏳ 결과 확인 중...</div>}
-                {phase === 'result' && <button onClick={resetGame} disabled={chips <= 0} className="px-10 py-4 bg-gradient-to-r from-green-500 to-emerald-500 text-white text-xl font-bold rounded-xl hover:from-green-400 hover:to-emerald-400 disabled:from-slate-400 disabled:to-slate-500 shadow-xl transition-all hover:scale-105">{chips <= 0 ? '칩이 없습니다' : '🔄 다음 게임'}</button>}
+                {phase === 'result' && (
+                    chips > 0 ? (
+                        <button onClick={resetGame} className="px-10 py-4 bg-gradient-to-r from-green-500 to-emerald-500 text-white text-xl font-bold rounded-xl shadow-xl transition-all hover:scale-105">🔄 다음 게임</button>
+                    ) : (
+                        <button onClick={fullRestart} className="px-10 py-4 bg-gradient-to-r from-indigo-500 to-purple-500 text-white text-xl font-bold rounded-xl shadow-xl transition-all hover:scale-105">🔄 게임 다시 시작 (1000)</button>
+                    )
+                )}
             </div>
 
             {/* PC 사이드바 */}

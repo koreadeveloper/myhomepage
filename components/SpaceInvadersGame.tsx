@@ -21,9 +21,9 @@ const SpaceInvadersGame = () => {
 
     const initGame = useCallback(() => {
         const enemies: { x: number; y: number; type: number }[] = [];
-        for (let row = 0; row < 5; row++) {
-            for (let col = 0; col < 10; col++) {
-                enemies.push({ x: col * 55 + 30, y: row * 45 + 50, type: row < 2 ? 0 : 1 });
+        for (let row = 0; row < 3; row++) {
+            for (let col = 0; col < 7; col++) {
+                enemies.push({ x: col * 70 + 50, y: row * 50 + 50, type: row < 1 ? 0 : 1 });
             }
         }
         gameStateRef.current = {
@@ -63,16 +63,16 @@ const SpaceInvadersGame = () => {
             state.enemyBullets = state.enemyBullets.filter(b => b.y < canvas.height);
             state.enemyBullets.forEach(b => b.y += 4);
 
-            // Move enemies
-            if (frameCount % 30 === 0) {
+            // Move enemies (slower)
+            if (frameCount % 45 === 0) {
                 let hitEdge = false;
                 state.enemies.forEach(e => {
-                    e.x += state.enemyDir * 10;
+                    e.x += state.enemyDir * 8;
                     if (e.x <= 10 || e.x >= canvas.width - 40) hitEdge = true;
                 });
                 if (hitEdge) {
                     state.enemyDir *= -1;
-                    state.enemies.forEach(e => e.y += 20);
+                    state.enemies.forEach(e => e.y += 15);
                 }
             }
 
@@ -177,10 +177,12 @@ const SpaceInvadersGame = () => {
     }, [started, gameOver, won, lives]);
 
     useEffect(() => {
+        const canvas = canvasRef.current;
         const handleKey = (e: KeyboardEvent) => {
             const state = gameStateRef.current;
+            const canvasWidth = canvas?.width || 600;
             if (e.key === 'ArrowLeft' || e.key === 'a') state.player.x = Math.max(0, state.player.x - 15);
-            if (e.key === 'ArrowRight' || e.key === 'd') state.player.x = Math.min(400 - state.player.width, state.player.x + 15);
+            if (e.key === 'ArrowRight' || e.key === 'd') state.player.x = Math.min(canvasWidth - state.player.width, state.player.x + 15);
             if (e.code === 'Space') {
                 e.preventDefault();
                 const now = Date.now();

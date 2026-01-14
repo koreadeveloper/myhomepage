@@ -1112,8 +1112,8 @@ const GoStopGame: React.FC = () => {
                 </div>
 
                 {/* AI 패 (뒷면) */}
-                <div className="text-center w-full">
-                    <div className="text-sm text-slate-500 dark:text-slate-400 mb-2">AI ({aiHand.length}장)</div>
+                <div className="text-center w-full mt-2 pt-4">
+                    <div className="text-sm sm:text-base text-slate-500 dark:text-slate-400 mb-2 px-2">상대 AI ({aiHand.length}장)</div>
                     <div className="flex gap-1 justify-center flex-wrap">
                         {aiHand.map((card, i) => (
                             <React.Fragment key={card.id}>
@@ -1375,7 +1375,7 @@ const GoStopGame: React.FC = () => {
 
             {/* 모바일 모달 */}
             {showMobileModal && <MobileModal />}
-        </div>
+        </div >
     );
 };
 

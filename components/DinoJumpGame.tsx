@@ -86,10 +86,14 @@ const DinoJumpGame = () => {
             // Spawn obstacles
             if (state.frameCount % Math.floor(100 - state.speed * 2) === 0) {
                 const type = Math.random() > 0.75 ? 'bird' : 'cactus';
+                // Bird height: Only spawn at heights where player can jump over or duck under
+                // Low birds (duck to avoid): groundY - 60 to groundY - 80 range
+                // High birds (stay normal to avoid): 100+ from ground
+                const birdHeight = Math.random() > 0.5 ? 30 + Math.random() * 20 : 90 + Math.random() * 30;
                 state.obstacles.push({
                     x: canvas.width,
                     type,
-                    height: type === 'bird' ? 40 + Math.random() * 50 : 40 + Math.random() * 40,
+                    height: type === 'bird' ? birdHeight : 40 + Math.random() * 40,
                 });
             }
 
