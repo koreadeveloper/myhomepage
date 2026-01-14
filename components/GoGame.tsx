@@ -136,43 +136,104 @@ const GoGame: React.FC = () => {
         setTimeout(() => aiMove(finalBoard, opponent), 300);
     };
 
-    // 간단한 AI (랜덤 + 기본 전략)
+    // 개선된 AI (잡기 우선, 위협 방어, 중앙 우선, 연결 우선)
     const aiMove = (currentBoard: Stone[][], color: 'black' | 'white') => {
         if (gameOver) return;
 
-        const validMoves: Position[] = [];
+        const opponent = color === 'black' ? 'white' : 'black';
+        const center = Math.floor(boardSize / 2);
+
+        interface ScoredMove {
+            pos: Position;
+            score: number;
+        }
+
+        const scoredMoves: ScoredMove[] = [];
 
         for (let row = 0; row < boardSize; row++) {
             for (let col = 0; col < boardSize; col++) {
-                if (currentBoard[row][col] === null) {
-                    // 자살 수 체크
-                    const testBoard = currentBoard.map(r => [...r]);
-                    testBoard[row][col] = color;
+                if (currentBoard[row][col] !== null) continue;
 
-                    const opponent = color === 'black' ? 'white' : 'black';
-                    const afterCapture = captureStones(testBoard, opponent);
+                // 자살 수 체크
+                const testBoard = currentBoard.map(r => [...r]);
+                testBoard[row][col] = color;
 
-                    const group = findGroup(row, col, afterCapture.board);
-                    if (countLiberties(group, afterCapture.board) > 0 || afterCapture.captured > 0) {
-                        validMoves.push({ row, col });
+                const afterCapture = captureStones(testBoard, opponent);
+                const group = findGroup(row, col, afterCapture.board);
+                const liberties = countLiberties(group, afterCapture.board);
+
+                if (liberties === 0 && afterCapture.captured === 0) continue;
+
+                let score = 0;
+
+                // 1. 잡기 점수 (가장 높은 우선순위)
+                if (afterCapture.captured > 0) {
+                    score += afterCapture.captured * 100;
+                }
+
+                // 2. 위협 방어 (자기 돌이 위험할 때)
+                getNeighbors(row, col).forEach(n => {
+                    if (currentBoard[n.row][n.col] === color) {
+                        const neighborGroup = findGroup(n.row, n.col, currentBoard);
+                        const neighborLiberties = countLiberties(neighborGroup, currentBoard);
+                        if (neighborLiberties === 1) {
+                            score += 80; // 위기 상황 방어
+                        } else if (neighborLiberties === 2) {
+                            score += 30;
+                        }
+                    }
+                });
+
+                // 3. 상대 위협 (상대 활로 줄이기)
+                getNeighbors(row, col).forEach(n => {
+                    if (currentBoard[n.row][n.col] === opponent) {
+                        const opponentGroup = findGroup(n.row, n.col, currentBoard);
+                        const opponentLiberties = countLiberties(opponentGroup, currentBoard);
+                        if (opponentLiberties === 2) {
+                            score += 50; // 상대 위협
+                        }
+                    }
+                });
+
+                // 4. 연결 보너스
+                let friendlyNeighbors = 0;
+                getNeighbors(row, col).forEach(n => {
+                    if (currentBoard[n.row][n.col] === color) {
+                        friendlyNeighbors++;
+                    }
+                });
+                score += friendlyNeighbors * 5;
+
+                // 5. 중앙 우선 (더 전략적인 위치)
+                const distFromCenter = Math.abs(row - center) + Math.abs(col - center);
+                score += (boardSize - distFromCenter) * 2;
+
+                // 6. 코너/변 피하기 (초기)
+                if (scoredMoves.length < boardSize * 2) {
+                    if ((row === 0 || row === boardSize - 1) && (col === 0 || col === boardSize - 1)) {
+                        score -= 20; // 코너 피하기
                     }
                 }
+
+                // 7. 약간의 랜덤성 추가
+                score += Math.random() * 10;
+
+                scoredMoves.push({ pos: { row, col }, score });
             }
         }
 
-        if (validMoves.length === 0) {
-            // 패스
+        if (scoredMoves.length === 0) {
             handlePass(color);
             return;
         }
 
-        // 랜덤 이동
-        const move = validMoves[Math.floor(Math.random() * validMoves.length)];
+        // 최고 점수 수 선택
+        scoredMoves.sort((a, b) => b.score - a.score);
+        const move = scoredMoves[0].pos;
 
         const newBoard = currentBoard.map(r => [...r]);
         newBoard[move.row][move.col] = color;
 
-        const opponent = color === 'black' ? 'white' : 'black';
         const opponentCapture = captureStones(newBoard, opponent);
         const finalBoard = opponentCapture.board;
 

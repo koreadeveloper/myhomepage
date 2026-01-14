@@ -5,46 +5,34 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 // 면 타입 정의
 type FaceType = 'U' | 'D' | 'L' | 'R' | 'F' | 'B';
 
-// 큐비 인터페이스
-interface Cubie extends THREE.Mesh {
-    userData: {
-        x: number;
-        y: number;
-        z: number;
-    };
-}
+// 색상 정의
+const COLORS = {
+    white: 0xffffff,   // U (위)
+    yellow: 0xffff00,  // D (아래)
+    red: 0xff0000,     // F (앞)
+    orange: 0xff8c00,  // B (뒤)
+    blue: 0x0000ff,    // L (왼쪽)
+    green: 0x00ff00,   // R (오른쪽)
+    black: 0x111111,   // 내부
+};
 
 const RubiksCubeGame: React.FC = () => {
     const containerRef = useRef<HTMLDivElement>(null);
     const sceneRef = useRef<THREE.Scene | null>(null);
-    const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
-    const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
-    const controlsRef = useRef<OrbitControls | null>(null);
-    const cubiesRef = useRef<Cubie[]>([]);
+    const cubiesRef = useRef<THREE.Mesh[]>([]);
     const isRotatingRef = useRef(false);
-    const animationIdRef = useRef<number>(0);
 
     const [moves, setMoves] = useState(0);
     const [isSolved, setIsSolved] = useState(true);
     const [moveHistory, setMoveHistory] = useState<string[]>([]);
+    const [isReady, setIsReady] = useState(false);
 
-    // 색상 정의
-    const COLORS = {
-        white: 0xffffff,   // U (위)
-        yellow: 0xffff00,  // D (아래)
-        red: 0xff0000,     // F (앞)
-        orange: 0xff8c00,  // B (뒤)
-        blue: 0x0000ff,    // L (왼쪽)
-        green: 0x00ff00,   // R (오른쪽)
-        black: 0x111111,   // 내부
-    };
-
-    // 큐비 생성
-    const createCubie = useCallback((x: number, y: number, z: number): Cubie => {
-        const geometry = new THREE.BoxGeometry(0.95, 0.95, 0.95);
+    // 큐비 생성 함수
+    const createCubie = useCallback((x: number, y: number, z: number): THREE.Mesh => {
+        const geometry = new THREE.BoxGeometry(0.93, 0.93, 0.93);
 
         // 각 면의 색상 결정
-        const materials: THREE.MeshStandardMaterial[] = [
+        const materials = [
             new THREE.MeshStandardMaterial({ color: x === 1 ? COLORS.green : COLORS.black }),  // +X (Right)
             new THREE.MeshStandardMaterial({ color: x === -1 ? COLORS.blue : COLORS.black }),  // -X (Left)
             new THREE.MeshStandardMaterial({ color: y === 1 ? COLORS.white : COLORS.black }),  // +Y (Up)
@@ -53,54 +41,30 @@ const RubiksCubeGame: React.FC = () => {
             new THREE.MeshStandardMaterial({ color: z === -1 ? COLORS.orange : COLORS.black }),// -Z (Back)
         ];
 
-        const cubie = new THREE.Mesh(geometry, materials) as Cubie;
+        const cubie = new THREE.Mesh(geometry, materials);
         cubie.position.set(x, y, z);
-        cubie.userData = { x, y, z };
 
         // 테두리 추가
         const edges = new THREE.EdgesGeometry(geometry);
         const line = new THREE.LineSegments(
             edges,
-            new THREE.LineBasicMaterial({ color: 0x000000, linewidth: 2 })
+            new THREE.LineBasicMaterial({ color: 0x000000 })
         );
         cubie.add(line);
 
         return cubie;
     }, []);
 
-    // 큐브 초기화
-    const initCube = useCallback(() => {
-        if (!sceneRef.current) return;
-
-        // 기존 큐비 제거
-        cubiesRef.current.forEach(cubie => {
-            sceneRef.current?.remove(cubie);
-        });
-        cubiesRef.current = [];
-
-        // 27개 큐비 생성
-        for (let x = -1; x <= 1; x++) {
-            for (let y = -1; y <= 1; y++) {
-                for (let z = -1; z <= 1; z++) {
-                    const cubie = createCubie(x, y, z);
-                    sceneRef.current.add(cubie);
-                    cubiesRef.current.push(cubie);
-                }
-            }
-        }
-
-        setMoves(0);
-        setMoveHistory([]);
-        setIsSolved(true);
-    }, [createCubie]);
-
-    // 면 회전 (피벗 그룹 방식)
+    // 면 회전 함수
     const rotateFace = useCallback((face: FaceType, clockwise: boolean = true) => {
-        if (isRotatingRef.current) return;
+        if (isRotatingRef.current || !sceneRef.current) return;
         isRotatingRef.current = true;
 
+        const scene = sceneRef.current;
+        const cubies = cubiesRef.current;
+
         // 해당 면에 속하는 큐비들 찾기
-        const cubies = cubiesRef.current.filter(cubie => {
+        const targetCubies = cubies.filter(cubie => {
             const pos = cubie.position;
             const tolerance = 0.1;
             switch (face) {
@@ -114,12 +78,17 @@ const RubiksCubeGame: React.FC = () => {
             }
         });
 
+        if (targetCubies.length === 0) {
+            isRotatingRef.current = false;
+            return;
+        }
+
         // 피벗 그룹 생성
         const pivot = new THREE.Group();
-        sceneRef.current?.add(pivot);
+        scene.add(pivot);
 
         // 큐비들을 피벗에 추가
-        cubies.forEach(cubie => {
+        targetCubies.forEach(cubie => {
             pivot.attach(cubie);
         });
 
@@ -153,8 +122,8 @@ const RubiksCubeGame: React.FC = () => {
                 pivot.rotateOnAxis(axis, targetAngle - currentAngle);
 
                 // 큐비들을 다시 씬에 추가
-                cubies.forEach(cubie => {
-                    sceneRef.current?.attach(cubie);
+                targetCubies.forEach(cubie => {
+                    scene.attach(cubie);
 
                     // 위치 반올림 (부동소수점 오차 제거)
                     cubie.position.x = Math.round(cubie.position.x);
@@ -163,7 +132,7 @@ const RubiksCubeGame: React.FC = () => {
                 });
 
                 // 피벗 제거
-                sceneRef.current?.remove(pivot);
+                scene.remove(pivot);
                 isRotatingRef.current = false;
 
                 // 이동 기록
@@ -176,31 +145,48 @@ const RubiksCubeGame: React.FC = () => {
         animate();
     }, []);
 
-    // 키보드 이벤트 핸들러
-    const handleKeyDown = useCallback((e: KeyboardEvent) => {
-        if (isRotatingRef.current) return;
+    // 큐브 초기화
+    const resetCube = useCallback(() => {
+        if (!sceneRef.current) return;
 
-        const shift = e.shiftKey;
-        switch (e.key.toUpperCase()) {
-            case 'U': rotateFace('U', !shift); break;
-            case 'D': rotateFace('D', !shift); break;
-            case 'L': rotateFace('L', !shift); break;
-            case 'R': rotateFace('R', !shift); break;
-            case 'F': rotateFace('F', !shift); break;
-            case 'B': rotateFace('B', !shift); break;
+        const scene = sceneRef.current;
+
+        // 기존 큐비 제거
+        cubiesRef.current.forEach(cubie => {
+            scene.remove(cubie);
+            cubie.geometry.dispose();
+            if (Array.isArray(cubie.material)) {
+                cubie.material.forEach(m => m.dispose());
+            }
+        });
+        cubiesRef.current = [];
+
+        // 27개 큐비 생성
+        for (let x = -1; x <= 1; x++) {
+            for (let y = -1; y <= 1; y++) {
+                for (let z = -1; z <= 1; z++) {
+                    const cubie = createCubie(x, y, z);
+                    scene.add(cubie);
+                    cubiesRef.current.push(cubie);
+                }
+            }
         }
-    }, [rotateFace]);
+
+        setMoves(0);
+        setMoveHistory([]);
+        setIsSolved(true);
+    }, [createCubie]);
 
     // 섞기
     const scramble = useCallback(async () => {
-        const faces: FaceType[] = ['U', 'D', 'L', 'R', 'F', 'B'];
-        const scrambleMoves = 20;
+        if (!isReady) return;
 
-        for (let i = 0; i < scrambleMoves; i++) {
+        const faces: FaceType[] = ['U', 'D', 'L', 'R', 'F', 'B'];
+
+        for (let i = 0; i < 20; i++) {
             const randomFace = faces[Math.floor(Math.random() * faces.length)];
             const clockwise = Math.random() > 0.5;
 
-            // 순차적으로 회전
             await new Promise<void>(resolve => {
                 const wait = () => {
                     if (!isRotatingRef.current) {
@@ -213,34 +199,42 @@ const RubiksCubeGame: React.FC = () => {
                 wait();
             });
         }
-    }, [rotateFace]);
+    }, [rotateFace, isReady]);
 
-    // Three.js 씬 초기화
+    // Three.js 초기화
     useEffect(() => {
-        if (!containerRef.current) return;
+        const container = containerRef.current;
+        if (!container) return;
 
         // 씬 생성
         const scene = new THREE.Scene();
         scene.background = new THREE.Color(0x1a1a2e);
         sceneRef.current = scene;
 
+        // 컨테이너 크기 (반응형)
+        const width = container.clientWidth || 400;
+        const height = container.clientHeight || 300;
+
         // 카메라 설정
-        const camera = new THREE.PerspectiveCamera(
-            50,
-            containerRef.current.clientWidth / containerRef.current.clientHeight,
-            0.1,
-            1000
-        );
-        camera.position.set(4, 4, 4);
+        const camera = new THREE.PerspectiveCamera(50, width / height, 0.1, 1000);
+        camera.position.set(4, 3, 4);
         camera.lookAt(0, 0, 0);
-        cameraRef.current = camera;
 
         // 렌더러 설정
         const renderer = new THREE.WebGLRenderer({ antialias: true });
-        renderer.setSize(containerRef.current.clientWidth, containerRef.current.clientHeight);
-        renderer.setPixelRatio(window.devicePixelRatio);
-        containerRef.current.appendChild(renderer.domElement);
-        rendererRef.current = renderer;
+        renderer.setSize(width, height);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        container.appendChild(renderer.domElement);
+
+        // 리사이즈 핸들러
+        const handleResize = () => {
+            const w = container.clientWidth || 400;
+            const h = container.clientHeight || 300;
+            camera.aspect = w / h;
+            camera.updateProjectionMatrix();
+            renderer.setSize(w, h);
+        };
+        window.addEventListener('resize', handleResize);
 
         // 조명 추가
         const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
@@ -260,45 +254,72 @@ const RubiksCubeGame: React.FC = () => {
         controls.dampingFactor = 0.05;
         controls.minDistance = 4;
         controls.maxDistance = 15;
-        controlsRef.current = controls;
 
-        // 큐브 초기화
-        initCube();
+        // 27개 큐비 생성
+        for (let x = -1; x <= 1; x++) {
+            for (let y = -1; y <= 1; y++) {
+                for (let z = -1; z <= 1; z++) {
+                    const geometry = new THREE.BoxGeometry(0.93, 0.93, 0.93);
+                    const materials = [
+                        new THREE.MeshStandardMaterial({ color: x === 1 ? COLORS.green : COLORS.black }),
+                        new THREE.MeshStandardMaterial({ color: x === -1 ? COLORS.blue : COLORS.black }),
+                        new THREE.MeshStandardMaterial({ color: y === 1 ? COLORS.white : COLORS.black }),
+                        new THREE.MeshStandardMaterial({ color: y === -1 ? COLORS.yellow : COLORS.black }),
+                        new THREE.MeshStandardMaterial({ color: z === 1 ? COLORS.red : COLORS.black }),
+                        new THREE.MeshStandardMaterial({ color: z === -1 ? COLORS.orange : COLORS.black }),
+                    ];
+                    const cubie = new THREE.Mesh(geometry, materials);
+                    cubie.position.set(x, y, z);
+
+                    const edges = new THREE.EdgesGeometry(geometry);
+                    const line = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color: 0x000000 }));
+                    cubie.add(line);
+
+                    scene.add(cubie);
+                    cubiesRef.current.push(cubie);
+                }
+            }
+        }
+
+        setIsReady(true);
 
         // 애니메이션 루프
-        const animateLoop = () => {
-            animationIdRef.current = requestAnimationFrame(animateLoop);
+        let animationId: number;
+        const animate = () => {
+            animationId = requestAnimationFrame(animate);
             controls.update();
             renderer.render(scene, camera);
         };
-        animateLoop();
-
-        // 리사이즈 핸들러
-        const handleResize = () => {
-            if (!containerRef.current) return;
-            camera.aspect = containerRef.current.clientWidth / containerRef.current.clientHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(containerRef.current.clientWidth, containerRef.current.clientHeight);
-        };
-        window.addEventListener('resize', handleResize);
+        animate();
 
         // 키보드 이벤트
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (isRotatingRef.current) return;
+            const shift = e.shiftKey;
+            const key = e.key.toUpperCase();
+            if (['U', 'D', 'L', 'R', 'F', 'B'].includes(key)) {
+                rotateFace(key as FaceType, !shift);
+            }
+        };
         window.addEventListener('keydown', handleKeyDown);
 
         // 클린업
         return () => {
-            cancelAnimationFrame(animationIdRef.current);
-            window.removeEventListener('resize', handleResize);
+            cancelAnimationFrame(animationId);
             window.removeEventListener('keydown', handleKeyDown);
+            window.removeEventListener('resize', handleResize);
+            controls.dispose();
             renderer.dispose();
-            if (containerRef.current && renderer.domElement) {
-                containerRef.current.removeChild(renderer.domElement);
+            if (container.contains(renderer.domElement)) {
+                container.removeChild(renderer.domElement);
             }
+            cubiesRef.current = [];
+            sceneRef.current = null;
         };
-    }, [initCube, handleKeyDown]);
+    }, [rotateFace]);
 
     return (
-        <div className="flex flex-col items-center justify-center w-full h-full p-4 gap-4 bg-slate-900">
+        <div className="flex flex-col items-center w-full min-h-screen p-4 gap-4 bg-slate-900 overflow-y-auto">
             <h1 className="text-2xl font-bold text-white">🧊 3D 루빅스 큐브</h1>
 
             {/* 상태 표시 */}
@@ -318,7 +339,8 @@ const RubiksCubeGame: React.FC = () => {
             {/* 3D 캔버스 컨테이너 */}
             <div
                 ref={containerRef}
-                className="w-full max-w-2xl aspect-square rounded-2xl overflow-hidden shadow-2xl border-4 border-slate-700"
+                className="rounded-2xl overflow-hidden shadow-2xl border-4 border-slate-700 bg-slate-800 w-full max-w-[600px]"
+                style={{ height: 'min(400px, 60vw)' }}
             />
 
             {/* 조작 버튼 */}
@@ -344,13 +366,12 @@ const RubiksCubeGame: React.FC = () => {
             <div className="flex gap-3">
                 <button
                     onClick={scramble}
-                    disabled={isRotatingRef.current}
-                    className="px-6 py-3 bg-gradient-to-r from-orange-500 to-red-500 text-white rounded-xl font-bold hover:from-orange-600 hover:to-red-600 transition-all shadow-lg disabled:opacity-50"
+                    className="px-6 py-3 bg-gradient-to-r from-orange-500 to-red-500 text-white rounded-xl font-bold hover:from-orange-600 hover:to-red-600 transition-all shadow-lg"
                 >
                     🔀 섞기
                 </button>
                 <button
-                    onClick={initCube}
+                    onClick={resetCube}
                     className="px-6 py-3 bg-gradient-to-r from-slate-600 to-slate-700 text-white rounded-xl font-bold hover:from-slate-700 hover:to-slate-800 transition-all shadow-lg"
                 >
                     🔄 초기화
@@ -371,9 +392,9 @@ const RubiksCubeGame: React.FC = () => {
             )}
 
             {/* 도움말 */}
-            <div className="text-xs text-slate-500 text-center max-w-md">
-                <p>💡 마우스로 드래그하여 큐브를 회전시킬 수 있습니다.</p>
-                <p>키보드: U, D, L, R, F, B (Shift+키 = 반시계방향)</p>
+            <div className="text-xs text-slate-500 text-center max-w-md pb-4">
+                <p>💡 마우스 드래그: 큐브 시점 회전 | 휠: 줌</p>
+                <p>키보드: U, D, L, R, F, B (Shift = 반시계)</p>
             </div>
         </div>
     );

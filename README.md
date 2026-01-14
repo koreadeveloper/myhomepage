@@ -6,7 +6,7 @@
   <p>
     <strong>아름답고 강력한 나만의 웹 대시보드 & 커뮤니티 & 게임존</strong>
     <br />
-    생산성 도구, 실시간 정보, 그리고 32종의 게임으로 하루를 활기차게 시작하세요.
+    생산성 도구, 실시간 정보, 그리고 43종의 게임으로 하루를 활기차게 시작하세요.
   </p>
 
   <p>
@@ -22,7 +22,7 @@
   [![TypeScript](https://img.shields.io/badge/TypeScript_5.8-007ACC?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
   [![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
   
-  [![Games](https://img.shields.io/badge/Games-32종-FF6B6B?style=for-the-badge&logo=game-controller&logoColor=white)](#-게임존-32종)
+  [![Games](https://img.shields.io/badge/Games-43종-FF6B6B?style=for-the-badge&logo=game-controller&logoColor=white)](#-게임존-43종)
   [![Responsive](https://img.shields.io/badge/Responsive-Mobile_Ready-4CAF50?style=for-the-badge&logo=mobile&logoColor=white)](#)
 </div>
 
@@ -36,7 +36,7 @@
 
 - 🖥️ **스마트 대시보드**: 생산성 도구와 실시간 정보 위젯
 - 💬 **커뮤니티 & 방명록**: 소통과 공유의 공간
-- 🎮 **32종 게임존**: 클래식 아케이드부터 전략 보드게임까지
+- 🎮 **43종 게임존**: 클래식 아케이드부터 전략 보드게임까지
 
 모든 기능은 **Glassmorphism** 디자인과 **반응형 레이아웃**으로 구현되어, 데스크탑부터 모바일까지 완벽하게 지원합니다.
 
@@ -69,9 +69,9 @@
 
 ---
 
-## 🎮 게임존 (32종)
+## 🎮 게임존 (43종)
 
-**GameZone**에서 다양한 장르의 **32가지 게임**을 즐길 수 있습니다!
+**GameZone**에서 다양한 장르의 **43가지 게임**을 즐길 수 있습니다!
 
 ### 🃏 카드 & 보드 게임
 
@@ -83,10 +83,21 @@
 | 🃏 **블랙잭** | 21을 향한 카드 게임 | 히트/스탠드/더블다운 |
 | 🃏 **솔리테어** | Klondike 솔리테어 | 52장 카드, 클릭 이동 |
 | 🃏 **프리셀** | 모든 카드가 보이는 전략 게임 | 4개 프리셀, 8개 캐스케이드 |
-| ⚫ **바둑** | AI와 고대 전략 대결 | 9x9/13x13/19x19, 활로/잡기 로직 |
+| ⚫ **바둑** | AI와 고대 전략 대결 | 9x9/13x13/19x19, 개선된 AI |
 | ⭕ **오목** | 5개를 먼저 완성하라 | AI 대전 |
 | 🔴 **체커** | 점프로 상대를 잡아라 | King 승격, AI 대전 |
 | ❌ **틱택토** | 3x3 삼목 게임 | AI 대전 |
+| ⚫ **오셀로** | 돌을 뒤집어 영역 차지 | AI 대전, 코너 전략 |
+| 🔴 **커넥트4** | 4개를 연속으로 연결 | AI 대전, 승리/차단 전략 |
+| 🚢 **배틀쉽** | 적 함대를 격침시켜라 | 배 배치, AI 대전 |
+| 🎲 **요트** | Yahtzee 주사위 게임 | 12라운드, 점수 카테고리 |
+| 🀱 **도미노** | AI와 숫자 매칭 대결 | 7개 시작, 체인 매칭 |
+| ♟️ **장기** | 한국 전통 장기 | 모든 기물 이동 규칙 |
+| 🀄 **마작 솔리테어** | 같은 타일 매칭 제거 | 3층 피라미드, 힌트 |
+| ⚔️ **카드 전쟁** | 높은 카드로 상대를 이겨라 | WAR 전쟁 규칙 |
+| ⚡ **스피드 카드** | 빠르게 카드 매칭 | AI 대전, 실시간 |
+| 🔴 **사이먼** | 패턴을 기억하고 따라하세요 | 사운드, 점수 기록 |
+| 🔍 **단어 찾기** | 숨겨진 단어를 드래그 | 한국어 단어, 5개 찾기 |
 
 ### 🕹️ 아케이드 게임
 
@@ -114,7 +125,7 @@
 | 📝 **단어 퍼즐** | 단어 찾기 게임 | 한국어 지원 |
 | 🔤 **행맨** | 단어 맞추기 게임 | 애니메이션 |
 | 🔢 **슬라이딩 퍼즐** | 숫자 타일 정렬 | 3x3/4x4/5x5 난이도 |
-| 🧊 **루빅스 큐브** | 3D 큐브 퍼즐 | 2D 전개도, 6면 회전 |
+| 🧊 **루빅스 큐브** | 3D 큐브 퍼즐 | Three.js 3D 렌더링, 모바일 지원, 키보드/버튼 조작 |
 
 ### 📚 교육 & 기술 게임
 
@@ -147,6 +158,7 @@
 | 🔄 **@dnd-kit** | 6.3 | 드래그 & 드롭 (Todo 정렬) |
 | ♟️ **chess.js** | 1.4 | 체스 로직 엔진 |
 | 🤖 **stockfish.js** | 10.0 | 체스 AI 엔진 |
+| 🧊 **three** | 0.165 | 3D 렌더링 (루빅스 큐브) |
 
 ### Architecture
 

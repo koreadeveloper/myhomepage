@@ -24,6 +24,18 @@ import FreecellGame from '../components/FreecellGame';
 import PoolGame from '../components/PoolGame';
 import GoGame from '../components/GoGame';
 import RubiksCubeGame from '../components/RubiksCubeGame';
+// New 10 board games
+import OthelloGame from '../components/OthelloGame';
+import ConnectFourGame from '../components/ConnectFourGame';
+import BattleshipGame from '../components/BattleshipGame';
+import YachtGame from '../components/YachtGame';
+import DominoGame from '../components/DominoGame';
+import SimonGame from '../components/SimonGame';
+import WordSearchGame from '../components/WordSearchGame';
+import SpeedCardGame from '../components/SpeedCardGame';
+import JanggiGame from '../components/JanggiGame';
+import MahjongSolitaireGame from '../components/MahjongSolitaireGame';
+import WarCardGame from '../components/WarCardGame';
 import MobileControls from '../components/MobileControls';
 
 // --- Shared Types & Constants ---
@@ -73,6 +85,18 @@ const games: Game[] = [
     { title: '당구', description: '2D 당구 시뮬레이션', icon: 'sports_baseball', color: 'text-emerald-600 dark:text-emerald-400', bgColor: 'bg-emerald-100 dark:bg-emerald-900/30', accentColor: 'bg-emerald-600', cornerAccentColor: 'bg-emerald-500/10' },
     { title: '바둑', description: 'AI와 고대 전략 대결', icon: 'blur_on', color: 'text-slate-700 dark:text-slate-300', bgColor: 'bg-slate-100 dark:bg-slate-800/50', accentColor: 'bg-slate-700', cornerAccentColor: 'bg-slate-500/10' },
     { title: '루빅스 큐브', description: '3D 큐브 퍼즐 도전', icon: 'view_in_ar', color: 'text-purple-600 dark:text-purple-400', bgColor: 'bg-purple-100 dark:bg-purple-900/30', accentColor: 'bg-purple-600', cornerAccentColor: 'bg-purple-500/10' },
+    // New Wave 3 - Board Games
+    { title: '오셀로', description: '돌을 뒤집어 영역을 차지하라', icon: 'radio_button_checked', color: 'text-green-700 dark:text-green-400', bgColor: 'bg-green-100 dark:bg-green-900/30', accentColor: 'bg-green-600', cornerAccentColor: 'bg-green-600/10' },
+    { title: '커넥트4', description: '4개를 연속으로 만들어라', icon: 'view_week', color: 'text-blue-600 dark:text-blue-400', bgColor: 'bg-blue-100 dark:bg-blue-900/30', accentColor: 'bg-blue-600', cornerAccentColor: 'bg-blue-600/10' },
+    { title: '배틀쉽', description: '적 함대를 격침시켜라', icon: 'directions_boat', color: 'text-slate-700 dark:text-slate-400', bgColor: 'bg-slate-100 dark:bg-slate-900/30', accentColor: 'bg-slate-600', cornerAccentColor: 'bg-slate-600/10' },
+    { title: '요트', description: '주사위로 최고 점수를 만들어라', icon: 'casino', color: 'text-amber-600 dark:text-amber-400', bgColor: 'bg-amber-100 dark:bg-amber-900/30', accentColor: 'bg-amber-600', cornerAccentColor: 'bg-amber-600/10' },
+    { title: '도미노', description: 'AI와 숫자 매칭 대결', icon: 'view_carousel', color: 'text-slate-800 dark:text-slate-300', bgColor: 'bg-slate-100 dark:bg-slate-800/50', accentColor: 'bg-slate-700', cornerAccentColor: 'bg-slate-600/10' },
+    { title: '사이먼', description: '패턴을 기억하고 따라하세요', icon: 'blur_circular', color: 'text-purple-600 dark:text-purple-400', bgColor: 'bg-purple-100 dark:bg-purple-900/30', accentColor: 'bg-purple-600', cornerAccentColor: 'bg-purple-600/10' },
+    { title: '단어 찾기', description: '숨겨진 단어를 드래그해서 찾아라', icon: 'search', color: 'text-green-600 dark:text-green-400', bgColor: 'bg-green-100 dark:bg-green-900/30', accentColor: 'bg-green-600', cornerAccentColor: 'bg-green-600/10' },
+    { title: '스피드 카드', description: '빠르게 카드를 매칭하라', icon: 'bolt', color: 'text-orange-600 dark:text-orange-400', bgColor: 'bg-orange-100 dark:bg-orange-900/30', accentColor: 'bg-orange-600', cornerAccentColor: 'bg-orange-600/10' },
+    { title: '장기', description: '한국 전통 보드게임', icon: 'castle', color: 'text-amber-700 dark:text-amber-400', bgColor: 'bg-amber-100 dark:bg-amber-900/30', accentColor: 'bg-amber-700', cornerAccentColor: 'bg-amber-600/10' },
+    { title: '마작 솔리테어', description: '같은 타일을 매칭하여 제거', icon: 'extension', color: 'text-rose-600 dark:text-rose-400', bgColor: 'bg-rose-100 dark:bg-rose-900/30', accentColor: 'bg-rose-600', cornerAccentColor: 'bg-rose-600/10' },
+    { title: '카드 전쟁', description: '높은 카드로 상대를 이겨라', icon: 'military_tech', color: 'text-red-600 dark:text-red-400', bgColor: 'bg-red-100 dark:bg-red-900/30', accentColor: 'bg-red-600', cornerAccentColor: 'bg-red-600/10' },
 ];
 
 // --- Game 1: Snake (Canvas) ---
@@ -1918,6 +1942,18 @@ const GameZone: React.FC = () => {
             case '당구': return <PoolGame />;
             case '바둑': return <GoGame />;
             case '루빅스 큐브': return <RubiksCubeGame />;
+            // New Wave 3 Games
+            case '오셀로': return <OthelloGame />;
+            case '커넥트4': return <ConnectFourGame />;
+            case '배틀쉽': return <BattleshipGame />;
+            case '요트': return <YachtGame />;
+            case '도미노': return <DominoGame />;
+            case '사이먼': return <SimonGame />;
+            case '단어 찾기': return <WordSearchGame />;
+            case '스피드 카드': return <SpeedCardGame />;
+            case '장기': return <JanggiGame />;
+            case '마작 솔리테어': return <MahjongSolitaireGame />;
+            case '카드 전쟁': return <WarCardGame />;
             default: return <div>게임을 찾을 수 없습니다</div>;
         }
     };
