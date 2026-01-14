@@ -5,6 +5,13 @@ import Home from './pages/Home';
 import Community from './pages/Community';
 import Guestbook from './pages/Guestbook';
 import GameZone from './pages/GameZone';
+import AdminLayout from './layouts/AdminLayout';
+import AdminLogin from './pages/admin/AdminLogin';
+import AdminDashboard from './pages/admin/AdminDashboard';
+import ContentManager from './pages/admin/ContentManager';
+
+import BanManager from './pages/admin/BanManager';
+import SiteSettings from './pages/admin/SiteSettings';
 import { Search, Bell, Home as HomeIcon, Users, BookOpen, Gamepad2 } from 'lucide-react';
 
 // 모바일 네비게이션 컴포넌트
@@ -98,7 +105,19 @@ const AppContent: React.FC = () => {
 const App: React.FC = () => {
   return (
     <Router>
-      <AppContent />
+      <Routes>
+        {/* 관리자 라우트 */}
+        <Route path="/admin" element={<AdminLayout />}>
+          <Route path="login" element={<AdminLogin />} />
+          <Route path="dashboard" element={<AdminDashboard />} />
+          <Route path="contents" element={<ContentManager />} />
+          <Route path="users" element={<BanManager />} />
+          <Route path="settings" element={<SiteSettings />} />
+        </Route>
+
+        {/* 일반 사용자 라우트 */}
+        <Route path="*" element={<AppContent />} />
+      </Routes>
     </Router>
   );
 };

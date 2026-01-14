@@ -2,22 +2,24 @@
 import React, { useState, useEffect } from 'react';
 import { Lock, Trash2, MessageCircle, Pin } from 'lucide-react';
 import Sidebar from '../components/Sidebar';
+import { supabase } from '../services/supabase';
+import { checkIsBanned, getVisitorIpInfo } from '../services/api';
 
 // 타입 정의
 interface GuestbookEntry {
   id: string;
   nickname: string;
-  avatarId: string;
+  avatar_id: string;
   content: string;
   password: string;
-  isSecret: boolean;
-  isStamp: boolean;
-  createdAt: number;
-  adminReply?: {
+  is_secret: boolean;
+  is_stamp: boolean;
+  created_at: string;
+  admin_reply?: {
     content: string;
     repliedAt: number;
   };
-  isPinned?: boolean;
+  is_pinned?: boolean;
 }
 
 // 아바타 목록
@@ -68,10 +70,18 @@ const Guestbook: React.FC = () => {
     setIsDarkMode(savedMode);
     if (savedMode) document.documentElement.classList.add('dark');
 
-    // Entries init
-    const saved = localStorage.getItem('pixel_guestbook');
-    if (saved) setEntries(JSON.parse(saved));
+    fetchEntries();
   }, []);
+
+  const fetchEntries = async () => {
+    const { data, error } = await supabase
+      .from('guestbook')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (error) console.error('Error fetching guestbook:', error);
+    else setEntries(data || []);
+  };
 
   const toggleDarkMode = () => {
     const newMode = !isDarkMode;
@@ -85,74 +95,109 @@ const Guestbook: React.FC = () => {
     }
   };
 
-  const saveEntries = (newEntries: GuestbookEntry[]) => {
-    setEntries(newEntries);
-    localStorage.setItem('pixel_guestbook', JSON.stringify(newEntries));
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!nickname || !content || !password) return;
     if (content.length > 100) return;
 
-    const newEntry: GuestbookEntry = {
-      id: Date.now().toString(),
+    if (content.length > 100) return;
+
+    // Ban Check
+    const visitor = await getVisitorIpInfo();
+    const banStatus = await checkIsBanned(visitor.ip, nickname);
+    if (banStatus.banned) {
+      alert(`차단된 사용자입니다.\n사유: ${banStatus.reason}`);
+      return;
+    }
+
+    const newEntry = {
       nickname,
-      avatarId: selectedAvatar,
+      avatar_id: selectedAvatar,
       content,
       password,
-      isSecret,
-      isStamp: false,
-      createdAt: Date.now(),
+      is_secret: isSecret,
+      is_stamp: false,
     };
 
-    setShowAnimation(newEntry.id);
-    setTimeout(() => setShowAnimation(null), 500);
+    const { data, error } = await supabase.from('guestbook').insert([newEntry]).select();
 
-    saveEntries([newEntry, ...entries]);
-    setContent('');
-    setIsSecret(false);
+    if (error) {
+      alert('작성 실패: ' + error.message);
+    } else if (data) {
+      const inserted = data[0] as GuestbookEntry;
+      setShowAnimation(inserted.id);
+      setTimeout(() => setShowAnimation(null), 500);
+      setEntries([inserted, ...entries]);
+      setContent('');
+      setIsSecret(false);
+    }
   };
 
-  const handleStamp = (stamp: typeof STAMPS[0]) => {
+  const handleStamp = async (stamp: typeof STAMPS[0]) => {
     if (!nickname || !password) {
       alert('닉네임과 비밀번호를 먼저 입력해주세요!');
       return;
     }
 
-    const newEntry: GuestbookEntry = {
-      id: Date.now().toString(),
+    // Ban Check
+    const visitor = await getVisitorIpInfo();
+    const banStatus = await checkIsBanned(visitor.ip, nickname);
+    if (banStatus.banned) {
+      alert(`차단된 사용자입니다.\n사유: ${banStatus.reason}`);
+      return;
+    }
+
+    const newEntry = {
       nickname,
-      avatarId: selectedAvatar,
+      avatar_id: selectedAvatar,
       content: `${stamp.emoji} ${stamp.label}`,
       password,
-      isSecret: false,
-      isStamp: true,
-      createdAt: Date.now(),
+      is_secret: false,
+      is_stamp: true,
     };
 
-    setShowAnimation(newEntry.id);
-    setTimeout(() => setShowAnimation(null), 500);
+    const { data, error } = await supabase.from('guestbook').insert([newEntry]).select();
 
-    saveEntries([newEntry, ...entries]);
+    if (error) {
+      alert('작성 실패: ' + error.message);
+    } else if (data) {
+      const inserted = data[0] as GuestbookEntry;
+      setShowAnimation(inserted.id);
+      setTimeout(() => setShowAnimation(null), 500);
+      setEntries([inserted, ...entries]);
+    }
   };
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
     if (!deleteId) return;
-    const entry = entries.find(e => e.id === deleteId);
-    if (entry && entry.password === deletePassword) {
-      saveEntries(entries.filter(e => e.id !== deleteId));
-      setDeleteId(null);
-      setDeletePassword('');
+
+    // 클라이언트단 비밀번호 확인 (간이)
+    // 실제로는 RLS나 서버 함수로 처리하는 것이 안전하지만, 편의상 DB에서 비밀번호 조회 후 비교
+    const { data } = await supabase
+      .from('guestbook')
+      .select('password')
+      .eq('id', deleteId)
+      .single();
+
+    if (data && data.password === deletePassword) {
+      const { error } = await supabase.from('guestbook').delete().eq('id', deleteId);
+      if (error) {
+        alert('삭제 실패: ' + error.message);
+      } else {
+        setEntries(entries.filter(e => e.id !== deleteId));
+        setDeleteId(null);
+        setDeletePassword('');
+        alert('삭제되었습니다.');
+      }
     } else {
       alert('비밀번호가 일치하지 않습니다.');
     }
   };
 
   const sortedEntries = [...entries].sort((a, b) => {
-    if (a.isPinned && !b.isPinned) return -1;
-    if (!a.isPinned && b.isPinned) return 1;
-    return 0;
+    if (a.is_pinned && !b.is_pinned) return -1;
+    if (!a.is_pinned && b.is_pinned) return 1;
+    return 0; // 이미 최신순 fetch 됨
   });
 
   const getAvatar = (id: string) => AVATARS.find(a => a.id === id) || AVATARS[0];
@@ -288,26 +333,26 @@ const Guestbook: React.FC = () => {
                     }`}
                   style={{ boxShadow: '3px 3px 0 #1e293b' }}
                 >
-                  {entry.isPinned && (
+                  {entry.is_pinned && (
                     <div className="absolute -top-2 -right-2 bg-yellow-400 text-yellow-900 p-1 rounded-full">
                       <Pin size={12} />
                     </div>
                   )}
 
-                  {entry.isSecret && (
+                  {entry.is_secret && (
                     <div className="text-sm text-slate-500 dark:text-slate-400 italic flex items-center gap-1">
                       <Lock size={14} /> 비밀글입니다 🔒
                     </div>
                   )}
 
-                  {!entry.isSecret && (
+                  {!entry.is_secret && (
                     <>
                       <div className="flex items-center justify-between mb-2">
                         <div className="flex items-center gap-2">
-                          <span className="text-xl">{getAvatar(entry.avatarId).emoji}</span>
+                          <span className="text-xl">{getAvatar(entry.avatar_id).emoji}</span>
                           <span className="font-black text-slate-900 dark:text-white text-sm">{entry.nickname}</span>
                           <span className="text-[10px] text-slate-400">
-                            {new Date(entry.createdAt).toLocaleDateString('ko-KR')}
+                            {new Date(entry.created_at).toLocaleDateString('ko-KR')}
                           </span>
                         </div>
                         <button
@@ -318,16 +363,16 @@ const Guestbook: React.FC = () => {
                         </button>
                       </div>
 
-                      <p className={`text-slate-700 dark:text-slate-200 ${entry.isStamp ? 'text-lg font-bold' : 'text-sm'}`}>
+                      <p className={`text-slate-700 dark:text-slate-200 ${entry.is_stamp ? 'text-lg font-bold' : 'text-sm'}`}>
                         {entry.content}
                       </p>
 
-                      {entry.adminReply && (
+                      {entry.admin_reply && (
                         <div className="mt-3 pl-4 border-l-2 border-indigo-400">
                           <div className="flex items-center gap-1 text-xs text-indigo-600 dark:text-indigo-400 font-bold mb-1">
                             <MessageCircle size={12} /> 주인장
                           </div>
-                          <p className="text-sm text-slate-600 dark:text-slate-300">{entry.adminReply.content}</p>
+                          <p className="text-sm text-slate-600 dark:text-slate-300">{entry.admin_reply.content}</p>
                         </div>
                       )}
                     </>

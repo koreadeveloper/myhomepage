@@ -1,6 +1,7 @@
 
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import { useSiteSettings } from '../hooks/useSiteSettings';
 
 interface SidebarProps {
     isDarkMode: boolean;
@@ -12,6 +13,7 @@ interface SidebarProps {
 const Sidebar: React.FC<SidebarProps> = ({ isDarkMode, toggleDarkMode, isMobileSidebarOpen, setIsMobileSidebarOpen }) => {
     const location = useLocation();
     const isActive = (path: string) => location.pathname === path;
+    const { profile } = useSiteSettings();
 
     return (
         <>
@@ -49,8 +51,14 @@ const Sidebar: React.FC<SidebarProps> = ({ isDarkMode, toggleDarkMode, isMobileS
 
                 {/* User Profile */}
                 <div className="flex items-center gap-3 p-3 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-2xl text-white shadow-lg shadow-indigo-500/20">
-                    <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center backdrop-blur-sm"><span className="material-icons-round">person</span></div>
-                    <div><div className="font-bold text-sm">게스트</div><div className="text-[10px] opacity-80">환영합니다!</div></div>
+                    <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center backdrop-blur-sm overflow-hidden">
+                        {profile.avatar_url ? (
+                            <img src={profile.avatar_url} alt="Profile" className="w-full h-full object-cover" />
+                        ) : (
+                            <span className="material-icons-round">person</span>
+                        )}
+                    </div>
+                    <div><div className="font-bold text-sm">{profile.nickname}</div><div className="text-[10px] opacity-80">{profile.status_message}</div></div>
                 </div>
 
                 {/* Navigation */}

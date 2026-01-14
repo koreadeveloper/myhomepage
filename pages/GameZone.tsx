@@ -38,6 +38,7 @@ import JanggiGame from '../components/JanggiGame';
 import MahjongSolitaireGame from '../components/MahjongSolitaireGame';
 import WarCardGame from '../components/WarCardGame';
 import MobileControls from '../components/MobileControls';
+import { logGamePlay, saveGameScore } from '../services/api';
 
 // --- Shared Types & Constants ---
 type Game = {
@@ -106,6 +107,8 @@ const SnakeGame = () => {
     const [score, setScore] = useState(0);
     const [gameOver, setGameOver] = useState(false);
     const [started, setStarted] = useState(false);
+    const [nickname, setNickname] = useState('');
+    const [saved, setSaved] = useState(false);
 
     const gridSize = 20;
     const gameStateRef = useRef({
@@ -129,6 +132,7 @@ const SnakeGame = () => {
         setScore(0);
         setGameOver(false);
         setStarted(false);
+        setSaved(false);
     };
 
     useEffect(() => {
@@ -310,9 +314,34 @@ const SnakeGame = () => {
             <div className="relative w-full max-w-[70vh] aspect-square">
                 <canvas ref={canvasRef} width={400} height={400} className="w-full h-full rounded-xl shadow-2xl border-4 border-slate-600" />
                 {gameOver && (
-                    <div className="absolute inset-0 bg-black/70 flex flex-col items-center justify-center text-white rounded-xl backdrop-blur-sm">
-                        <div className="text-4xl font-bold mb-4">게임 오버!</div>
-                        <div className="text-xl mb-6">최종 점수: {score}</div>
+                    <div className="absolute inset-0 bg-black/80 flex flex-col items-center justify-center text-white rounded-xl backdrop-blur-sm p-6 z-10">
+                        <div className="text-4xl font-bold mb-2">게임 오버!</div>
+                        <div className="text-xl mb-4 text-emerald-400">최종 점수: {score}</div>
+                        {!saved ? (
+                            <div className="flex flex-col gap-2 mb-4 w-full max-w-[200px]">
+                                <input
+                                    type="text"
+                                    placeholder="닉네임 (랭킹 등록)"
+                                    className="px-3 py-2 rounded text-black font-bold outline-none ring-2 ring-emerald-500"
+                                    maxLength={8}
+                                    value={nickname}
+                                    onChange={(e) => setNickname(e.target.value)}
+                                />
+                                <button
+                                    onClick={() => {
+                                        if (nickname.trim()) {
+                                            saveGameScore('스네이크', nickname, score);
+                                            setSaved(true);
+                                        }
+                                    }}
+                                    className="px-4 py-2 bg-emerald-600 rounded font-bold hover:bg-emerald-500"
+                                >
+                                    랭킹 등록
+                                </button>
+                            </div>
+                        ) : (
+                            <div className="mb-6 text-emerald-400 font-bold">✨ 랭킹 등록 완료!</div>
+                        )}
                         <button onClick={resetGame} className="px-8 py-3 bg-emerald-500 rounded-xl font-bold text-lg hover:bg-emerald-600 transition-all hover:scale-105">다시 시작</button>
                     </div>
                 )}
@@ -1873,6 +1902,7 @@ const GameZone: React.FC = () => {
 
     const openGame = (game: Game) => {
         setActiveGame(game);
+        logGamePlay(game.title);
         window.history.pushState({ game: game.title }, '', '');
     };
     const closeGame = () => setActiveGame(null);

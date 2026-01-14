@@ -1,6 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../services/supabase';
+import { checkIsBanned, getVisitorIpInfo } from '../services/api';
 import { MessageSquare, Heart, Eye, Edit2, Trash2, Search, X } from 'lucide-react';
 
 interface Post {
@@ -64,6 +65,14 @@ const FreeBoard: React.FC<FreeBoardProps> = ({ isDarkMode }) => {
         e.preventDefault();
         if (!title || !content || !authorName || !password) return;
 
+        // Ban Check
+        const visitor = await getVisitorIpInfo();
+        const banStatus = await checkIsBanned(visitor.ip, authorName);
+        if (banStatus.banned) {
+            alert(`차단된 사용자입니다.\n사유: ${banStatus.reason}`);
+            return;
+        }
+
         const { error } = await supabase
             .from('posts')
             .insert([{ title, content, author_name: authorName, password }]);
@@ -96,6 +105,14 @@ const FreeBoard: React.FC<FreeBoardProps> = ({ isDarkMode }) => {
     const handleCommentSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!commentContent || !selectedPost || !authorName || !password) return;
+
+        // Ban Check
+        const visitor = await getVisitorIpInfo();
+        const banStatus = await checkIsBanned(visitor.ip, authorName);
+        if (banStatus.banned) {
+            alert(`차단된 사용자입니다.\n사유: ${banStatus.reason}`);
+            return;
+        }
 
         const { error } = await supabase.from('comments').insert([{
             post_id: selectedPost.id,

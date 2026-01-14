@@ -2,6 +2,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Coffee, Moon, CloudRain, Flame, Send, User, MessageCircle } from 'lucide-react';
 import { supabase } from '../services/supabase';
+import { checkIsBanned, getVisitorIpInfo } from '../services/api';
 
 // 타입 정의
 interface Message {
@@ -78,6 +79,13 @@ const MidnightCafe: React.FC<MidnightCafeProps> = ({ isDarkMode }) => {
                     setMessages((prev) => [...prev, payload.new as Message]);
                 }
             )
+            .on(
+                'postgres_changes',
+                { event: 'DELETE', schema: 'public', table: 'chat_messages' },
+                (payload) => {
+                    setMessages((prev) => prev.filter(msg => msg.id !== payload.old.id));
+                }
+            )
             .subscribe();
 
         return () => {
@@ -96,6 +104,14 @@ const MidnightCafe: React.FC<MidnightCafeProps> = ({ isDarkMode }) => {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!content.trim()) return;
+
+        // Ban Check
+        const visitor = await getVisitorIpInfo();
+        const banStatus = await checkIsBanned(visitor.ip, nickname);
+        if (banStatus.banned) {
+            alert(`차단된 사용자입니다.\n사유: ${banStatus.reason}`);
+            return;
+        }
 
         const newMessage = {
             content: content.slice(0, 200),

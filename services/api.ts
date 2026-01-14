@@ -1,4 +1,6 @@
 
+
+import { supabase } from './supabase';
 import { WeatherData, CryptoData, VisitorInfo, MarketData } from '../types';
 
 export const fetchWeather = async (city: string): Promise<WeatherData> => {
@@ -80,3 +82,71 @@ export const getVisitorIpInfo = async (): Promise<VisitorInfo> => {
     };
   }
 };
+
+export const checkIsBanned = async (ip: string, nickname?: string): Promise<{ banned: boolean; reason?: string }> => {
+  try {
+    const { data, error } = await supabase.rpc('check_ban_status', {
+      check_ip: ip,
+      check_nickname: nickname || null
+    });
+
+    if (error) {
+      console.error('Ban check error:', error);
+      return { banned: false };
+    }
+
+    return data as { banned: boolean; reason?: string };
+  } catch (e) {
+    console.error('Ban check exception:', e);
+    return { banned: false };
+  }
+};
+
+export const logVisit = async (ip: string, path: string = '/') => {
+  try {
+    await supabase.from('visit_logs').insert([{ ip_address: ip, path }]);
+  } catch (e) {
+    console.error('Log visit error:', e);
+  }
+};
+
+// --- Game Stats & Scores ---
+
+// Play Count Logging
+export const logGamePlay = async (gameId: string, ip?: string) => {
+  try {
+    await supabase.from('game_play_logs').insert([{ game_id: gameId, ip_address: ip }]);
+  } catch (e) {
+    console.error('Log game play error:', e);
+  }
+};
+
+// Score Saving
+export const saveGameScore = async (gameId: string, nickname: string, score: number) => {
+  try {
+    if (!nickname || score < 0) return;
+
+    // Check ban status
+    const { data: banData } = await supabase.rpc('check_ban_status', { check_ip: '', check_nickname: nickname });
+    if (banData && banData.banned) {
+      console.warn('Blocked user attempted to save score');
+      return;
+    }
+
+    await supabase.from('game_scores').insert([{ game_id: gameId, nickname, score }]);
+  } catch (e) {
+    console.error('Save score error:', e);
+  }
+};
+
+// Fetch Top Scores
+export const getTopScores = async (gameId: string, limit = 10) => {
+  const { data } = await supabase
+    .from('game_scores')
+    .select('*')
+    .eq('game_id', gameId)
+    .order('score', { ascending: false })
+    .limit(limit);
+  return data || [];
+};
+

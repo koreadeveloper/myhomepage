@@ -25,3 +25,6 @@ dist-ssr
 
 # Dev logs
 dev_log/
+
+# Artifacts
+artifacts/

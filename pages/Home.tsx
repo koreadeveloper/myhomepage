@@ -13,7 +13,8 @@ import {
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { fetchWeather, fetchMarketData, getVisitorIpInfo } from '../services/api';
+import { fetchWeather, fetchMarketData, getVisitorIpInfo, logVisit } from '../services/api';
+import { useSiteSettings } from '../hooks/useSiteSettings';
 import { Shortcut, WeatherData, CryptoData, MarketData, VisitorInfo, Todo, Dday, Habit, CodeSnippet } from '../types';
 import Modal from '../components/Modal';
 
@@ -86,6 +87,9 @@ const Home: React.FC = () => {
    const [isPomoActive, setIsPomoActive] = useState(false);
    const [activeModal, setActiveModal] = useState<string | null>(null);
    const [batt, setBatt] = useState<string>('...');
+
+   // Dynamic Site Settings
+   const { banner, profile } = useSiteSettings();
 
    // 도구 전용 상태
    const [jsonInput, setJsonInput] = useState('');
@@ -183,7 +187,10 @@ const Home: React.FC = () => {
       fetchWeather('Seoul').then(d => setWeather(prev => ({ ...prev, seoul: d })));
       fetchWeather('Busan').then(d => setWeather(prev => ({ ...prev, busan: d })));
       fetchMarketData().then(setMarketData);
-      getVisitorIpInfo().then(setVisitor);
+      getVisitorIpInfo().then(v => {
+         setVisitor(v);
+         logVisit(v.ip);
+      });
 
       if ((navigator as any).getBattery) {
          (navigator as any).getBattery().then((b: any) => setBatt(`${Math.round(b.level * 100)}%`));
@@ -449,12 +456,16 @@ const Home: React.FC = () => {
 
             {/* 미니 프로필 */}
             <div className="flex items-center gap-3 p-3 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-2xl text-white">
-               <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center">
-                  <User size={20} />
+               <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center overflow-hidden">
+                  {profile.avatar_url ? (
+                     <img src={profile.avatar_url} alt="Profile" className="w-full h-full object-cover" />
+                  ) : (
+                     <User size={20} />
+                  )}
                </div>
                <div>
-                  <div className="font-bold text-sm">운영자</div>
-                  <div className="text-[10px] opacity-80">기록하는 개발자입니다</div>
+                  <div className="font-bold text-sm">{profile.nickname}</div>
+                  <div className="text-[10px] opacity-80">{profile.status_message}</div>
                </div>
             </div>
 
@@ -512,11 +523,11 @@ const Home: React.FC = () => {
          <main className="flex-grow overflow-y-auto bg-[#f9f9fb] dark:bg-slate-900 p-6 lg:p-12">
             <div className="max-w-7xl mx-auto">
                <div className="mb-12">
-                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 text-[10px] font-black uppercase mb-4 ml-14 lg:ml-0">
-                     <Zap size={12} fill="currentColor" /> {getKoreanGreeting()}
+                  <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-white text-[10px] font-black uppercase mb-4 ml-14 lg:ml-0 bg-gradient-to-r ${banner.bg_color || 'from-indigo-500 to-purple-500'}`}>
+                     <Zap size={12} fill="currentColor" /> {banner.subtext || getKoreanGreeting()}
                   </div>
                   <h1 className="text-4xl lg:text-5xl font-black text-slate-900 dark:text-white tracking-tight">
-                     당신의 스마트한 공간 , <span className="text-transparent bg-clip-text clickup-gradient">sia.kr</span>
+                     {banner.text || '당신의 스마트한 공간 , sia.kr'}
                   </h1>
                </div>
 
