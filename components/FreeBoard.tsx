@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../services/supabase';
-import { checkIsBanned, getVisitorIpInfo } from '../services/api';
+import { checkIsBanned, getVisitorIpInfo, verifyItemPassword } from '../services/api';
 import { MessageSquare, Heart, Eye, Edit2, Trash2, Search, X } from 'lucide-react';
 
 interface Post {
@@ -48,7 +48,7 @@ const FreeBoard: React.FC<FreeBoardProps> = ({ isDarkMode }) => {
     const fetchPosts = async () => {
         const { data, error } = await supabase
             .from('posts')
-            .select('*, comments(count)')
+            .select('id, title, content, author_name, views, likes, created_at, comments(count)')
             .order('created_at', { ascending: false });
 
         if (error) console.error('Error fetching posts:', error);
@@ -93,7 +93,7 @@ const FreeBoard: React.FC<FreeBoardProps> = ({ isDarkMode }) => {
         // Fetch comments
         const { data: commentData } = await supabase
             .from('comments')
-            .select('*')
+            .select('id, post_id, content, author_name, created_at')
             .eq('post_id', post.id)
             .order('created_at', { ascending: true });
 
@@ -124,7 +124,7 @@ const FreeBoard: React.FC<FreeBoardProps> = ({ isDarkMode }) => {
         if (!error) {
             const { data: newComments } = await supabase
                 .from('comments')
-                .select('*')
+                .select('id, post_id, content, author_name, created_at')
                 .eq('post_id', selectedPost.id)
                 .order('created_at', { ascending: true });
 
@@ -137,14 +137,10 @@ const FreeBoard: React.FC<FreeBoardProps> = ({ isDarkMode }) => {
         const inputPwd = prompt('비밀번호를 입력하세요:');
         if (!inputPwd || !selectedPost) return;
 
-        // Check password (simple client-side check for this demo, ideally server-side RPC)
-        const { data } = await supabase
-            .from('posts')
-            .select('password')
-            .eq('id', selectedPost.id)
-            .single();
+        // Secure password check via RPC
+        const isMatched = await verifyItemPassword('posts', selectedPost.id, inputPwd);
 
-        if (data && data.password === inputPwd) {
+        if (isMatched) {
             await supabase.from('posts').delete().eq('id', selectedPost.id);
             alert('삭제되었습니다.');
             setView('list');

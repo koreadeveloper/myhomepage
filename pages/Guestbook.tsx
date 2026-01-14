@@ -11,7 +11,6 @@ interface GuestbookEntry {
   nickname: string;
   avatar_id: string;
   content: string;
-  password: string;
   is_secret: boolean;
   is_stamp: boolean;
   created_at: string;
@@ -74,10 +73,8 @@ const Guestbook: React.FC = () => {
   }, []);
 
   const fetchEntries = async () => {
-    const { data, error } = await supabase
-      .from('guestbook')
-      .select('*')
-      .order('created_at', { ascending: false });
+    // SECURITY: Use RPC to get entries. This masks secret content if user is not admin.
+    const { data, error } = await supabase.rpc('get_guestbook_entries');
 
     if (error) console.error('Error fetching guestbook:', error);
     else setEntries(data || []);
