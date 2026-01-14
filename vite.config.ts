@@ -12,5 +12,6 @@ export default defineConfig({
     alias: {
       '@': path.resolve(__dirname, '.'),
     }
-  }
+  },
+  base: './', // Fix for blank page on deployment
 });
