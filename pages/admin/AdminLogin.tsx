@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { supabase } from '../../services/supabase';
 import { useNavigate } from 'react-router-dom';
 
@@ -8,6 +8,16 @@ const AdminLogin: React.FC = () => {
     const [loading, setLoading] = useState(false);
     const [errorMsg, setErrorMsg] = useState<string | null>(null);
     const navigate = useNavigate();
+
+    useEffect(() => {
+        const checkSession = async () => {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (session) {
+                navigate('/admin/dashboard', { replace: true });
+            }
+        };
+        checkSession();
+    }, [navigate]);
 
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();

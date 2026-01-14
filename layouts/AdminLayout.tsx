@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Outlet, NavLink, useNavigate } from 'react-router-dom';
 import { LayoutDashboard, MessageSquare, Settings, LogOut, Shield, Users } from 'lucide-react';
 import { supabase } from '../services/supabase';
@@ -6,6 +6,27 @@ import { supabase } from '../services/supabase';
 const AdminLayout: React.FC = () => {
     const navigate = useNavigate();
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+    const [isLoading, setIsLoading] = useState(true);
+
+    useEffect(() => {
+        const checkAuth = async () => {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (!session) {
+                navigate('/admin/login', { replace: true });
+            } else {
+                setIsLoading(false);
+            }
+        };
+        checkAuth();
+    }, [navigate]);
+
+    if (isLoading) {
+        return (
+            <div className="flex h-screen items-center justify-center bg-slate-100 dark:bg-slate-900">
+                <div className="text-indigo-600 font-bold text-lg animate-pulse">Loading Admin Panel...</div>
+            </div>
+        );
+    }
 
     const handleLogout = async () => {
         await supabase.auth.signOut();

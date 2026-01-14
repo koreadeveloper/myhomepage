@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Link, useLocation, Navigate } from 'react-router-dom';
 import Home from './pages/Home';
 import Community from './pages/Community';
 import Guestbook from './pages/Guestbook';
@@ -107,8 +107,12 @@ const App: React.FC = () => {
     <Router>
       <Routes>
         {/* 관리자 라우트 */}
+        {/* 관리자 라우트 - 로그인 (전체 화면) */}
+        <Route path="/admin/login" element={<AdminLogin />} />
+
+        {/* 관리자 라우트 - 보호된 영역 */}
         <Route path="/admin" element={<AdminLayout />}>
-          <Route path="login" element={<AdminLogin />} />
+          <Route index element={<Navigate to="dashboard" replace />} />
           <Route path="dashboard" element={<AdminDashboard />} />
           <Route path="contents" element={<ContentManager />} />
           <Route path="users" element={<BanManager />} />
