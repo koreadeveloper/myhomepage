@@ -13,5 +13,5 @@ export default defineConfig({
       '@': path.resolve(__dirname, '.'),
     }
   },
-  base: './', // Fix for blank page on deployment
+  base: '/', // Absolute path for correct asset loading in nested routes
 });
