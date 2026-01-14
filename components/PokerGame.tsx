@@ -118,7 +118,7 @@ const DesktopSidebarComponent = memo(() => {
     const [showHowTo, setShowHowTo] = useState(true);
 
     return (
-        <div className="space-y-4">
+        <div className="space-y-4 pt-10 sm:pt-12">
             <div className="bg-white dark:bg-slate-800 rounded-xl shadow-lg overflow-hidden">
                 <div className="flex items-center justify-between p-3 bg-gradient-to-r from-purple-600 to-indigo-600 text-white cursor-pointer" onClick={() => setShowRankings(!showRankings)}>
                     <div className="flex items-center gap-2"><span className="text-lg">🃏</span><span className="font-bold text-sm">포커 족보</span></div>
@@ -426,7 +426,7 @@ const PokerGame: React.FC = () => {
             </div>
 
             {/* PC 사이드바 */}
-            <div className="hidden lg:block w-72 shrink-0"><DesktopSidebarComponent /></div>
+            <div className="hidden lg:block w-72 shrink-0 pt-8 sm:pt-10"><DesktopSidebarComponent /></div>
 
             {/* 모바일 모달 */}
             {showMobileModal && <MobileModal />}
