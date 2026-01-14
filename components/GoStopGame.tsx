@@ -606,7 +606,7 @@ const DesktopSidebar = memo(({ mode = 'classic' }: { mode?: 'classic' | 'reality
     const [showHowTo, setShowHowTo] = useState(true);
 
     return (
-        <div className="space-y-4">
+        <div className="space-y-4 pt-10 sm:pt-12">
             <div className="bg-white dark:bg-slate-800 rounded-xl shadow-lg overflow-hidden">
                 <div className="flex items-center justify-between p-3 bg-gradient-to-r from-orange-500 to-amber-500 text-white cursor-pointer" onClick={() => setShowRankings(!showRankings)}>
                     <div className="flex items-center gap-2"><span className="text-lg">🎴</span><span className="font-bold text-sm">고스톱 족보</span></div>
@@ -1369,7 +1369,7 @@ const GoStopGame: React.FC = () => {
             </div>
 
             {/* PC 가이드 사이드바 */}
-            <div className="hidden lg:block w-80 shrink-0">
+            <div className="hidden lg:block w-80 shrink-0 pt-8 sm:pt-10">
                 <DesktopSidebar mode={gameMode} />
             </div>
 
