@@ -21,6 +21,8 @@ const RubiksCubeGame: React.FC = () => {
     const sceneRef = useRef<THREE.Scene | null>(null);
     const cubiesRef = useRef<THREE.Mesh[]>([]);
     const isRotatingRef = useRef(false);
+    const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
+    const controlsRef = useRef<OrbitControls | null>(null);
 
     const [moves, setMoves] = useState(0);
     const [isSolved, setIsSolved] = useState(true);
@@ -175,6 +177,16 @@ const RubiksCubeGame: React.FC = () => {
         setMoves(0);
         setMoveHistory([]);
         setIsSolved(true);
+
+        // 카메라 위치 초기화 (중앙으로 리셋)
+        if (cameraRef.current) {
+            cameraRef.current.position.set(4, 3, 4);
+            cameraRef.current.lookAt(0, 0, 0);
+        }
+        if (controlsRef.current) {
+            controlsRef.current.target.set(0, 0, 0);
+            controlsRef.current.update();
+        }
     }, [createCubie]);
 
     // 섞기
@@ -254,6 +266,10 @@ const RubiksCubeGame: React.FC = () => {
         controls.dampingFactor = 0.05;
         controls.minDistance = 4;
         controls.maxDistance = 15;
+
+        // ref에 저장
+        cameraRef.current = camera;
+        controlsRef.current = controls;
 
         // 27개 큐비 생성
         for (let x = -1; x <= 1; x++) {
