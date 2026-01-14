@@ -112,6 +112,51 @@ const SlidingPuzzleGame: React.FC = () => {
         initPuzzle();
     }, [initPuzzle]);
 
+    // 키보드 방향키 지원
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (!isPlaying || isWon) return;
+
+            const emptyIndex = tiles.indexOf(0);
+            const emptyRow = Math.floor(emptyIndex / gridSize);
+            const emptyCol = emptyIndex % gridSize;
+
+            let targetIndex = -1;
+
+            switch (e.key) {
+                case 'ArrowUp':
+                    // 빈 칸 아래의 타일을 위로 이동 (빈 칸이 위로 이동하는 것처럼)
+                    if (emptyRow < gridSize - 1) {
+                        targetIndex = (emptyRow + 1) * gridSize + emptyCol;
+                    }
+                    break;
+                case 'ArrowDown':
+                    if (emptyRow > 0) {
+                        targetIndex = (emptyRow - 1) * gridSize + emptyCol;
+                    }
+                    break;
+                case 'ArrowLeft':
+                    if (emptyCol < gridSize - 1) {
+                        targetIndex = emptyRow * gridSize + (emptyCol + 1);
+                    }
+                    break;
+                case 'ArrowRight':
+                    if (emptyCol > 0) {
+                        targetIndex = emptyRow * gridSize + (emptyCol - 1);
+                    }
+                    break;
+            }
+
+            if (targetIndex >= 0) {
+                e.preventDefault();
+                moveTile(targetIndex);
+            }
+        };
+
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [isPlaying, isWon, tiles, gridSize]);
+
     // 시간 포맷
     const formatTime = (seconds: number) => {
         const mins = Math.floor(seconds / 60);

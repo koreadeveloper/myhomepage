@@ -1090,9 +1090,9 @@ const GoStopGame: React.FC = () => {
     );
 
     return (
-        <div className="flex flex-col lg:flex-row gap-4 w-full min-h-screen p-2 sm:p-4 overflow-y-auto pb-24">
+        <div className="flex flex-col lg:flex-row gap-4 w-full min-h-screen p-2 sm:p-4 pt-6 sm:pt-8 overflow-y-auto pb-24">
             {/* 메인 게임 영역 */}
-            <div className="flex-1 flex flex-col items-center gap-3 sm:gap-4 max-w-4xl mx-auto">
+            <div className="flex-1 flex flex-col items-center gap-3 sm:gap-4 max-w-4xl mx-auto pt-2">
                 {/* 점수 & 가이드 버튼 */}
                 <div className="flex justify-between items-center w-full px-4">
                     <div className="flex items-center gap-4">
