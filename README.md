@@ -39,13 +39,14 @@
 | `/projects` | 전체 프로젝트 목록 |
 | `/about` | 제작자 소개·프로젝트별 역할 |
 | `/gamezone` | 30+ 브라우저 게임 (체스·장기·고스톱·포커 등) |
+| `/stats` | 방문자 통계 (국가·기기·유입 경로·시간대) |
 
 ## 🛠️ 기술 스택
 
 - **React 19** + **TypeScript** + **Vite**
 - **Tailwind CSS** (CDN, 커스텀 디자인 토큰)
 - **React Router** — SPA 라우팅
-- **Supabase** — 게임존 점수/랭킹 (선택적, 키 없이도 실행 가능)
+- **Supabase** — 게임존 점수/랭킹 + 방문자 통계 (선택적, 키 없이도 실행 가능)
 - **Stockfish 19 (WASM)** · **three** · **chess.js** — 게임존 엔진
 
 ## � 시작하기

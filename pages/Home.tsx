@@ -1,7 +1,7 @@
 
 import React, { useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { ArrowRight, Github, Gamepad2 } from 'lucide-react';
+import { ArrowRight, Github, Gamepad2, BarChart3 } from 'lucide-react';
 import { site } from '../data/site';
 import { featuredProjects } from '../data/projects';
 import ProjectCard from '../components/ProjectCard';
@@ -107,6 +107,12 @@ const Home: React.FC = () => {
                      className="inline-flex items-center gap-1.5 text-xs font-bold text-muted dark:text-slate-400 hover:text-brand transition-colors"
                   >
                      <Gamepad2 size={14} /> 게임존
+                  </Link>
+                  <Link
+                     to="/stats"
+                     className="inline-flex items-center gap-1.5 text-xs font-bold text-muted dark:text-slate-400 hover:text-brand transition-colors"
+                  >
+                     <BarChart3 size={14} /> 통계
                   </Link>
                </div>
             </div>

@@ -4,8 +4,17 @@ import Home from './pages/Home';
 import Projects from './pages/Projects';
 import About from './pages/About';
 import GameZone from './pages/GameZone';
+import Stats from './pages/Stats';
 import { Menu, X, Sun, Moon } from 'lucide-react';
 import { useTheme } from './hooks/useTheme';
+import { trackPageview } from './services/analytics';
+
+// 라우트 변경마다 방문 기록
+const PageTracker: React.FC = () => {
+  const { pathname } = useLocation();
+  useEffect(() => { void trackPageview(pathname); }, [pathname]);
+  return null;
+};
 
 const navItems = [
   { to: '/#projects', label: '프로젝트' },
@@ -94,11 +103,13 @@ const App: React.FC = () => {
   return (
     <Router>
       <Header />
+      <PageTracker />
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/projects" element={<Projects />} />
         <Route path="/about" element={<About />} />
         <Route path="/gamezone" element={<GameZone />} />
+        <Route path="/stats" element={<Stats />} />
 
         {/* 과거 주소 → 새 경로 안내 */}
         <Route path="/community" element={<Navigate to="/" replace />} />
