@@ -17,10 +17,15 @@
       <stop offset="0" stop-color="#F9A8D4" stop-opacity="0.55"/>
       <stop offset="1" stop-color="#F9A8D4" stop-opacity="0"/>
     </radialGradient>
+    <linearGradient id="sGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="0.7" stop-color="#F4F1FF"/>
+      <stop offset="1" stop-color="#DDD5FF"/>
+    </linearGradient>
     <filter id="soft" x="-40%" y="-40%" width="180%" height="180%">
       <feGaussianBlur stdDeviation="34"/>
     </filter>
-    <filter id="sShadow" x="-30%" y="-30%" width="160%" height="160%">
+    <filter id="sShadow" x="-40%" y="-40%" width="180%" height="180%">
       <feDropShadow dx="0" dy="10" stdDeviation="14" flood-color="#2E1B9E" flood-opacity="0.35"/>
     </filter>
     <clipPath id="clip"><rect width="512" height="512" rx="116"/></clipPath>
@@ -35,8 +40,13 @@
     <ellipse cx="256" cy="52" rx="300" ry="105" fill="#ffffff" opacity="0.16" filter="url(#soft)"/>
   </g>
 
-  <text x="258" y="356" text-anchor="middle"
-        font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif"
-        font-size="310" font-weight="800" fill="#ffffff" letter-spacing="-6"
-        filter="url(#sShadow)">S</text>
+  <path d="M 352 152
+           C 330 84, 214 62, 150 118
+           C 96 166, 96 236, 165 268
+           C 205 287, 300 295, 345 330
+           C 400 372, 380 452, 290 470
+           C 215 484, 120 452, 118 375"
+        fill="none" stroke="url(#sGrad)" stroke-width="84"
+        stroke-linecap="round" filter="url(#sShadow)"
+        transform="translate(256,252) scale(0.8) translate(-235,-273)"/>
 </svg>
