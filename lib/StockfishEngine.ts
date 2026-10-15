@@ -1,5 +1,5 @@
 // Stockfish Engine Wrapper
-// Uses stockfish.js directly as a Web Worker
+// Uses Stockfish 19 Lite WASM (single-threaded) as a Web Worker
 
 export interface StockfishOptions {
     skillLevel?: number;  // 0-20
@@ -26,8 +26,8 @@ export class StockfishEngine {
 
     private initWorker(): void {
         try {
-            // Use locally hosted stockfish.js as worker
-            this.worker = new Worker('/stockfish.js');
+            // Stockfish 19 Lite (single-threaded WASM) — no COOP/COEP headers required
+            this.worker = new Worker('/stockfish-19-lite-single.js');
 
             this.worker.onmessage = (e: MessageEvent) => {
                 const message = typeof e.data === 'string' ? e.data : String(e.data);
@@ -88,16 +88,24 @@ export class StockfishEngine {
     private applyOptions(): void {
         if (!this.worker) return;
 
-        // Note: stockfish.js 10.0.2 may not support all UCI options
-        // Skill Level is the most reliable way to adjust difficulty
-        this.sendMessage(`setoption name Skill Level value ${this.options.skillLevel}`);
+        const elo = this.options.elo ?? 1200;
+        if (elo >= 1350) {
+            // UCI_Elo (SF11+) caps playing strength at a real rating (1320–3190)
+            this.sendMessage('setoption name UCI_LimitStrength value true');
+            this.sendMessage(`setoption name UCI_Elo value ${Math.min(3190, Math.max(1320, elo))}`);
+            this.sendMessage('setoption name Skill Level value 20');
+        } else {
+            // Below 1320 UCI_Elo can't go that low — use Skill Level for blundering play
+            this.sendMessage('setoption name UCI_LimitStrength value false');
+            this.sendMessage(`setoption name Skill Level value ${this.options.skillLevel}`);
+        }
         this.sendMessage('isready');
     }
 
     public setDifficulty(elo: number): void {
         this.options.elo = Math.max(300, Math.min(3000, elo));
 
-        // Map Elo to Skill Level (0-20)
+        // Map Elo to Skill Level (0-20) — only used below 1350 where UCI_Elo can't reach
         if (elo < 600) {
             this.options.skillLevel = Math.floor((elo - 300) / 75);  // 0-3
             this.options.depth = 3;
@@ -107,7 +115,7 @@ export class StockfishEngine {
             this.options.depth = 6;
             this.options.moveTime = 200;
         } else if (elo < 1500) {
-            this.options.skillLevel = Math.floor((elo - 1000) / 100) + 8;  // 8-12
+            this.options.skillLevel = Math.min(9, Math.floor((elo - 1000) / 150) + 6);  // 6-9
             this.options.depth = 10;
             this.options.moveTime = 500;
         } else if (elo < 2000) {

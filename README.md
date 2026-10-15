@@ -46,7 +46,7 @@
 - **Tailwind CSS** (CDN, 커스텀 디자인 토큰)
 - **React Router** — SPA 라우팅
 - **Supabase** — 게임존 점수/랭킹 (선택적, 키 없이도 실행 가능)
-- **Stockfish.js** · **three** · **chess.js** — 게임존 엔진
+- **Stockfish 19 (WASM)** · **three** · **chess.js** — 게임존 엔진
 
 ## � 시작하기
 
