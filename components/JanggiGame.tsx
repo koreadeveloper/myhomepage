@@ -268,7 +268,7 @@ const JanggiGame: React.FC = () => {
     };
 
     return (
-        <div className="flex flex-col items-center justify-center w-full h-full p-4 gap-4">
+        <div className="flex flex-col items-center justify-center w-full p-2 gap-3">
             <h1 className="text-2xl font-bold text-slate-800 dark:text-white">♟️ 장기</h1>
 
             <div className="flex gap-4">
@@ -299,7 +299,7 @@ const JanggiGame: React.FC = () => {
                                     <div
                                         key={colIdx}
                                         onClick={() => handleClick(rowIdx, colIdx)}
-                                        className={`w-12 h-12 sm:w-14 sm:h-14 flex items-center justify-center cursor-pointer
+                                        className={`w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center cursor-pointer
                                             border border-amber-700/30 relative
                                             ${isSelected ? 'bg-yellow-300' : ''}
                                             ${isValid ? 'bg-green-200' : ''}`}

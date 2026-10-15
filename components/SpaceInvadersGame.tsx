@@ -198,11 +198,11 @@ const SpaceInvadersGame = () => {
 
     return (
         <div className="flex flex-col items-center gap-4">
-            <div className="flex gap-6 text-lg font-bold text-white">
+            <div className="flex gap-6 text-lg font-bold text-slate-800 dark:text-white">
                 <span>점수: {score}</span>
                 <span className="text-red-500">생명: {lives}</span>
             </div>
-            <canvas ref={canvasRef} width={600} height={700} className="rounded-lg bg-black max-w-full" />
+            <canvas ref={canvasRef} width={600} height={700} className="rounded-lg bg-black max-w-full max-h-[62vh] w-auto" />
             {!started && (
                 <button onClick={initGame} className="px-6 py-3 bg-purple-500 text-white font-bold rounded-lg hover:bg-purple-400">
                     게임 시작

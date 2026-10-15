@@ -160,8 +160,8 @@ const BreakoutGame = () => {
 
     return (
         <div className="flex flex-col items-center gap-4">
-            <div className="text-lg font-bold text-white">점수: {score}</div>
-            <canvas ref={canvasRef} width={600} height={650} className="rounded-lg bg-slate-900 max-w-full" />
+            <div className="text-lg font-bold text-slate-800 dark:text-white">점수: {score}</div>
+            <canvas ref={canvasRef} width={600} height={650} className="rounded-lg bg-slate-900 max-w-full max-h-[62vh] w-auto" />
             {!started && (
                 <button onClick={initGame} className="px-6 py-3 bg-red-500 text-white font-bold rounded-lg hover:bg-red-400">
                     게임 시작

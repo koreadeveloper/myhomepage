@@ -213,11 +213,11 @@ const PacmanGame = () => {
 
     return (
         <div className="flex flex-col items-center gap-4">
-            <div className="flex gap-4 text-lg font-bold text-white">
+            <div className="flex gap-4 text-lg font-bold text-slate-800 dark:text-white">
                 <span>점수: {score}</span>
                 <span>레벨: {level}</span>
             </div>
-            <canvas ref={canvasRef} width={570} height={630} className="rounded-lg bg-black max-w-full" />
+            <canvas ref={canvasRef} width={570} height={630} className="rounded-lg bg-black max-w-full max-h-[62vh] w-auto" />
             {!started && (
                 <button onClick={initGame} className="px-6 py-3 bg-yellow-500 text-black font-bold rounded-lg hover:bg-yellow-400">
                     게임 시작

@@ -173,20 +173,20 @@ const FlappyBirdGame = () => {
     return (
         <div className="flex flex-col items-center gap-4">
             <div className="flex gap-6 text-lg font-bold">
-                <span className="text-white">점수: {score}</span>
+                <span className="text-slate-800 dark:text-white">점수: {score}</span>
                 <span className="text-yellow-400">최고: {bestScore}</span>
             </div>
             <canvas
                 ref={canvasRef}
                 width={500}
                 height={650}
-                className="rounded-lg cursor-pointer max-w-full"
+                className="rounded-lg cursor-pointer max-w-full max-h-[62vh] w-auto bg-gradient-to-b from-[#87ceeb] to-[#98d8eb]"
                 onClick={jump}
                 onTouchStart={jump}
             />
             {!started && (
                 <div className="text-center">
-                    <p className="text-slate-300 mb-2">화면을 탭하거나 스페이스바를 눌러 점프!</p>
+                    <p className="text-slate-500 dark:text-slate-300 mb-2">화면을 탭하거나 스페이스바를 눌러 점프!</p>
                     <button onClick={initGame} className="px-6 py-3 bg-sky-500 text-white font-bold rounded-lg hover:bg-sky-400">
                         게임 시작
                     </button>

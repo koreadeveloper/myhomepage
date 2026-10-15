@@ -25,7 +25,7 @@ const MobileControls: React.FC<MobileControlsProps> = ({
     const iconClass = "w-8 h-8 text-slate-800 dark:text-white";
 
     return (
-        <div className="fixed bottom-4 left-0 right-0 px-4 pb-safe flex justify-between items-end pointer-events-none z-50">
+        <div className="fixed bottom-4 left-0 right-0 px-4 pb-safe flex justify-between items-end pointer-events-none z-50 lg:hidden">
             {/* Left Control Area */}
             <div className="pointer-events-auto">
                 {type === 'dpad' && (

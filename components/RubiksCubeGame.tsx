@@ -28,6 +28,7 @@ const RubiksCubeGame: React.FC = () => {
     const [isSolved, setIsSolved] = useState(true);
     const [moveHistory, setMoveHistory] = useState<string[]>([]);
     const [isReady, setIsReady] = useState(false);
+    const [webglError, setWebglError] = useState(false);
 
     // 큐비 생성 함수
     const createCubie = useCallback((x: number, y: number, z: number): THREE.Mesh => {
@@ -233,7 +234,13 @@ const RubiksCubeGame: React.FC = () => {
         camera.lookAt(0, 0, 0);
 
         // 렌더러 설정
-        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        let renderer: THREE.WebGLRenderer;
+        try {
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+        } catch {
+            setWebglError(true);
+            return;
+        }
         renderer.setSize(width, height);
         renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
         container.appendChild(renderer.domElement);
@@ -335,7 +342,7 @@ const RubiksCubeGame: React.FC = () => {
     }, [rotateFace]);
 
     return (
-        <div className="flex flex-col items-center w-full min-h-screen p-4 gap-4 bg-slate-900 overflow-y-auto">
+        <div className="flex flex-col items-center w-full p-4 gap-4 bg-slate-900 rounded-2xl">
             <h1 className="text-2xl font-bold text-white">🧊 3D 루빅스 큐브</h1>
 
             {/* 상태 표시 */}
@@ -353,11 +360,19 @@ const RubiksCubeGame: React.FC = () => {
             )}
 
             {/* 3D 캔버스 컨테이너 */}
-            <div
-                ref={containerRef}
-                className="rounded-2xl overflow-hidden shadow-2xl border-4 border-slate-700 bg-slate-800 w-full max-w-[600px]"
-                style={{ height: 'min(400px, 60vw)' }}
-            />
+            {webglError ? (
+                <div className="rounded-2xl border-4 border-slate-700 bg-slate-800 w-full max-w-[600px] flex flex-col items-center justify-center gap-2 text-center p-6" style={{ height: 'min(400px, 60vw)' }}>
+                    <span className="text-3xl">🧊</span>
+                    <p className="text-white font-bold">이 브라우저에서 3D(WebGL)를 사용할 수 없습니다</p>
+                    <p className="text-slate-400 text-sm">하드웨어 가속을 켜거나 다른 브라우저에서 시도해 주세요.</p>
+                </div>
+            ) : (
+                <div
+                    ref={containerRef}
+                    className="rounded-2xl overflow-hidden shadow-2xl border-4 border-slate-700 bg-slate-800 w-full max-w-[600px]"
+                    style={{ height: 'min(400px, 60vw)' }}
+                />
+            )}
 
             {/* 조작 버튼 */}
             <div className="bg-slate-800 rounded-xl p-4 shadow-lg">

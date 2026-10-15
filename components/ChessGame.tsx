@@ -379,7 +379,7 @@ const ChessGame: React.FC = () => {
             </div>
 
             {/* Chess Board */}
-            <div className="flex-shrink-0 w-[95vw] aspect-square lg:w-[min(calc(100vh-100px),calc(100vw-400px),800px)] lg:h-[min(calc(100vh-100px),calc(100vw-400px),800px)] relative">
+            <div className="flex-shrink-0 w-[95vw] aspect-square lg:w-[min(calc(100vh-220px),calc(100vw-400px),800px)] lg:h-[min(calc(100vh-220px),calc(100vw-400px),800px)] relative">
                 <div className="grid grid-cols-8 grid-rows-8 border-2 lg:border-4 border-lime-800 dark:border-lime-600 rounded-lg overflow-hidden shadow-2xl w-full h-full" style={{ contain: 'layout' }}>
                     {(playerColor === 'b' ? [...board].reverse().map(row => [...row].reverse()) : board).map((row, displayR) => row.map((piece, displayC) => {
                         const r = playerColor === 'b' ? 7 - displayR : displayR;
@@ -444,7 +444,7 @@ const ChessGame: React.FC = () => {
             </div>
 
             {/* Right Panel - Move History */}
-            <div className="hidden lg:flex flex-col w-44" style={{ height: 'min(calc(100vh - 100px), 800px)' }}>
+            <div className="hidden lg:flex flex-col w-44" style={{ height: 'min(calc(100vh - 220px), 800px)' }}>
                 <div className="bg-white dark:bg-slate-800 rounded-lg shadow-lg border border-slate-200 dark:border-slate-700 flex-1 overflow-hidden flex flex-col">
                     <div className="text-sm font-bold text-slate-600 dark:text-slate-300 p-2 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900">기보</div>
                     <div className="flex-1 overflow-y-auto p-1">

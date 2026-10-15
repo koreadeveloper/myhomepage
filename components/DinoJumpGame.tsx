@@ -216,7 +216,7 @@ const DinoJumpGame = () => {
     return (
         <div className="flex flex-col items-center gap-4">
             <div className="flex gap-6 text-lg font-bold">
-                <span className="text-slate-700">점수: {score}</span>
+                <span className="text-slate-700 dark:text-slate-200">점수: {score}</span>
                 <span className="text-amber-600">최고: {bestScore}</span>
             </div>
             <canvas
