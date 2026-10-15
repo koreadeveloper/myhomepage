@@ -4,12 +4,25 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>sia.kr | 개인 생산성 OS</title>
+  <title>sia.kr — 프로젝트 허브</title>
+  <meta name="description" content="만들고 실험한 서비스를 소개하고 바로 체험할 수 있는 sia.kr의 프로젝트 허브" />
   <link rel="icon" type="image/png" href="/favicon.png" />
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
       darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            paper: '#F8F9FD',
+            ink: '#101828',
+            muted: '#475467',
+            brand: '#6846FF',
+            night: '#0B1020',
+            nightcard: '#141B2E',
+          },
+        },
+      },
     }
   </script>
   <link
@@ -19,14 +32,20 @@
   <style>
     body {
       font-family: 'Plus Jakarta Sans', 'Noto Sans KR', sans-serif;
-      background-color: #f9f9fb;
+      background-color: #F8F9FD;
+      color: #101828;
       overflow-x: hidden;
-      transition: background-color 0.3s ease;
+      transition: background-color 0.3s ease, color 0.3s ease;
     }
 
-    .dark body,
-    body.dark {
-      background-color: #0f172a;
+    .dark body {
+      background-color: #0B1020;
+      color: #E6EAF2;
+    }
+
+    /* 한글 제목 단어 중간 줄바꿈 방지 */
+    h1, h2, h3 {
+      word-break: keep-all;
     }
 
     /* Custom Scrollbar */
@@ -35,39 +54,124 @@
     }
 
     ::-webkit-scrollbar-track {
-      background: #f1f1f1;
+      background: transparent;
     }
 
     ::-webkit-scrollbar-thumb {
-      background: #ccc;
+      background: #c4c9d4;
       border-radius: 10px;
     }
 
     ::-webkit-scrollbar-thumb:hover {
-      background: #999;
-    }
-
-    .dark ::-webkit-scrollbar-track {
-      background: #1e293b;
+      background: #98a2b3;
     }
 
     .dark ::-webkit-scrollbar-thumb {
-      background: #475569;
+      background: #344054;
     }
 
-    .glass-card {
-      background: rgba(255, 255, 255, 0.8);
-      backdrop-filter: blur(10px);
-      border: 1px solid rgba(255, 255, 255, 0.3);
+    /* ── Aurora (히어로 뒤 정적 소프트 그라데이션) ── */
+    .aurora {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+      pointer-events: none;
     }
 
-    .dark .glass-card {
-      background: rgba(30, 41, 59, 0.8);
-      border: 1px solid rgba(71, 85, 105, 0.3);
+    .aurora::before,
+    .aurora::after {
+      content: '';
+      position: absolute;
+      border-radius: 9999px;
+      filter: blur(90px);
     }
 
-    .clickup-gradient {
-      background: linear-gradient(135deg, #7b68ee 0%, #ff00ff 100%);
+    .aurora::before {
+      width: 55vw;
+      height: 55vw;
+      top: -22vw;
+      right: -14vw;
+      background: radial-gradient(circle, rgba(125, 211, 252, 0.55), rgba(196, 181, 253, 0.35) 55%, transparent 75%);
+    }
+
+    .aurora::after {
+      width: 45vw;
+      height: 45vw;
+      top: -14vw;
+      left: -12vw;
+      background: radial-gradient(circle, rgba(196, 181, 253, 0.45), rgba(165, 243, 252, 0.3) 55%, transparent 75%);
+    }
+
+    .dark .aurora::before {
+      background: radial-gradient(circle, rgba(104, 70, 255, 0.28), rgba(56, 89, 179, 0.18) 55%, transparent 75%);
+    }
+
+    .dark .aurora::after {
+      background: radial-gradient(circle, rgba(59, 130, 246, 0.2), rgba(104, 70, 255, 0.14) 55%, transparent 75%);
+    }
+
+    /* ── 글래스 (내비게이션 전용) ── */
+    .glass {
+      background: rgba(255, 255, 255, 0.62);
+      -webkit-backdrop-filter: blur(20px) saturate(1.7);
+      backdrop-filter: blur(20px) saturate(1.7);
+      border: 1px solid rgba(255, 255, 255, 0.75);
+      box-shadow: 0 8px 30px rgba(16, 24, 40, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.9);
+    }
+
+    .dark .glass {
+      background: rgba(20, 27, 46, 0.6);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+    }
+
+    /* ── 등장 전환 (짧은 진입만, reduced-motion 대응) ── */
+    @keyframes rise {
+      from {
+        opacity: 0;
+        transform: translateY(18px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .reveal {
+      animation: rise 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
+    }
+
+    .reveal-1 { animation-delay: 0.05s; }
+    .reveal-2 { animation-delay: 0.12s; }
+    .reveal-3 { animation-delay: 0.19s; }
+    .reveal-4 { animation-delay: 0.26s; }
+    .reveal-5 { animation-delay: 0.33s; }
+    .reveal-6 { animation-delay: 0.40s; }
+
+    /* ── 포커스 접근성 ── */
+    :focus-visible {
+      outline: 2px solid #6846FF;
+      outline-offset: 3px;
+      border-radius: 4px;
+    }
+
+    /* ── 모션 감소 설정 ── */
+    @media (prefers-reduced-motion: reduce) {
+
+      .reveal,
+      .reveal-1,
+      .reveal-2,
+      .reveal-3,
+      .reveal-4,
+      .reveal-5,
+      .reveal-6 {
+        animation: none;
+      }
+
+      *, *::before, *::after {
+        transition-duration: 0.01ms !important;
+      }
     }
   </style>
   <script type="importmap">
@@ -82,7 +186,7 @@
   }
 }
 </script>
-  <link rel="stylesheet" href="/index.css">
+
 </head>
 
 <body>

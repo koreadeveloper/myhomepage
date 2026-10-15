@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import Sidebar from '../components/Sidebar';
 import ChessGameNew from '../components/ChessGame';
 import PacmanGame from '../components/PacmanGame';
 import BreakoutGame from '../components/BreakoutGame';
@@ -1899,13 +1898,6 @@ const ChessGame = () => {
 // --- Main Component ---
 const GameZone: React.FC = () => {
     const [activeGame, setActiveGame] = useState<Game | null>(null);
-    const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
-    const [isDarkMode, setIsDarkMode] = useState(() => {
-        if (typeof window !== 'undefined') {
-            return document.documentElement.classList.contains('dark');
-        }
-        return false;
-    });
 
     const openGame = (game: Game) => {
         setActiveGame(game);
@@ -1933,18 +1925,6 @@ const GameZone: React.FC = () => {
             window.removeEventListener('popstate', handlePopState);
         };
     }, [activeGame]);
-
-    const toggleDarkMode = () => {
-        const newMode = !isDarkMode;
-        setIsDarkMode(newMode);
-        if (newMode) {
-            document.documentElement.classList.add('dark');
-            localStorage.setItem('darkMode', 'true');
-        } else {
-            document.documentElement.classList.remove('dark');
-            localStorage.setItem('darkMode', 'false');
-        }
-    };
 
     const renderGame = () => {
         switch (activeGame?.title) {
@@ -1997,15 +1977,8 @@ const GameZone: React.FC = () => {
     };
 
     return (
-        <div className={`flex h-[calc(100vh-72px)] overflow-hidden ${isDarkMode ? 'dark' : ''}`}>
-            <Sidebar
-                isDarkMode={isDarkMode}
-                toggleDarkMode={toggleDarkMode}
-                isMobileSidebarOpen={isMobileSidebarOpen}
-                setIsMobileSidebarOpen={setIsMobileSidebarOpen}
-            />
-
-            <main className="flex-grow overflow-hidden relative bg-[#f9f9fb] dark:bg-slate-900">
+        <div className="flex h-screen overflow-hidden pt-[76px]">
+            <main className="flex-grow overflow-hidden relative bg-paper dark:bg-night">
                 <div className={`h-full overflow-y-auto p-6 transition-all duration-300 transform ${activeGame ? 'opacity-0 scale-95 pointer-events-none' : 'opacity-100 scale-100 pointer-events-auto'}`}>
                     <div className="max-w-7xl mx-auto">
                         <div className="mb-8">

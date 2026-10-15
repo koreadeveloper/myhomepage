@@ -66,7 +66,7 @@ const SpeedCardGame: React.FC = () => {
         }
 
         // 카드 놓기
-        const newPiles: [Card | null, Card | null] = [...centerPiles];
+        const newPiles: [Card | null, Card | null] = [centerPiles[0], centerPiles[1]];
         newPiles[pileIndex] = card;
         setCenterPiles(newPiles);
 
@@ -102,7 +102,7 @@ const SpeedCardGame: React.FC = () => {
                 if (aiDeck.length > 0) {
                     const topCard = aiDeck[0];
                     if (canPlay(topCard, centerPiles[pileIdx])) {
-                        const newPiles: [Card | null, Card | null] = [...centerPiles];
+                        const newPiles: [Card | null, Card | null] = [centerPiles[0], centerPiles[1]];
                         newPiles[pileIdx] = topCard;
                         setCenterPiles(newPiles);
                         setAiDeck(aiDeck.slice(1));
