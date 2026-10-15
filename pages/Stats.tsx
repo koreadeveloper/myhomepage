@@ -195,6 +195,11 @@ const Stats: React.FC = () => {
                   {v.path || '/'} · {host(v.referrer)}
                 </p>
               </div>
+              {v.ip_address && (
+                <code className="text-[10px] font-mono font-bold text-slate-400 dark:text-slate-500 bg-slate-100 dark:bg-white/10 rounded px-1.5 py-0.5 shrink-0 hidden sm:block">
+                  {v.ip_address}
+                </code>
+              )}
               <span className="text-xs font-bold text-slate-400 shrink-0">{timeAgo(v.created_at)}</span>
             </li>
           ))}

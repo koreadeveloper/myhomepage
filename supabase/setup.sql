@@ -7,12 +7,16 @@ create table if not exists site_visits (
   session_id text not null,
   path text,
   referrer text,
+  ip_address text,
   country text,
   country_code text,
   city text,
   device text,
   browser text
 );
+
+-- 이미 테이블을 만든 경우: 아래 한 줄만 실행하면 됩니다
+alter table site_visits add column if not exists ip_address text;
 
 alter table site_visits enable row level security;
 

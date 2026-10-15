@@ -31,7 +31,7 @@ const parseBrowser = (ua: string): string => {
   return '기타';
 };
 
-interface GeoInfo { country: string; country_code: string; city: string; }
+interface GeoInfo { ip: string; country: string; country_code: string; city: string; }
 
 let geoPromise: Promise<GeoInfo | null> | null = null;
 
@@ -47,6 +47,7 @@ const getGeo = (): Promise<GeoInfo | null> => {
       .then((d) => {
         if (!d || d.success === false) return null;
         const info: GeoInfo = {
+          ip: d.ip || '',
           country: d.country || '알 수 없음',
           country_code: d.country_code || '',
           city: d.city || '',
@@ -69,6 +70,7 @@ export const trackPageview = async (path: string): Promise<void> => {
       session_id: getSessionId(),
       path,
       referrer: document.referrer || '직접 접속',
+      ip_address: geo?.ip || null,
       country: geo?.country || null,
       country_code: geo?.country_code || null,
       city: geo?.city || null,
@@ -86,6 +88,7 @@ export interface VisitRow {
   session_id: string;
   path: string | null;
   referrer: string | null;
+  ip_address: string | null;
   country: string | null;
   country_code: string | null;
   city: string | null;
