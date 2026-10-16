@@ -76,89 +76,10 @@ const JanggiGame = lazyGame('장기');
 const MahjongSolitaireGame = lazyGame('마작 솔리테어');
 const WarCardGame = lazyGame('카드 전쟁');
 import MobileControls from '../components/MobileControls';
-import { logGamePlay, saveGameScore } from '../services/api';
+import { logGamePlay, saveGameScore, getTopScores } from '../services/api';
 import { getBestScore, recordBestScore } from '../lib/highScore';
+import { games, filters, gameLink, gameThumb, type Game, type GameFilter } from '../data/games';
 import { gameHelp } from '../lib/gameHelp';
-
-// --- Shared Types & Constants ---
-type Game = {
-    title: string;
-    description: string;
-    icon: string;
-    color: string;
-    bgColor: string;
-    accentColor: string;
-    cornerAccentColor: string;
-    isLarge?: boolean;
-};
-
-const games: Game[] = [
-    { title: '체스', description: 'AI와 대전하는 클래식 전략 게임', icon: 'grid_on', color: 'text-lime-700 dark:text-lime-400', bgColor: 'bg-lime-100 dark:bg-lime-900/30', accentColor: 'bg-lime-600', cornerAccentColor: 'bg-lime-600/10' },
-    { title: '포커', description: 'AI와 텍사스 홀덤 대결', icon: 'casino', color: 'text-red-600 dark:text-red-400', bgColor: 'bg-red-100 dark:bg-red-900/30', accentColor: 'bg-red-600', cornerAccentColor: 'bg-red-600/10' },
-    { title: '고스톱', description: 'AI와 1:1 맞고 대결', icon: 'filter_vintage', color: 'text-orange-600 dark:text-orange-400', bgColor: 'bg-orange-100 dark:bg-orange-900/30', accentColor: 'bg-orange-600', cornerAccentColor: 'bg-orange-600/10' },
-    { title: '스네이크', description: '클래식 레트로 도전 게임', icon: 'gesture', color: 'text-emerald-600 dark:text-emerald-400', bgColor: 'bg-emerald-100 dark:bg-emerald-900/30', accentColor: 'bg-emerald-500', cornerAccentColor: 'bg-emerald-500/10' },
-    { title: '테트리스', description: '블록을 완벽하게 맞춰라', icon: 'view_module', color: 'text-blue-600 dark:text-blue-400', bgColor: 'bg-blue-100 dark:bg-blue-900/30', accentColor: 'bg-blue-500', cornerAccentColor: 'bg-blue-500/10' },
-    { title: '2048', description: '숫자를 합쳐 2048을 만들어라', icon: 'grid_4x4', color: 'text-amber-600 dark:text-amber-400', bgColor: 'bg-amber-100 dark:bg-amber-900/30', accentColor: 'bg-amber-500', cornerAccentColor: 'bg-amber-500/10' },
-    { title: '지뢰찾기', description: '지뢰밭을 안전하게 정리하라', icon: 'flag', color: 'text-rose-600 dark:text-rose-400', bgColor: 'bg-rose-100 dark:bg-rose-900/30', accentColor: 'bg-rose-500', cornerAccentColor: 'bg-rose-500/10' },
-    { title: '스도쿠', description: '9x9 격자 논리 퍼즐', icon: 'calculate', color: 'text-indigo-600 dark:text-indigo-400', bgColor: 'bg-indigo-100 dark:bg-indigo-900/30', accentColor: 'bg-indigo-500', cornerAccentColor: 'bg-indigo-500/10' },
-    { title: '카드 뒤집기', description: '두뇌력을 테스트하라', icon: 'style', color: 'text-pink-600 dark:text-pink-400', bgColor: 'bg-pink-100 dark:bg-pink-900/30', accentColor: 'bg-pink-500', cornerAccentColor: 'bg-pink-500/10' },
-    { title: '틱택토', description: 'AI와 빠른 대결', icon: 'close', color: 'text-cyan-600 dark:text-cyan-400', bgColor: 'bg-cyan-100 dark:bg-cyan-900/30', accentColor: 'bg-cyan-500', cornerAccentColor: 'bg-cyan-500/10' },
-    { title: '단어 퍼즐', description: '5글자 영단어를 맞춰라', icon: 'abc', color: 'text-orange-600 dark:text-orange-400', bgColor: 'bg-orange-100 dark:bg-orange-900/30', accentColor: 'bg-orange-500', cornerAccentColor: 'bg-orange-500/10' },
-    // New classic games
-    { title: '팩맨', description: '유령을 피해 점을 먹어라', icon: 'radio_button_checked', color: 'text-yellow-500 dark:text-yellow-400', bgColor: 'bg-yellow-100 dark:bg-yellow-900/30', accentColor: 'bg-yellow-500', cornerAccentColor: 'bg-yellow-500/10' },
-    { title: '브레이크아웃', description: '공으로 벽돌을 깨부숴라', icon: 'view_compact', color: 'text-red-500 dark:text-red-400', bgColor: 'bg-red-100 dark:bg-red-900/30', accentColor: 'bg-red-500', cornerAccentColor: 'bg-red-500/10' },
-    { title: '핑퐁', description: 'AI와 탁구 대결', icon: 'sports_tennis', color: 'text-green-500 dark:text-green-400', bgColor: 'bg-green-100 dark:bg-green-900/30', accentColor: 'bg-green-500', cornerAccentColor: 'bg-green-500/10' },
-    { title: '플래피버드', description: '장애물을 피해 날아라', icon: 'flutter_dash', color: 'text-sky-500 dark:text-sky-400', bgColor: 'bg-sky-100 dark:bg-sky-900/30', accentColor: 'bg-sky-500', cornerAccentColor: 'bg-sky-500/10' },
-    { title: '스페이스 인베이더', description: '외계인 침략을 막아라', icon: 'rocket_launch', color: 'text-purple-500 dark:text-purple-400', bgColor: 'bg-purple-100 dark:bg-purple-900/30', accentColor: 'bg-purple-500', cornerAccentColor: 'bg-purple-500/10' },
-    { title: '점프 다이노', description: '장애물을 뛰어넘어라', icon: 'pets', color: 'text-slate-600 dark:text-slate-400', bgColor: 'bg-slate-100 dark:bg-slate-800/50', accentColor: 'bg-slate-600', cornerAccentColor: 'bg-slate-500/10' },
-    { title: '행맨', description: '단어를 맞춰 목숨을 구해라', icon: 'person', color: 'text-teal-500 dark:text-teal-400', bgColor: 'bg-teal-100 dark:bg-teal-900/30', accentColor: 'bg-teal-500', cornerAccentColor: 'bg-teal-500/10' },
-    // New games - Wave 2
-    { title: '오목', description: 'AI와 5목 대결', icon: 'blur_on', color: 'text-amber-600 dark:text-amber-400', bgColor: 'bg-amber-100 dark:bg-amber-900/30', accentColor: 'bg-amber-600', cornerAccentColor: 'bg-amber-500/10' },
-    { title: '반응속도', description: '얼마나 빠르게 반응하나?', icon: 'speed', color: 'text-red-500 dark:text-red-400', bgColor: 'bg-red-100 dark:bg-red-900/30', accentColor: 'bg-red-500', cornerAccentColor: 'bg-red-500/10' },
-    { title: '타자연습', description: '한국어 타이핑 실력 테스트', icon: 'keyboard', color: 'text-green-600 dark:text-green-400', bgColor: 'bg-green-100 dark:bg-green-900/30', accentColor: 'bg-green-600', cornerAccentColor: 'bg-green-500/10' },
-    { title: '블랙잭', description: '21을 향한 카드 게임', icon: 'casino', color: 'text-violet-600 dark:text-violet-400', bgColor: 'bg-violet-100 dark:bg-violet-900/30', accentColor: 'bg-violet-600', cornerAccentColor: 'bg-violet-500/10' },
-    { title: '퀴즈', description: '어려운 상식 문제 도전', icon: 'quiz', color: 'text-fuchsia-600 dark:text-fuchsia-400', bgColor: 'bg-fuchsia-100 dark:bg-fuchsia-900/30', accentColor: 'bg-fuchsia-600', cornerAccentColor: 'bg-fuchsia-500/10' },
-    { title: '암산', description: '60초 수학 계산 챌린지', icon: 'functions', color: 'text-blue-600 dark:text-blue-400', bgColor: 'bg-blue-100 dark:bg-blue-900/30', accentColor: 'bg-blue-600', cornerAccentColor: 'bg-blue-500/10' },
-    { title: '슬라이딩 퍼즐', description: '숫자 타일을 순서대로 정렬', icon: 'grid_4x4', color: 'text-indigo-600 dark:text-indigo-400', bgColor: 'bg-indigo-100 dark:bg-indigo-900/30', accentColor: 'bg-indigo-600', cornerAccentColor: 'bg-indigo-500/10' },
-    { title: '다트', description: '정확하게 과녁을 맞춰라', icon: 'gps_fixed', color: 'text-red-600 dark:text-red-400', bgColor: 'bg-red-100 dark:bg-red-900/30', accentColor: 'bg-red-600', cornerAccentColor: 'bg-red-500/10' },
-    { title: '체커', description: '점프로 상대를 잡아라', icon: 'grid_view', color: 'text-amber-600 dark:text-amber-400', bgColor: 'bg-amber-100 dark:bg-amber-900/30', accentColor: 'bg-amber-600', cornerAccentColor: 'bg-amber-500/10' },
-    { title: '솔리테어', description: '클래식 카드 정리 게임', icon: 'style', color: 'text-green-600 dark:text-green-400', bgColor: 'bg-green-100 dark:bg-green-900/30', accentColor: 'bg-green-600', cornerAccentColor: 'bg-green-500/10' },
-    { title: '프리셀', description: '모든 카드가 보이는 전략 게임', icon: 'view_column', color: 'text-blue-600 dark:text-blue-400', bgColor: 'bg-blue-100 dark:bg-blue-900/30', accentColor: 'bg-blue-600', cornerAccentColor: 'bg-blue-500/10' },
-    { title: '당구', description: '2D 당구 시뮬레이션', icon: 'sports_baseball', color: 'text-emerald-600 dark:text-emerald-400', bgColor: 'bg-emerald-100 dark:bg-emerald-900/30', accentColor: 'bg-emerald-600', cornerAccentColor: 'bg-emerald-500/10' },
-    { title: '바둑', description: 'AI와 고대 전략 대결', icon: 'blur_on', color: 'text-slate-700 dark:text-slate-300', bgColor: 'bg-slate-100 dark:bg-slate-800/50', accentColor: 'bg-slate-700', cornerAccentColor: 'bg-slate-500/10' },
-    { title: '루빅스 큐브', description: '3D 큐브 퍼즐 도전', icon: 'view_in_ar', color: 'text-purple-600 dark:text-purple-400', bgColor: 'bg-purple-100 dark:bg-purple-900/30', accentColor: 'bg-purple-600', cornerAccentColor: 'bg-purple-500/10' },
-    // New Wave 3 - Board Games
-    { title: '오셀로', description: '돌을 뒤집어 영역을 차지하라', icon: 'radio_button_checked', color: 'text-green-700 dark:text-green-400', bgColor: 'bg-green-100 dark:bg-green-900/30', accentColor: 'bg-green-600', cornerAccentColor: 'bg-green-600/10' },
-    { title: '커넥트4', description: '4개를 연속으로 만들어라', icon: 'view_week', color: 'text-blue-600 dark:text-blue-400', bgColor: 'bg-blue-100 dark:bg-blue-900/30', accentColor: 'bg-blue-600', cornerAccentColor: 'bg-blue-600/10' },
-    { title: '배틀쉽', description: '적 함대를 격침시켜라', icon: 'directions_boat', color: 'text-slate-700 dark:text-slate-400', bgColor: 'bg-slate-100 dark:bg-slate-900/30', accentColor: 'bg-slate-600', cornerAccentColor: 'bg-slate-600/10' },
-    { title: '요트', description: '주사위로 최고 점수를 만들어라', icon: 'casino', color: 'text-amber-600 dark:text-amber-400', bgColor: 'bg-amber-100 dark:bg-amber-900/30', accentColor: 'bg-amber-600', cornerAccentColor: 'bg-amber-600/10' },
-    { title: '도미노', description: 'AI와 숫자 매칭 대결', icon: 'view_carousel', color: 'text-slate-800 dark:text-slate-300', bgColor: 'bg-slate-100 dark:bg-slate-800/50', accentColor: 'bg-slate-700', cornerAccentColor: 'bg-slate-600/10' },
-    { title: '사이먼', description: '패턴을 기억하고 따라하세요', icon: 'blur_circular', color: 'text-purple-600 dark:text-purple-400', bgColor: 'bg-purple-100 dark:bg-purple-900/30', accentColor: 'bg-purple-600', cornerAccentColor: 'bg-purple-600/10' },
-    { title: '단어 찾기', description: '숨겨진 단어를 드래그해서 찾아라', icon: 'search', color: 'text-green-600 dark:text-green-400', bgColor: 'bg-green-100 dark:bg-green-900/30', accentColor: 'bg-green-600', cornerAccentColor: 'bg-green-600/10' },
-    { title: '스피드 카드', description: '빠르게 카드를 매칭하라', icon: 'bolt', color: 'text-orange-600 dark:text-orange-400', bgColor: 'bg-orange-100 dark:bg-orange-900/30', accentColor: 'bg-orange-600', cornerAccentColor: 'bg-orange-600/10' },
-    { title: '장기', description: '한국 전통 보드게임', icon: 'castle', color: 'text-amber-700 dark:text-amber-400', bgColor: 'bg-amber-100 dark:bg-amber-900/30', accentColor: 'bg-amber-700', cornerAccentColor: 'bg-amber-600/10' },
-    { title: '마작 솔리테어', description: '같은 타일을 매칭하여 제거', icon: 'extension', color: 'text-rose-600 dark:text-rose-400', bgColor: 'bg-rose-100 dark:bg-rose-900/30', accentColor: 'bg-rose-600', cornerAccentColor: 'bg-rose-600/10' },
-    { title: '카드 전쟁', description: '높은 카드로 상대를 이겨라', icon: 'military_tech', color: 'text-red-600 dark:text-red-400', bgColor: 'bg-red-100 dark:bg-red-900/30', accentColor: 'bg-red-600', cornerAccentColor: 'bg-red-600/10' },
-];
-
-// --- 카테고리 ---
-type GameCategory = '보드' | '카드' | '아케이드' | '퍼즐' | '챌린지';
-type GameFilter = '전체' | '최근' | '즐겨찾기' | GameCategory;
-
-const categoryOf: Record<string, GameCategory> = {
-    '체스': '보드', '틱택토': '보드', '오목': '보드', '체커': '보드', '바둑': '보드',
-    '오셀로': '보드', '커넥트4': '보드', '배틀쉽': '보드', '도미노': '보드', '장기': '보드',
-    '포커': '카드', '고스톱': '카드', '블랙잭': '카드', '솔리테어': '카드',
-    '프리셀': '카드', '스피드 카드': '카드', '카드 전쟁': '카드',
-    '스네이크': '아케이드', '테트리스': '아케이드', '팩맨': '아케이드', '브레이크아웃': '아케이드',
-    '핑퐁': '아케이드', '플래피버드': '아케이드', '스페이스 인베이더': '아케이드',
-    '점프 다이노': '아케이드', '다트': '아케이드', '당구': '아케이드', '요트': '아케이드',
-    '2048': '퍼즐', '지뢰찾기': '퍼즐', '스도쿠': '퍼즐', '카드 뒤집기': '퍼즐',
-    '단어 퍼즐': '퍼즐', '행맨': '퍼즐', '슬라이딩 퍼즐': '퍼즐', '루빅스 큐브': '퍼즐',
-    '단어 찾기': '퍼즐', '마작 솔리테어': '퍼즐',
-    '반응속도': '챌린지', '타자연습': '챌린지', '퀴즈': '챌린지', '암산': '챌린지', '사이먼': '챌린지',
-};
-const filters: GameFilter[] = ['전체', '최근', '즐겨찾기', '보드', '카드', '아케이드', '퍼즐', '챌린지'];
 
 // --- 플레이 통계 (localStorage) ---
 type PlayStat = { count: number; last: number };
@@ -172,8 +93,6 @@ const bumpStat = (title: string) => {
     try { localStorage.setItem(STATS_KEY, JSON.stringify(stats)); } catch { /* 용량 초과 무시 */ }
     return stats;
 };
-
-const gameLink = (title: string) => `${window.location.origin}/gamezone/${encodeURIComponent(title)}`;
 
 // --- Game 1: Snake (Canvas) ---
 const SnakeGame = () => {
@@ -1377,7 +1296,44 @@ const GameZone: React.FC = () => {
     const [favs, setFavs] = useState<string[]>(loadFavs);
     const [copiedTitle, setCopiedTitle] = useState<string | null>(null);
     const [helpGame, setHelpGame] = useState<Game | null>(null);
+    const [lbOpen, setLbOpen] = useState(false);
+    const [lbRows, setLbRows] = useState<{ nickname: string; score: number }[]>([]);
+    const [lastScore, setLastScore] = useState<{ game: string; score: number } | null>(null);
+    const [nick, setNick] = useState(() => { try { return localStorage.getItem('gz-nick') || ''; } catch { return ''; } });
+    const [lbBusy, setLbBusy] = useState(false);
+    const [lbSubmitted, setLbSubmitted] = useState(false);
     const searchRef = useRef<HTMLInputElement>(null);
+
+    // 게임 종료 점수 이벤트 → 리더보드 등록 제안
+    useEffect(() => {
+        const onScore = (e: Event) => {
+            const { game, score } = (e as CustomEvent<{ game: string; score: number }>).detail;
+            setLastScore({ game, score });
+            setLbSubmitted(false);
+            if (activeGame && game === activeGame.title) setLbOpen(true);
+        };
+        window.addEventListener('gz:score', onScore);
+        return () => window.removeEventListener('gz:score', onScore);
+    }, [activeGame]);
+
+    useEffect(() => {
+        if (!lbOpen || !activeGame) return;
+        getTopScores(activeGame.title, 10).then((rows) =>
+            setLbRows(rows as { nickname: string; score: number }[])
+        );
+    }, [lbOpen, activeGame]);
+
+    const submitScore = async () => {
+        if (!activeGame || !lastScore || lastScore.game !== activeGame.title || lbBusy) return;
+        const n = nick.trim().slice(0, 12) || '익명';
+        setLbBusy(true);
+        try { localStorage.setItem('gz-nick', n); } catch { /* 무시 */ }
+        await saveGameScore(activeGame.title, n, lastScore.score);
+        setLbBusy(false);
+        setLbSubmitted(true);
+        const rows = await getTopScores(activeGame.title, 10);
+        setLbRows(rows as { nickname: string; score: number }[]);
+    };
 
     // 라우트 파라미터 /gamezone/:game + 구형 ?game= 딥링크 지원
     useEffect(() => {
@@ -1544,7 +1500,7 @@ const GameZone: React.FC = () => {
                                     if (query.trim() && !g.title.includes(query.trim())) return false;
                                     if (filter === '최근') return !!stats[g.title];
                                     if (filter === '즐겨찾기') return favs.includes(g.title);
-                                    if (filter !== '전체') return categoryOf[g.title] === filter;
+                                    if (filter !== '전체') return g.category === filter;
                                     return true;
                                 })
                                 .sort((a, b) => filter === '최근' ? stats[b.title].last - stats[a.title].last : 0)
@@ -1560,7 +1516,18 @@ const GameZone: React.FC = () => {
                                     </button>
                                     <div className={`absolute top-0 right-0 ${game.isLarge ? 'w-32 h-32' : 'w-24 h-24'} ${game.cornerAccentColor} rounded-bl-full -mr-4 -mt-4 transition-transform group-hover:scale-150`}></div>
                                     <div className="relative z-10">
-                                        <div className={`${game.isLarge ? 'w-20 h-20' : 'w-14 h-14'} rounded-xl ${game.bgColor} ${game.color} flex items-center justify-center mb-4 group-hover:${game.accentColor} group-hover:text-white transition-colors`}><span className={`material-icons-round ${game.isLarge ? 'text-5xl' : 'text-3xl'}`}>{game.icon}</span></div>
+                                        <div className="relative mb-4 -mx-2 -mt-2 rounded-xl overflow-hidden aspect-video bg-slate-100 dark:bg-slate-700">
+                                            <img
+                                                src={gameThumb(game.title)}
+                                                alt={`${game.title} 게임 화면`}
+                                                loading="lazy"
+                                                className="w-full h-full object-cover object-center opacity-90 group-hover:opacity-100 group-hover:scale-[1.03] transition-all duration-300"
+                                                onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                                            />
+                                            <div className={`absolute bottom-2 left-2 w-8 h-8 rounded-lg ${game.bgColor} ${game.color} flex items-center justify-center shadow-md`}>
+                                                <span className="material-icons-round text-lg">{game.icon}</span>
+                                            </div>
+                                        </div>
                                         <h3 className={`${game.isLarge ? 'text-2xl' : 'text-lg'} font-bold text-slate-800 dark:text-white mb-1`}>{game.title}</h3>
                                         <p className={`${game.isLarge ? 'text-sm' : 'text-xs'} text-slate-500 dark:text-slate-400`}>{game.description}</p>
                                         <div className="mt-3 flex items-center justify-between">
@@ -1569,7 +1536,7 @@ const GameZone: React.FC = () => {
                                                     ? `최고 ${getBestScore(game.title)!.toLocaleString()}`
                                                     : stats[game.title]
                                                         ? `${stats[game.title].count}회 플레이`
-                                                        : categoryOf[game.title]}
+                                                        : game.category}
                                             </span>
                                             <button
                                                 onClick={(e) => copyLink(e, game.title)}
@@ -1588,7 +1555,7 @@ const GameZone: React.FC = () => {
                             if (query.trim() && !g.title.includes(query.trim())) return false;
                             if (filter === '최근') return !!stats[g.title];
                             if (filter === '즐겨찾기') return favs.includes(g.title);
-                            if (filter !== '전체') return categoryOf[g.title] === filter;
+                            if (filter !== '전체') return g.category === filter;
                             return true;
                         }).length === 0 && (
                             <p className="text-center text-sm text-slate-400 dark:text-slate-500 py-16">
@@ -1615,6 +1582,16 @@ const GameZone: React.FC = () => {
                         <div className="flex items-center gap-3">
                             {activeGame && (
                                 <button
+                                    onClick={() => setLbOpen((v) => !v)}
+                                    className={`flex items-center gap-1.5 text-sm font-medium transition-colors ${lbOpen ? 'text-amber-500' : 'text-slate-500 hover:text-amber-500'}`}
+                                    aria-label="리더보드"
+                                >
+                                    <span className="material-icons-round text-base">emoji_events</span>
+                                    <span className="hidden sm:inline">순위</span>
+                                </button>
+                            )}
+                            {activeGame && (
+                                <button
                                     onClick={(e) => copyLink(e, activeGame.title)}
                                     className="flex items-center gap-1.5 text-sm font-medium text-slate-500 hover:text-violet-500 transition-colors"
                                     aria-label="게임 링크 복사"
@@ -1626,6 +1603,51 @@ const GameZone: React.FC = () => {
                             <div className="text-sm font-medium text-slate-500 hidden sm:block">ESC 또는 뒤로가기 버튼으로 나가기</div>
                         </div>
                     </div>
+                    {/* 리더보드 패널 */}
+                    {activeGame && lbOpen && (
+                        <div className="shrink-0 border-b border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-6 py-4">
+                            <div className="max-w-md mx-auto">
+                                {/* 점수 등록 */}
+                                {lastScore && lastScore.game === activeGame.title && !lbSubmitted && (
+                                    <div className="flex items-center gap-2 mb-4 p-3 rounded-xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/40">
+                                        <span className="text-xs font-bold text-amber-700 dark:text-amber-300 flex-1">
+                                            이번 점수 <b>{lastScore.score.toLocaleString()}</b> — 리더보드에 올리기:
+                                        </span>
+                                        <input
+                                            value={nick}
+                                            onChange={(e) => setNick(e.target.value)}
+                                            placeholder="닉네임"
+                                            maxLength={12}
+                                            className="w-24 rounded-lg border border-amber-200 dark:border-amber-700 bg-white dark:bg-slate-900 px-2 py-1.5 text-xs font-bold text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-400"
+                                        />
+                                        <button
+                                            onClick={submitScore}
+                                            disabled={lbBusy}
+                                            className="px-3 py-1.5 rounded-lg bg-amber-500 text-white text-xs font-black hover:bg-amber-600 disabled:opacity-50 transition-colors"
+                                        >
+                                            {lbBusy ? '…' : '등록'}
+                                        </button>
+                                    </div>
+                                )}
+                                {lbSubmitted && lastScore?.game === activeGame.title && (
+                                    <p className="text-xs font-bold text-emerald-600 dark:text-emerald-400 mb-3">✓ 리더보드에 등록됐어요!</p>
+                                )}
+                                <ul className="space-y-1.5">
+                                    {lbRows.map((r, i) => (
+                                        <li key={`${r.nickname}-${i}`} className="flex items-center gap-3 text-sm">
+                                            <span className={`w-5 text-center font-black ${i === 0 ? 'text-amber-500' : i === 1 ? 'text-slate-400' : i === 2 ? 'text-amber-700 dark:text-amber-600' : 'text-slate-300 dark:text-slate-600'}`}>{i + 1}</span>
+                                            <span className="flex-1 font-semibold text-slate-700 dark:text-slate-200 truncate">{r.nickname}</span>
+                                            <span className="font-black text-slate-800 dark:text-white">{r.score.toLocaleString()}</span>
+                                        </li>
+                                    ))}
+                                    {lbRows.length === 0 && (
+                                        <li className="text-xs text-slate-400 py-2 text-center">아직 등록된 점수가 없어요. 첫 1위를 노려보세요!</li>
+                                    )}
+                                </ul>
+                            </div>
+                        </div>
+                    )}
+
                     {/* Game Container: m-auto centers when content fits, top-aligns when it overflows so nothing is clipped */}
                     <div className="flex-1 overflow-auto relative flex px-2 pt-20 pb-40 sm:p-6 bg-slate-50 dark:bg-slate-900/50">
                         <div className="w-full max-w-7xl m-auto flex items-center justify-center relative">
@@ -1648,9 +1670,9 @@ const GameZone: React.FC = () => {
                     {activeGame && (
                         <div className="shrink-0 border-t border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-6 py-3 overflow-x-auto">
                             <div className="flex items-center gap-3 min-w-max">
-                                <span className="text-xs font-bold text-slate-400 shrink-0">다른 {categoryOf[activeGame.title] || ''} 게임</span>
+                                <span className="text-xs font-bold text-slate-400 shrink-0">다른 {activeGame.category || ''} 게임</span>
                                 {games
-                                    .filter((g) => g.title !== activeGame.title && categoryOf[g.title] === categoryOf[activeGame.title])
+                                    .filter((g) => g.title !== activeGame.title && g.category === activeGame.category)
                                     .slice(0, 6)
                                     .map((g) => (
                                         <button
@@ -1671,15 +1693,35 @@ const GameZone: React.FC = () => {
             {/* 조작법 모달 */}
             {helpGame && (
                 <div className="fixed inset-0 z-[60] flex items-center justify-center p-6 bg-black/40" onClick={() => setHelpGame(null)}>
-                    <div className="bg-white dark:bg-slate-800 rounded-3xl p-6 max-w-sm w-full shadow-2xl" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true" aria-label={`${helpGame.title} 조작법`}>
-                        <div className="flex items-center gap-3 mb-4">
-                            <div className={`w-10 h-10 rounded-xl ${helpGame.bgColor} ${helpGame.color} flex items-center justify-center`}>
-                                <span className="material-icons-round text-xl">{helpGame.icon}</span>
+                    <div className="bg-white dark:bg-slate-800 rounded-3xl p-6 max-w-md w-full shadow-2xl max-h-[80vh] overflow-y-auto" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true" aria-label={`${helpGame.title} 게임 소개`}>
+                        <div className="flex items-center gap-3 mb-5">
+                            <div className={`w-11 h-11 rounded-xl ${helpGame.bgColor} ${helpGame.color} flex items-center justify-center`}>
+                                <span className="material-icons-round text-2xl">{helpGame.icon}</span>
                             </div>
-                            <h3 className="text-lg font-bold text-slate-800 dark:text-white">{helpGame.title} 조작법</h3>
+                            <div>
+                                <h3 className="text-lg font-bold text-slate-800 dark:text-white">{helpGame.title}</h3>
+                                <p className="text-xs text-slate-400 font-medium">{helpGame.category} · {helpGame.description}</p>
+                            </div>
                         </div>
-                        <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">{gameHelp[helpGame.title]}</p>
-                        <button onClick={() => setHelpGame(null)} className="mt-5 w-full py-2.5 rounded-xl bg-violet-600 text-white text-sm font-bold hover:bg-violet-700 transition-colors">확인</button>
+                        {(() => { const h = gameHelp[helpGame.title]; return h && (
+                            <div className="space-y-4 text-sm leading-relaxed">
+                                <div>
+                                    <p className="text-[11px] font-black text-violet-500 uppercase tracking-wider mb-1">🎯 목표</p>
+                                    <p className="text-slate-700 dark:text-slate-200">{h.goal}</p>
+                                </div>
+                                <div>
+                                    <p className="text-[11px] font-black text-violet-500 uppercase tracking-wider mb-1">🕹 조작</p>
+                                    <p className="text-slate-600 dark:text-slate-300">{h.controls}</p>
+                                </div>
+                                {h.tips && (
+                                    <div className="rounded-xl bg-violet-50 dark:bg-violet-900/20 p-3.5">
+                                        <p className="text-[11px] font-black text-violet-500 uppercase tracking-wider mb-1">💡 팁</p>
+                                        <p className="text-slate-600 dark:text-slate-300">{h.tips}</p>
+                                    </div>
+                                )}
+                            </div>
+                        ); })()}
+                        <button onClick={() => setHelpGame(null)} className="mt-6 w-full py-2.5 rounded-xl bg-violet-600 text-white text-sm font-bold hover:bg-violet-700 transition-colors">확인</button>
                     </div>
                 </div>
             )}

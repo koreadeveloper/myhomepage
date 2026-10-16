@@ -95,3 +95,28 @@ begin
     execute 'create policy "anon read game_play_logs" on game_play_logs for select to anon using (true)';
   end if;
 end $$;
+
+-- 8) 게임 점수 리더보드 — 누구나 읽기/쓰기 (테이블이 없으면 생성)
+create table if not exists game_scores (
+  id bigint generated always as identity primary key,
+  created_at timestamptz not null default now(),
+  game_id text not null,
+  nickname text not null,
+  score integer not null
+);
+alter table game_scores enable row level security;
+
+drop policy if exists "anon read game_scores" on game_scores;
+create policy "anon read game_scores" on game_scores
+  for select to anon using (true);
+
+drop policy if exists "anon insert game_scores" on game_scores;
+create policy "anon insert game_scores" on game_scores
+  for insert to anon with check (true);
+
+create index if not exists game_scores_game_idx on game_scores (game_id, score desc);
+
+-- 9) 오래된 데이터 정리 — 가끔 SQL Editor에서 실행하세요 (무료 플랜 500MB 관리)
+-- delete from site_visits where created_at < now() - interval '90 days';
+-- delete from game_play_logs where created_at < now() - interval '90 days';
+-- delete from guestbook where created_at < now() - interval '180 days';

@@ -12,9 +12,11 @@ export const getBestScore = (gameId: string): number | undefined =>
 
 /**
  * 점수 기록. 기존 기록보다 좋으면 저장하고 true 반환.
+ * 게임 종료 점수는 'gz:score' 이벤트로 브로드캐스트 — GameZone이 리더보드 등록 UI를 띄움.
  * opts.lowerIsBetter: 시간/시도횟수처럼 낮을수록 좋은 게임용.
  */
 export const recordBestScore = (gameId: string, score: number, opts?: { lowerIsBetter?: boolean }): boolean => {
+  window.dispatchEvent(new CustomEvent('gz:score', { detail: { game: gameId, score, lowerIsBetter: !!opts?.lowerIsBetter } }));
   const all = load();
   const prev = all[gameId]?.score;
   const better = prev === undefined
