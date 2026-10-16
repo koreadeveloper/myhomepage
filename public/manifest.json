@@ -1,0 +1,17 @@
+{
+  "name": "sia.kr — 프로젝트 허브",
+  "short_name": "sia.kr",
+  "description": "만들고 실험한 서비스를 소개하고 바로 체험할 수 있는 sia.kr의 프로젝트 허브",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#F8F9FD",
+  "theme_color": "#6846FF",
+  "icons": [
+    {
+      "src": "/favicon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}

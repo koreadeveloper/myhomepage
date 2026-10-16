@@ -1,41 +1,41 @@
-import React, { Component, useState, useEffect, useCallback, useRef } from 'react';
+import React, { Component, useState, useEffect, useCallback, useRef, lazy, Suspense } from 'react';
 import { Link } from 'react-router-dom';
-import ChessGameNew from '../components/ChessGame';
-import PacmanGame from '../components/PacmanGame';
-import BreakoutGame from '../components/BreakoutGame';
-import PongGame from '../components/PongGame';
-import FlappyBirdGame from '../components/FlappyBirdGame';
-import SpaceInvadersGame from '../components/SpaceInvadersGame';
-import DinoJumpGame from '../components/DinoJumpGame';
-import HangmanGame from '../components/HangmanGame';
-import GomokuGame from '../components/GomokuGame';
-import ReactionTest from '../components/ReactionTest';
-import TypingGame from '../components/TypingGame';
-import BlackjackGame from '../components/BlackjackGame';
-import PokerGame from '../components/PokerGame';
-import GoStopGame from '../components/GoStopGame';
-import QuizGame from '../components/QuizGame';
-import MathGame from '../components/MathGame';
-import SlidingPuzzleGame from '../components/SlidingPuzzleGame';
-import DartsGame from '../components/DartsGame';
-import CheckersGame from '../components/CheckersGame';
-import SolitaireGame from '../components/SolitaireGame';
-import FreecellGame from '../components/FreecellGame';
-import PoolGame from '../components/PoolGame';
-import GoGame from '../components/GoGame';
-import RubiksCubeGame from '../components/RubiksCubeGame';
-// New 10 board games
-import OthelloGame from '../components/OthelloGame';
-import ConnectFourGame from '../components/ConnectFourGame';
-import BattleshipGame from '../components/BattleshipGame';
-import YachtGame from '../components/YachtGame';
-import DominoGame from '../components/DominoGame';
-import SimonGame from '../components/SimonGame';
-import WordSearchGame from '../components/WordSearchGame';
-import SpeedCardGame from '../components/SpeedCardGame';
-import JanggiGame from '../components/JanggiGame';
-import MahjongSolitaireGame from '../components/MahjongSolitaireGame';
-import WarCardGame from '../components/WarCardGame';
+// 게임 컴포넌트는 각각 lazy — 선택한 게임 코드만 로드
+const ChessGameNew = lazy(() => import('../components/ChessGame'));
+const PacmanGame = lazy(() => import('../components/PacmanGame'));
+const BreakoutGame = lazy(() => import('../components/BreakoutGame'));
+const PongGame = lazy(() => import('../components/PongGame'));
+const FlappyBirdGame = lazy(() => import('../components/FlappyBirdGame'));
+const SpaceInvadersGame = lazy(() => import('../components/SpaceInvadersGame'));
+const DinoJumpGame = lazy(() => import('../components/DinoJumpGame'));
+const HangmanGame = lazy(() => import('../components/HangmanGame'));
+const GomokuGame = lazy(() => import('../components/GomokuGame'));
+const ReactionTest = lazy(() => import('../components/ReactionTest'));
+const TypingGame = lazy(() => import('../components/TypingGame'));
+const BlackjackGame = lazy(() => import('../components/BlackjackGame'));
+const PokerGame = lazy(() => import('../components/PokerGame'));
+const GoStopGame = lazy(() => import('../components/GoStopGame'));
+const QuizGame = lazy(() => import('../components/QuizGame'));
+const MathGame = lazy(() => import('../components/MathGame'));
+const SlidingPuzzleGame = lazy(() => import('../components/SlidingPuzzleGame'));
+const DartsGame = lazy(() => import('../components/DartsGame'));
+const CheckersGame = lazy(() => import('../components/CheckersGame'));
+const SolitaireGame = lazy(() => import('../components/SolitaireGame'));
+const FreecellGame = lazy(() => import('../components/FreecellGame'));
+const PoolGame = lazy(() => import('../components/PoolGame'));
+const GoGame = lazy(() => import('../components/GoGame'));
+const RubiksCubeGame = lazy(() => import('../components/RubiksCubeGame'));
+const OthelloGame = lazy(() => import('../components/OthelloGame'));
+const ConnectFourGame = lazy(() => import('../components/ConnectFourGame'));
+const BattleshipGame = lazy(() => import('../components/BattleshipGame'));
+const YachtGame = lazy(() => import('../components/YachtGame'));
+const DominoGame = lazy(() => import('../components/DominoGame'));
+const SimonGame = lazy(() => import('../components/SimonGame'));
+const WordSearchGame = lazy(() => import('../components/WordSearchGame'));
+const SpeedCardGame = lazy(() => import('../components/SpeedCardGame'));
+const JanggiGame = lazy(() => import('../components/JanggiGame'));
+const MahjongSolitaireGame = lazy(() => import('../components/MahjongSolitaireGame'));
+const WarCardGame = lazy(() => import('../components/WarCardGame'));
 import MobileControls from '../components/MobileControls';
 import { logGamePlay, saveGameScore } from '../services/api';
 
@@ -99,6 +99,40 @@ const games: Game[] = [
     { title: '마작 솔리테어', description: '같은 타일을 매칭하여 제거', icon: 'extension', color: 'text-rose-600 dark:text-rose-400', bgColor: 'bg-rose-100 dark:bg-rose-900/30', accentColor: 'bg-rose-600', cornerAccentColor: 'bg-rose-600/10' },
     { title: '카드 전쟁', description: '높은 카드로 상대를 이겨라', icon: 'military_tech', color: 'text-red-600 dark:text-red-400', bgColor: 'bg-red-100 dark:bg-red-900/30', accentColor: 'bg-red-600', cornerAccentColor: 'bg-red-600/10' },
 ];
+
+// --- 카테고리 ---
+type GameCategory = '보드' | '카드' | '아케이드' | '퍼즐' | '챌린지';
+type GameFilter = '전체' | '최근' | GameCategory;
+
+const categoryOf: Record<string, GameCategory> = {
+    '체스': '보드', '틱택토': '보드', '오목': '보드', '체커': '보드', '바둑': '보드',
+    '오셀로': '보드', '커넥트4': '보드', '배틀쉽': '보드', '도미노': '보드', '장기': '보드',
+    '포커': '카드', '고스톱': '카드', '블랙잭': '카드', '솔리테어': '카드',
+    '프리셀': '카드', '스피드 카드': '카드', '카드 전쟁': '카드',
+    '스네이크': '아케이드', '테트리스': '아케이드', '팩맨': '아케이드', '브레이크아웃': '아케이드',
+    '핑퐁': '아케이드', '플래피버드': '아케이드', '스페이스 인베이더': '아케이드',
+    '점프 다이노': '아케이드', '다트': '아케이드', '당구': '아케이드', '요트': '아케이드',
+    '2048': '퍼즐', '지뢰찾기': '퍼즐', '스도쿠': '퍼즐', '카드 뒤집기': '퍼즐',
+    '단어 퍼즐': '퍼즐', '행맨': '퍼즐', '슬라이딩 퍼즐': '퍼즐', '루빅스 큐브': '퍼즐',
+    '단어 찾기': '퍼즐', '마작 솔리테어': '퍼즐',
+    '반응속도': '챌린지', '타자연습': '챌린지', '퀴즈': '챌린지', '암산': '챌린지', '사이먼': '챌린지',
+};
+const filters: GameFilter[] = ['전체', '최근', '보드', '카드', '아케이드', '퍼즐', '챌린지'];
+
+// --- 플레이 통계 (localStorage) ---
+type PlayStat = { count: number; last: number };
+const STATS_KEY = 'gamezone-stats';
+const loadStats = (): Record<string, PlayStat> => {
+    try { return JSON.parse(localStorage.getItem(STATS_KEY) || '{}'); } catch { return {}; }
+};
+const bumpStat = (title: string) => {
+    const stats = loadStats();
+    stats[title] = { count: (stats[title]?.count ?? 0) + 1, last: Date.now() };
+    try { localStorage.setItem(STATS_KEY, JSON.stringify(stats)); } catch { /* 용량 초과 무시 */ }
+    return stats;
+};
+
+const gameLink = (title: string) => `${window.location.origin}/gamezone?game=${encodeURIComponent(title)}`;
 
 // --- Game 1: Snake (Canvas) ---
 const SnakeGame = () => {
@@ -1280,6 +1314,9 @@ class GameErrorBoundary extends Component<{ children: React.ReactNode; onClose: 
 // --- Main Component ---
 const GameZone: React.FC = () => {
     const [activeGame, setActiveGame] = useState<Game | null>(null);
+    const [filter, setFilter] = useState<GameFilter>('전체');
+    const [stats, setStats] = useState<Record<string, PlayStat>>(loadStats);
+    const [copiedTitle, setCopiedTitle] = useState<string | null>(null);
 
     // Deep link: /gamezone?game=체스 opens the game directly
     useEffect(() => {
@@ -1288,12 +1325,22 @@ const GameZone: React.FC = () => {
         if (match) {
             setActiveGame(match);
             logGamePlay(match.title);
+            setStats(bumpStat(match.title));
         }
     }, []);
+
+    const copyLink = (e: React.MouseEvent, title: string) => {
+        e.stopPropagation();
+        navigator.clipboard.writeText(gameLink(title)).then(() => {
+            setCopiedTitle(title);
+            setTimeout(() => setCopiedTitle(null), 1500);
+        });
+    };
 
     const openGame = (game: Game) => {
         setActiveGame(game);
         logGamePlay(game.title);
+        setStats(bumpStat(game.title));
         window.history.pushState({ game: game.title }, '', `?game=${encodeURIComponent(game.title)}`);
     };
     const closeGame = () => {
@@ -1381,19 +1428,57 @@ const GameZone: React.FC = () => {
                             <h2 className="text-3xl md:text-4xl font-extrabold text-slate-900 dark:text-white mb-2">나만의 게임 공간, <span className="text-violet-500">즐기고 휴식하세요</span></h2>
                             <p className="text-slate-500 dark:text-slate-400">게임을 선택하면 전체 화면 모드로 시작됩니다.</p>
                         </div>
+
+                        {/* 카테고리 필터 */}
+                        <div className="flex flex-wrap gap-2 mb-6">
+                            {filters.map((f) => (
+                                <button
+                                    key={f}
+                                    onClick={() => setFilter(f)}
+                                    className={`px-4 py-1.5 rounded-full text-xs font-bold transition-colors ${
+                                        filter === f
+                                            ? 'bg-violet-600 text-white shadow-md'
+                                            : 'bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-700 hover:border-violet-400 hover:text-violet-600 dark:hover:text-violet-400'
+                                    }`}
+                                >
+                                    {f}
+                                </button>
+                            ))}
+                        </div>
+
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                            {games.map((game) => (
+                            {(filter === '전체'
+                                ? games
+                                : filter === '최근'
+                                    ? games.filter((g) => stats[g.title]).sort((a, b) => stats[b.title].last - stats[a.title].last)
+                                    : games.filter((g) => categoryOf[g.title] === filter)
+                            ).map((game) => (
                                 <div key={game.title} className={`game-card group bg-white dark:bg-slate-800 rounded-2xl p-6 border border-slate-100 dark:border-slate-700 shadow-sm hover:shadow-xl cursor-pointer transition-all duration-300 hover:-translate-y-2 relative overflow-hidden ${game.isLarge ? 'sm:col-span-2 sm:row-span-2' : ''}`} onClick={() => openGame(game)}>
                                     <div className={`absolute top-0 right-0 ${game.isLarge ? 'w-32 h-32' : 'w-24 h-24'} ${game.cornerAccentColor} rounded-bl-full -mr-4 -mt-4 transition-transform group-hover:scale-150`}></div>
                                     <div className="relative z-10">
                                         <div className={`${game.isLarge ? 'w-20 h-20' : 'w-14 h-14'} rounded-xl ${game.bgColor} ${game.color} flex items-center justify-center mb-4 group-hover:${game.accentColor} group-hover:text-white transition-colors`}><span className={`material-icons-round ${game.isLarge ? 'text-5xl' : 'text-3xl'}`}>{game.icon}</span></div>
                                         <h3 className={`${game.isLarge ? 'text-2xl' : 'text-lg'} font-bold text-slate-800 dark:text-white mb-1`}>{game.title}</h3>
                                         <p className={`${game.isLarge ? 'text-sm' : 'text-xs'} text-slate-500 dark:text-slate-400`}>{game.description}</p>
+                                        <div className="mt-3 flex items-center justify-between">
+                                            <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500">
+                                                {stats[game.title] ? `${stats[game.title].count}회 플레이` : categoryOf[game.title]}
+                                            </span>
+                                            <button
+                                                onClick={(e) => copyLink(e, game.title)}
+                                                aria-label={`${game.title} 링크 복사`}
+                                                className="w-7 h-7 rounded-lg flex items-center justify-center text-slate-400 hover:text-violet-500 hover:bg-violet-50 dark:hover:bg-violet-900/30 transition-colors"
+                                            >
+                                                <span className="material-icons-round text-base">{copiedTitle === game.title ? 'check' : 'link'}</span>
+                                            </button>
+                                        </div>
                                         {game.isLarge && <div className="mt-4 flex items-center gap-2 text-lime-600 dark:text-lime-400 font-medium text-sm"><span className="material-icons-round text-lg">play_arrow</span>플레이하기</div>}
                                     </div>
                                 </div>
                             ))}
                         </div>
+                        {filter === '최근' && !games.some((g) => stats[g.title]) && (
+                            <p className="text-center text-sm text-slate-400 dark:text-slate-500 py-16">아직 플레이한 게임이 없어요. 게임을 하나 열어보세요!</p>
+                        )}
                     </div>
                 </div>
 
@@ -1404,13 +1489,27 @@ const GameZone: React.FC = () => {
                             <div className="h-6 w-px bg-slate-300 dark:bg-slate-600 mx-2"></div>
                             <h2 className="text-xl font-bold text-slate-800 dark:text-white">{activeGame?.title}</h2>
                         </div>
-                        <div className="text-sm font-medium text-slate-500 hidden sm:block">ESC 또는 뒤로가기 버튼으로 나가기</div>
+                        <div className="flex items-center gap-3">
+                            {activeGame && (
+                                <button
+                                    onClick={(e) => copyLink(e, activeGame.title)}
+                                    className="flex items-center gap-1.5 text-sm font-medium text-slate-500 hover:text-violet-500 transition-colors"
+                                    aria-label="게임 링크 복사"
+                                >
+                                    <span className="material-icons-round text-base">{copiedTitle === activeGame.title ? 'check' : 'link'}</span>
+                                    <span className="hidden sm:inline">{copiedTitle === activeGame.title ? '복사됨' : '링크 복사'}</span>
+                                </button>
+                            )}
+                            <div className="text-sm font-medium text-slate-500 hidden sm:block">ESC 또는 뒤로가기 버튼으로 나가기</div>
+                        </div>
                     </div>
                     {/* Game Container: m-auto centers when content fits, top-aligns when it overflows so nothing is clipped */}
                     <div className="flex-1 overflow-auto relative flex px-2 pt-20 pb-40 sm:p-6 bg-slate-50 dark:bg-slate-900/50">
                         <div className="w-full max-w-7xl m-auto flex items-center justify-center relative">
                             <GameErrorBoundary onClose={closeGame}>
-                                {activeGame && renderGame()}
+                                <Suspense fallback={<div className="py-24 text-center text-slate-400 text-sm font-bold animate-pulse">게임 불러오는 중…</div>}>
+                                    {activeGame && renderGame()}
+                                </Suspense>
                             </GameErrorBoundary>
                         </div>
                     </div>

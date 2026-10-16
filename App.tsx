@@ -1,25 +1,39 @@
-import React, { useEffect, useState } from 'react';
+import React, { Suspense, lazy, useEffect, useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link, Navigate, useLocation } from 'react-router-dom';
 import Home from './pages/Home';
-import Projects from './pages/Projects';
-import About from './pages/About';
-import GameZone from './pages/GameZone';
-import Stats from './pages/Stats';
-import { Menu, X, Sun, Moon } from 'lucide-react';
+import { Menu, X, Sun, Moon, Loader2 } from 'lucide-react';
 import { useTheme } from './hooks/useTheme';
 import { trackPageview } from './services/analytics';
 
-// 라우트 변경마다 방문 기록
+// 페이지 단위 코드 스플리팅 — 게임존/통계는 첫 로딩에서 제외
+const Projects = lazy(() => import('./pages/Projects'));
+const About = lazy(() => import('./pages/About'));
+const GameZone = lazy(() => import('./pages/GameZone'));
+const Stats = lazy(() => import('./pages/Stats'));
+const NotFound = lazy(() => import('./pages/NotFound'));
+
+const routeTitles: [RegExp, string][] = [
+  [/^\/projects/, '프로젝트 — sia.kr'],
+  [/^\/about/, '소개 — sia.kr'],
+  [/^\/gamezone/, '게임존 — sia.kr'],
+  [/^\/stats/, '통계 — sia.kr'],
+];
+
+// 라우트 변경마다 방문 기록 + 문서 타이틀 갱신
 const PageTracker: React.FC = () => {
   const { pathname } = useLocation();
-  useEffect(() => { void trackPageview(pathname); }, [pathname]);
+  useEffect(() => {
+    const [, title] = routeTitles.find(([re]) => re.test(pathname)) ?? [];
+    document.title = title ?? 'sia.kr — 프로젝트 허브';
+    void trackPageview(pathname);
+  }, [pathname]);
   return null;
 };
 
 const navItems = [
-  { to: '/#projects', label: '프로젝트' },
-  { to: '/about', label: '소개' },
-  { to: '/gamezone', label: '게임존' },
+  { to: '/#projects', label: '프로젝트', match: (p: string) => p === '/' || p === '/projects' },
+  { to: '/about', label: '소개', match: (p: string) => p.startsWith('/about') },
+  { to: '/gamezone', label: '게임존', match: (p: string) => p.startsWith('/gamezone') },
 ];
 
 const Header: React.FC = () => {
@@ -47,15 +61,23 @@ const Header: React.FC = () => {
 
         {/* 데스크톱 글래스 내비 */}
         <nav className="hidden md:flex items-center gap-1 glass rounded-full px-2 py-1.5" aria-label="주요 메뉴">
-          {navItems.map((item) => (
-            <Link
-              key={item.label}
-              to={item.to}
-              className="px-4 py-1.5 text-[13px] font-bold text-muted dark:text-slate-300 hover:text-ink dark:hover:text-white rounded-full hover:bg-white/60 dark:hover:bg-white/10 transition-colors"
-            >
-              {item.label}
-            </Link>
-          ))}
+          {navItems.map((item) => {
+            const active = item.match(location.pathname);
+            return (
+              <Link
+                key={item.label}
+                to={item.to}
+                aria-current={active ? 'page' : undefined}
+                className={`px-4 py-1.5 text-[13px] font-bold rounded-full transition-colors ${
+                  active
+                    ? 'text-brand bg-brand/10 dark:bg-brand/20'
+                    : 'text-muted dark:text-slate-300 hover:text-ink dark:hover:text-white hover:bg-white/60 dark:hover:bg-white/10'
+                }`}
+              >
+                {item.label}
+              </Link>
+            );
+          })}
         </nav>
 
         {/* 우측 액션 */}
@@ -83,15 +105,23 @@ const Header: React.FC = () => {
         <>
           <div className="fixed inset-0 -z-10" onClick={() => setMenuOpen(false)} />
           <nav className="md:hidden glass rounded-3xl mt-3 mx-auto max-w-6xl p-2 flex flex-col" aria-label="모바일 메뉴">
-            {navItems.map((item) => (
-              <Link
-                key={item.label}
-                to={item.to}
-                className="px-5 py-3.5 text-sm font-bold text-ink dark:text-white rounded-2xl hover:bg-white/60 dark:hover:bg-white/10 transition-colors"
-              >
-                {item.label}
-              </Link>
-            ))}
+            {navItems.map((item) => {
+              const active = item.match(location.pathname);
+              return (
+                <Link
+                  key={item.label}
+                  to={item.to}
+                  aria-current={active ? 'page' : undefined}
+                  className={`px-5 py-3.5 text-sm font-bold rounded-2xl transition-colors ${
+                    active
+                      ? 'text-brand bg-brand/10 dark:bg-brand/20'
+                      : 'text-ink dark:text-white hover:bg-white/60 dark:hover:bg-white/10'
+                  }`}
+                >
+                  {item.label}
+                </Link>
+              );
+            })}
           </nav>
         </>
       )}
@@ -104,19 +134,27 @@ const App: React.FC = () => {
     <Router>
       <Header />
       <PageTracker />
-      <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/projects" element={<Projects />} />
-        <Route path="/about" element={<About />} />
-        <Route path="/gamezone" element={<GameZone />} />
-        <Route path="/stats" element={<Stats />} />
+      <Suspense
+        fallback={
+          <div className="min-h-screen flex items-center justify-center" role="status" aria-label="페이지 로딩 중">
+            <Loader2 size={28} className="animate-spin text-brand" />
+          </div>
+        }
+      >
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/projects" element={<Projects />} />
+          <Route path="/about" element={<About />} />
+          <Route path="/gamezone" element={<GameZone />} />
+          <Route path="/stats" element={<Stats />} />
 
-        {/* 과거 주소 → 새 경로 안내 */}
-        <Route path="/community" element={<Navigate to="/" replace />} />
-        <Route path="/guestbook" element={<Navigate to="/" replace />} />
-        <Route path="/admin/*" element={<Navigate to="/" replace />} />
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
+          {/* 과거 주소 → 새 경로 안내 */}
+          <Route path="/community" element={<Navigate to="/" replace />} />
+          <Route path="/guestbook" element={<Navigate to="/" replace />} />
+          <Route path="/admin/*" element={<Navigate to="/" replace />} />
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </Suspense>
     </Router>
   );
 };
