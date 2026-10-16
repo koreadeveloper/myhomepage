@@ -119,13 +119,15 @@ const Stats: React.FC = () => {
       {/* 14일 차트 */}
       <div className="rounded-3xl bg-white/80 dark:bg-white/5 border border-white/60 dark:border-white/10 p-6 mb-10">
         <h2 className="font-black text-slate-900 dark:text-white mb-6">최근 14일 방문자</h2>
-        <div className="flex items-end gap-1.5 h-40">
+        <div className="flex items-end gap-1.5 h-48">
           {stats.days.map((d) => (
-            <div key={d.label} className="flex-1 flex flex-col items-center gap-1 group">
-              <span className="text-[10px] font-bold text-slate-500 opacity-0 group-hover:opacity-100 transition-opacity">{d.count}</span>
+            <div key={d.label} className="flex-1 h-full flex flex-col items-center justify-end gap-1">
+              <span className={`text-[10px] font-black ${d.count > 0 ? 'text-indigo-500 dark:text-indigo-300' : 'text-slate-200 dark:text-white/10'}`}>
+                {d.count}
+              </span>
               <div
-                className="w-full rounded-t-lg bg-gradient-to-t from-indigo-500 to-violet-400 dark:from-indigo-400 dark:to-violet-300 min-h-[4px] transition-all"
-                style={{ height: `${(d.count / stats.maxDay) * 100}%` }}
+                className={`w-full rounded-t-md transition-all ${d.count > 0 ? 'bg-gradient-to-t from-indigo-500 to-violet-400 dark:from-indigo-400 dark:to-violet-300' : 'bg-slate-200 dark:bg-white/10'}`}
+                style={{ height: d.count === 0 ? '3px' : `calc(${(d.count / stats.maxDay) * 80}% + 14px)` }}
               />
               <span className="text-[9px] font-bold text-slate-400 dark:text-slate-500">{d.label}</span>
             </div>
