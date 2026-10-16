@@ -1,4 +1,5 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
+import { recordBestScore } from '../lib/highScore';
 
 const SimonGame: React.FC = () => {
     const colors = ['red', 'blue', 'green', 'yellow'] as const;
@@ -12,6 +13,8 @@ const SimonGame: React.FC = () => {
     const [score, setScore] = useState(0);
     const [highScore, setHighScore] = useState(0);
     const [gameOver, setGameOver] = useState(false);
+
+    useEffect(() => { if (gameOver) recordBestScore('사이먼', score); }, [gameOver]);
     const [message, setMessage] = useState('시작 버튼을 누르세요');
 
     const colorStyles: Record<ColorType, { base: string; active: string }> = {

@@ -1,5 +1,6 @@
 import React, { useRef, useState, useEffect, useCallback } from 'react';
 import MobileControls from './MobileControls';
+import { recordBestScore } from '../lib/highScore';
 
 // Flappy Bird Game
 const FlappyBirdGame = () => {
@@ -8,6 +9,8 @@ const FlappyBirdGame = () => {
     const [bestScore, setBestScore] = useState(0);
     const [gameOver, setGameOver] = useState(false);
     const [started, setStarted] = useState(false);
+
+    useEffect(() => { if (gameOver) recordBestScore('플래피버드', score); }, [gameOver]);
 
     const gameStateRef = useRef({
         bird: { y: 300, velocity: 0 },

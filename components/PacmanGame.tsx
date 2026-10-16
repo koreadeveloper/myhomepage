@@ -1,10 +1,13 @@
 import React, { useRef, useState, useEffect, useCallback } from 'react';
+import { recordBestScore } from '../lib/highScore';
 
 // Pacman Game
 const PacmanGame = () => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const [score, setScore] = useState(0);
     const [gameOver, setGameOver] = useState(false);
+
+    useEffect(() => { if (gameOver) recordBestScore('팩맨', score); }, [gameOver]);
     const [started, setStarted] = useState(false);
     const [level, setLevel] = useState(1);
 

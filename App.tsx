@@ -10,6 +10,7 @@ const Projects = lazy(() => import('./pages/Projects'));
 const About = lazy(() => import('./pages/About'));
 const GameZone = lazy(() => import('./pages/GameZone'));
 const Stats = lazy(() => import('./pages/Stats'));
+const Guestbook = lazy(() => import('./pages/Guestbook'));
 const NotFound = lazy(() => import('./pages/NotFound'));
 
 const routeTitles: [RegExp, string][] = [
@@ -17,6 +18,7 @@ const routeTitles: [RegExp, string][] = [
   [/^\/about/, '소개 — sia.kr'],
   [/^\/gamezone/, '게임존 — sia.kr'],
   [/^\/stats/, '통계 — sia.kr'],
+  [/^\/guestbook/, '방명록 — sia.kr'],
 ];
 
 // 라우트 변경마다 방문 기록 + 문서 타이틀 갱신
@@ -34,6 +36,7 @@ const navItems = [
   { to: '/#projects', label: '프로젝트', match: (p: string) => p === '/' || p === '/projects' },
   { to: '/about', label: '소개', match: (p: string) => p.startsWith('/about') },
   { to: '/gamezone', label: '게임존', match: (p: string) => p.startsWith('/gamezone') },
+  { to: '/guestbook', label: '방명록', match: (p: string) => p.startsWith('/guestbook') },
 ];
 
 const Header: React.FC = () => {
@@ -129,9 +132,16 @@ const Header: React.FC = () => {
   );
 };
 
-const App: React.FC = () => {
+const Shell: React.FC = () => {
+  const location = useLocation();
   return (
-    <Router>
+    <>
+      <a
+        href="#main"
+        className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-[100] focus:px-4 focus:py-2 focus:rounded-lg focus:bg-brand focus:text-white focus:text-sm focus:font-bold"
+      >
+        본문으로 건너뛰기
+      </a>
       <Header />
       <PageTracker />
       <Suspense
@@ -141,22 +151,30 @@ const App: React.FC = () => {
           </div>
         }
       >
-        <Routes>
+        <div id="main" key={location.pathname} className="page-enter">
+          <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/projects" element={<Projects />} />
           <Route path="/about" element={<About />} />
-          <Route path="/gamezone" element={<GameZone />} />
+          <Route path="/gamezone/:game?" element={<GameZone />} />
           <Route path="/stats" element={<Stats />} />
 
-          {/* 과거 주소 → 새 경로 안내 */}
-          <Route path="/community" element={<Navigate to="/" replace />} />
-          <Route path="/guestbook" element={<Navigate to="/" replace />} />
-          <Route path="/admin/*" element={<Navigate to="/" replace />} />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
+            {/* 과거 주소 → 새 경로 안내 */}
+            <Route path="/community" element={<Navigate to="/" replace />} />
+            <Route path="/guestbook" element={<Guestbook />} />
+            <Route path="/admin/*" element={<Navigate to="/" replace />} />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </div>
       </Suspense>
-    </Router>
+    </>
   );
 };
+
+const App: React.FC = () => (
+  <Router>
+    <Shell />
+  </Router>
+);
 
 export default App;

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { recordBestScore } from '../lib/highScore';
 
 // 타자 연습 (한국어 버전)
 const TypingGame = () => {
@@ -22,6 +23,8 @@ const TypingGame = () => {
     const [score, setScore] = useState(0);
     const [lives, setLives] = useState(5);
     const [gameOver, setGameOver] = useState(false);
+
+    useEffect(() => { if (gameOver) recordBestScore('타자연습', score); }, [gameOver]);
     const [started, setStarted] = useState(false);
     const [level, setLevel] = useState(1);
     const inputRef = useRef<HTMLInputElement>(null);

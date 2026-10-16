@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { recordBestScore } from '../lib/highScore';
 
 // 암산 게임
 const MathGame = () => {
@@ -11,6 +12,8 @@ const MathGame = () => {
     const [userAnswer, setUserAnswer] = useState('');
     const [streak, setStreak] = useState(0);
     const [gameState, setGameState] = useState<'ready' | 'playing' | 'finished'>('ready');
+
+    useEffect(() => { if (gameState === 'finished') recordBestScore('암산', score); }, [gameState]);
     const [feedback, setFeedback] = useState<'correct' | 'wrong' | null>(null);
     const [correctCount, setCorrectCount] = useState(0);
     const [wrongCount, setWrongCount] = useState(0);

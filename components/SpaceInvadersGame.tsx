@@ -1,4 +1,5 @@
 import React, { useRef, useState, useEffect, useCallback } from 'react';
+import { recordBestScore } from '../lib/highScore';
 
 // Space Invaders Game
 const SpaceInvadersGame = () => {
@@ -7,6 +8,8 @@ const SpaceInvadersGame = () => {
     const [lives, setLives] = useState(3);
     const [gameOver, setGameOver] = useState(false);
     const [won, setWon] = useState(false);
+
+    useEffect(() => { if (gameOver || won) recordBestScore('스페이스 인베이더', score); }, [gameOver, won]);
     const [started, setStarted] = useState(false);
 
     const gameStateRef = useRef({

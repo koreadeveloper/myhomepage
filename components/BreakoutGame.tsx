@@ -1,5 +1,6 @@
 import React, { useRef, useState, useEffect, useCallback } from 'react';
 import MobileControls from './MobileControls';
+import { recordBestScore } from '../lib/highScore';
 
 // Breakout Game
 const BreakoutGame = () => {
@@ -8,6 +9,8 @@ const BreakoutGame = () => {
     const [gameOver, setGameOver] = useState(false);
     const [won, setWon] = useState(false);
     const [started, setStarted] = useState(false);
+
+    useEffect(() => { if (gameOver || won) recordBestScore('브레이크아웃', score); }, [gameOver, won]);
 
     const gameStateRef = useRef({
         paddle: { x: 250, width: 100, height: 14 },

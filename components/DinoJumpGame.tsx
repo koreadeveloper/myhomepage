@@ -1,5 +1,6 @@
 import React, { useRef, useState, useEffect, useCallback } from 'react';
 import MobileControls from './MobileControls';
+import { recordBestScore } from '../lib/highScore';
 
 // Dino Jump Game (Chrome Dinosaur Clone)
 const DinoJumpGame = () => {
@@ -8,6 +9,8 @@ const DinoJumpGame = () => {
     const [bestScore, setBestScore] = useState(0);
     const [gameOver, setGameOver] = useState(false);
     const [started, setStarted] = useState(false);
+
+    useEffect(() => { if (gameOver) recordBestScore('점프 다이노', score); }, [gameOver]);
 
     const gameStateRef = useRef({
         dino: { y: 0, velocity: 0, jumping: false, ducking: false },

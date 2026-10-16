@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { BarChart3, Globe2, Lock, MonitorSmartphone, Users } from 'lucide-react';
-import { fetchVisits, fetchVisitIps, VisitRow } from '../services/analytics';
+import { BarChart3, Gamepad2, Globe2, Lock, MonitorSmartphone, Users } from 'lucide-react';
+import { fetchVisits, fetchVisitIps, fetchGamePopularity, VisitRow } from '../services/analytics';
 
 // 국가 코드 → 국기 이모지
 const flag = (code: string | null) =>
@@ -32,8 +32,11 @@ const Stats: React.FC = () => {
   const [pwError, setPwError] = useState(false);
   const [pwBusy, setPwBusy] = useState(false);
 
+  const [gamePop, setGamePop] = useState<[string, number][]>([]);
+
   useEffect(() => {
     fetchVisits(2000).then((v) => { setVisits(v); setLoading(false); });
+    fetchGamePopularity().then(setGamePop);
   }, []);
 
   const unlockIps = async (e: React.FormEvent) => {
@@ -191,6 +194,29 @@ const Stats: React.FC = () => {
             ))}
           </ul>
         </div>
+      </div>
+
+      {/* 인기 게임 */}
+      <div className="rounded-3xl bg-white/80 dark:bg-white/5 border border-white/60 dark:border-white/10 p-6 mb-10">
+        <h2 className="font-black text-slate-900 dark:text-white mb-5 flex items-center gap-2">
+          <Gamepad2 className="w-4 h-4 text-violet-500" /> 인기 게임
+        </h2>
+        {gamePop.length > 0 ? (
+          <ul className="space-y-3">
+            {gamePop.slice(0, 10).map(([name, n], i) => (
+              <li key={name} className="flex items-center gap-3 text-sm">
+                <span className={`w-5 text-right text-xs font-black ${i < 3 ? 'text-violet-500' : 'text-slate-300 dark:text-slate-600'}`}>{i + 1}</span>
+                <span className="flex-1 font-semibold text-slate-700 dark:text-slate-200 truncate">{name}</span>
+                <div className="h-1.5 rounded-full bg-slate-100 dark:bg-white/10 w-24 overflow-hidden">
+                  <div className="h-full bg-violet-500 rounded-full" style={{ width: `${(n / gamePop[0][1]) * 100}%` }} />
+                </div>
+                <span className="text-xs font-black text-slate-500 w-8 text-right">{n}</span>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="text-sm text-slate-400">아직 집계된 게임 플레이 데이터가 없습니다.</p>
+        )}
       </div>
 
       {/* 최근 방문 */}

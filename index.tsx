@@ -22,3 +22,10 @@ root.render(
     <App />
   </React.StrictMode>
 );
+
+// PWA: 프로덕션에서만 서비스 워커 등록 (개발 환경 캐시 꼬임 방지)
+if (import.meta.env.PROD && 'serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js').catch(() => { /* 무시 */ });
+  });
+}

@@ -106,6 +106,22 @@ export const fetchVisits = async (limit = 1000): Promise<VisitRow[]> => {
   return data || [];
 };
 
+// 게임 플레이 로그 — 인기 게임 집계용 (game_id별 횟수, 내림차순)
+export const fetchGamePopularity = async (limit = 5000): Promise<[string, number][]> => {
+  if (!supabase) return [];
+  const { data } = await supabase
+    .from('game_play_logs')
+    .select('game_id')
+    .limit(limit);
+  if (!data) return [];
+  const counts = new Map<string, number>();
+  for (const row of data as { game_id: string | null }[]) {
+    if (!row.game_id) continue;
+    counts.set(row.game_id, (counts.get(row.game_id) || 0) + 1);
+  }
+  return [...counts.entries()].sort((a, b) => b[1] - a[1]);
+};
+
 // IP 열람 — 비밀번호가 DB(app_secrets)와 일치할 때만 반환
 export const fetchVisitIps = async (password: string): Promise<Record<string, string> | null> => {
   if (!supabase) return null;

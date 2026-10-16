@@ -1,4 +1,5 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
+import { recordBestScore } from '../lib/highScore';
 
 // 퀴즈 게임 (한국어 어려운 버전)
 const QuizGame = () => {
@@ -158,6 +159,8 @@ const QuizGame = () => {
     const [isCorrect, setIsCorrect] = useState<boolean | null>(null);
     const [shuffledQuizzes, setShuffledQuizzes] = useState<typeof quizData>([]);
     const [gameOver, setGameOver] = useState(false);
+
+    useEffect(() => { if (gameOver) recordBestScore('퀴즈', score); }, [gameOver]);
 
     const startGame = useCallback(() => {
         const shuffled = [...quizData]

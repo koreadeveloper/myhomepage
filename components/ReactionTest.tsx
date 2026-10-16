@@ -1,8 +1,11 @@
-import React, { useState, useCallback, useRef } from 'react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
+import { recordBestScore } from '../lib/highScore';
 
 // 반응속도 테스트
 const ReactionTest = () => {
     const [state, setState] = useState<'waiting' | 'ready' | 'go' | 'result' | 'early'>('waiting');
+
+    useEffect(() => { if (state === 'result') recordBestScore('반응속도', reactionTime, { lowerIsBetter: true }); }, [state]);
     const [reactionTime, setReactionTime] = useState(0);
     const [bestTime, setBestTime] = useState<number | null>(null);
     const [attempts, setAttempts] = useState<number[]>([]);

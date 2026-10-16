@@ -1,7 +1,7 @@
 
 import React, { useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { ArrowRight, Github, Gamepad2, BarChart3 } from 'lucide-react';
+import { ArrowRight, ChevronDown, Github, Gamepad2, BarChart3, PenLine } from 'lucide-react';
 import { site } from '../data/site';
 import { featuredProjects } from '../data/projects';
 import ProjectCard from '../components/ProjectCard';
@@ -60,6 +60,15 @@ const Home: React.FC = () => {
                      </span>
                   </Link>
                </div>
+
+               {/* 스크롤 유도 */}
+               <a
+                  href="#projects"
+                  aria-label="프로젝트 섹션으로 스크롤"
+                  className="absolute left-1/2 -translate-x-1/2 bottom-4 text-muted dark:text-slate-500 hover:text-brand transition-colors animate-bounce"
+               >
+                  <ChevronDown size={22} />
+               </a>
             </div>
          </section>
 
@@ -113,6 +122,12 @@ const Home: React.FC = () => {
                      className="inline-flex items-center gap-1.5 text-xs font-bold text-muted dark:text-slate-400 hover:text-brand transition-colors"
                   >
                      <BarChart3 size={14} /> 통계
+                  </Link>
+                  <Link
+                     to="/guestbook"
+                     className="inline-flex items-center gap-1.5 text-xs font-bold text-muted dark:text-slate-400 hover:text-brand transition-colors"
+                  >
+                     <PenLine size={14} /> 방명록
                   </Link>
                </div>
             </div>

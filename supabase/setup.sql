@@ -69,3 +69,29 @@ end;
 $$;
 
 grant execute on function get_visit_ips(text) to anon;
+
+-- 6) 방명록 — 누구나 읽기/쓰기, 수정·삭제는 불가 (남발 방지는 앱에서 200자 제한)
+create table if not exists guestbook (
+  id uuid primary key default gen_random_uuid(),
+  created_at timestamptz not null default now(),
+  nickname text not null check (char_length(nickname) between 1 and 20),
+  message text not null check (char_length(message) between 1 and 200)
+);
+alter table guestbook enable row level security;
+
+drop policy if exists "anon read guestbook" on guestbook;
+create policy "anon read guestbook" on guestbook
+  for select to anon using (true);
+
+drop policy if exists "anon insert guestbook" on guestbook;
+create policy "anon insert guestbook" on guestbook
+  for insert to anon with check (true);
+
+-- 7) 게임 플레이 로그 읽기 허용 — /stats 인기 게임 차트용
+do $$
+begin
+  if exists (select 1 from information_schema.tables where table_name = 'game_play_logs') then
+    execute 'drop policy if exists "anon read game_play_logs" on game_play_logs';
+    execute 'create policy "anon read game_play_logs" on game_play_logs for select to anon using (true)';
+  end if;
+end $$;

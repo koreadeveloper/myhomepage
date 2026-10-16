@@ -121,6 +121,23 @@ h1, h2, h3 {
 .reveal-5 { animation-delay: 0.33s; }
 .reveal-6 { animation-delay: 0.40s; }
 
+/* ── 페이지 전환 ── */
+@keyframes pageIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.page-enter {
+  animation: pageIn 0.3s ease-out both;
+}
+
 /* ── 포커스 접근성 ── */
 :focus-visible {
   outline: 2px solid #6846FF;
@@ -143,5 +160,7 @@ h1, h2, h3 {
 
   *, *::before, *::after {
     transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
   }
 }
