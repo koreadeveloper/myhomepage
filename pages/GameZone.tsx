@@ -1505,38 +1505,45 @@ const GameZone: React.FC = () => {
                                 })
                                 .sort((a, b) => filter === '최근' ? stats[b.title].last - stats[a.title].last : 0)
                                 .map((game) => (
-                                <div key={game.title} className={`game-card group bg-white dark:bg-slate-800 rounded-2xl p-6 border border-slate-100 dark:border-slate-700 shadow-sm hover:shadow-xl cursor-pointer transition-all duration-300 hover:-translate-y-2 relative overflow-hidden ${game.isLarge ? 'sm:col-span-2 sm:row-span-2' : ''}`} onClick={() => openGame(game)} onMouseEnter={() => gameLoaders[game.title]?.()}>
-                                    <button
-                                        onClick={(e) => toggleFav(e, game.title)}
-                                        aria-label={`${game.title} 즐겨찾기`}
-                                        aria-pressed={favs.includes(game.title)}
-                                        className={`absolute top-3 left-3 z-20 w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${favs.includes(game.title) ? 'text-rose-500' : 'text-slate-300 dark:text-slate-600 hover:text-rose-400'}`}
-                                    >
-                                        <span className="material-icons-round text-lg">{favs.includes(game.title) ? 'favorite' : 'favorite_border'}</span>
-                                    </button>
-                                    <div className={`absolute top-0 right-0 ${game.isLarge ? 'w-32 h-32' : 'w-24 h-24'} ${game.cornerAccentColor} rounded-bl-full -mr-4 -mt-4 transition-transform group-hover:scale-150`}></div>
-                                    <div className="relative z-10">
-                                        <div className="relative mb-4 -mx-2 -mt-2 rounded-xl overflow-hidden aspect-video bg-slate-100 dark:bg-slate-700">
-                                            <img
-                                                src={gameThumb(game.title)}
-                                                alt={`${game.title} 게임 화면`}
-                                                loading="lazy"
-                                                className="w-full h-full object-cover object-center opacity-90 group-hover:opacity-100 group-hover:scale-[1.03] transition-all duration-300"
-                                                onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
-                                            />
-                                            <div className={`absolute bottom-2 left-2 w-8 h-8 rounded-lg ${game.bgColor} ${game.color} flex items-center justify-center shadow-md`}>
-                                                <span className="material-icons-round text-lg">{game.icon}</span>
-                                            </div>
+                                <div key={game.title} className={`game-card group bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-sm hover:shadow-xl cursor-pointer transition-all duration-300 hover:-translate-y-2 relative overflow-hidden ${game.isLarge ? 'sm:col-span-2 sm:row-span-2' : ''}`} onClick={() => openGame(game)} onMouseEnter={() => gameLoaders[game.title]?.()}>
+                                    <div className={`relative overflow-hidden bg-slate-200 dark:bg-slate-900 ${game.isLarge ? 'aspect-[2/1]' : 'aspect-video'}`}>
+                                        <img
+                                            src={gameThumb(game.title)}
+                                            alt={`${game.title} 게임 화면`}
+                                            loading="lazy"
+                                            className="w-full h-full object-cover object-center transition-transform duration-500 group-hover:scale-105"
+                                            onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                                        />
+                                        <div className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-black/60 via-black/20 to-transparent pointer-events-none"></div>
+                                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-300 pointer-events-none"></div>
+                                        <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none">
+                                            <span className="px-4 py-2 rounded-full bg-white/95 dark:bg-slate-900/90 text-slate-800 dark:text-white text-sm font-bold shadow-lg flex items-center gap-1.5 scale-90 group-hover:scale-100 transition-transform duration-300">
+                                                <span className="material-icons-round text-base">play_arrow</span>플레이
+                                            </span>
                                         </div>
-                                        <h3 className={`${game.isLarge ? 'text-2xl' : 'text-lg'} font-bold text-slate-800 dark:text-white mb-1`}>{game.title}</h3>
-                                        <p className={`${game.isLarge ? 'text-sm' : 'text-xs'} text-slate-500 dark:text-slate-400`}>{game.description}</p>
+                                        <button
+                                            onClick={(e) => toggleFav(e, game.title)}
+                                            aria-label={`${game.title} 즐겨찾기`}
+                                            aria-pressed={favs.includes(game.title)}
+                                            className={`absolute top-3 left-3 z-20 w-8 h-8 rounded-lg flex items-center justify-center backdrop-blur-sm transition-colors ${favs.includes(game.title) ? 'bg-white/90 dark:bg-slate-900/80 text-rose-500' : 'bg-black/30 text-white/80 hover:text-rose-400'}`}
+                                        >
+                                            <span className="material-icons-round text-lg">{favs.includes(game.title) ? 'favorite' : 'favorite_border'}</span>
+                                        </button>
+                                        <span className="absolute top-3 right-3 px-2 py-0.5 rounded-full text-[10px] font-bold bg-black/40 text-white/90 backdrop-blur-sm pointer-events-none">{game.category}</span>
+                                        <div className={`absolute bottom-3 left-3 w-9 h-9 rounded-xl ${game.bgColor} ${game.color} flex items-center justify-center shadow-lg`}>
+                                            <span className="material-icons-round text-xl">{game.icon}</span>
+                                        </div>
+                                    </div>
+                                    <div className="p-4">
+                                        <h3 className={`${game.isLarge ? 'text-xl' : 'text-base'} font-bold text-slate-800 dark:text-white mb-1`}>{game.title}</h3>
+                                        <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-2">{game.description}</p>
                                         <div className="mt-3 flex items-center justify-between">
                                             <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500">
                                                 {getBestScore(game.title) !== undefined
                                                     ? `최고 ${getBestScore(game.title)!.toLocaleString()}`
                                                     : stats[game.title]
                                                         ? `${stats[game.title].count}회 플레이`
-                                                        : game.category}
+                                                        : '아직 플레이 기록 없음'}
                                             </span>
                                             <button
                                                 onClick={(e) => copyLink(e, game.title)}
@@ -1546,7 +1553,6 @@ const GameZone: React.FC = () => {
                                                 <span className="material-icons-round text-base">{copiedTitle === game.title ? 'check' : 'link'}</span>
                                             </button>
                                         </div>
-                                        {game.isLarge && <div className="mt-4 flex items-center gap-2 text-lime-600 dark:text-lime-400 font-medium text-sm"><span className="material-icons-round text-lg">play_arrow</span>플레이하기</div>}
                                     </div>
                                 </div>
                             ))}
