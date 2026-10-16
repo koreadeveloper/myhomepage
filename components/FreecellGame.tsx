@@ -12,7 +12,7 @@ const FreecellGame: React.FC = () => {
     const [cascade, setCascade] = useState<Card[][]>([[], [], [], [], [], [], [], []]);
     const [freeCell, setFreeCell] = useState<(Card | null)[]>([null, null, null, null]);
     const [foundation, setFoundation] = useState<Card[][]>([[], [], [], []]);
-    const [selectedCard, setSelectedCard] = useState<{ card: Card, from: string, fromIndex: number } | null>(null);
+    const [selectedCard, setSelectedCard] = useState<{ cards: Card[], from: string, fromIndex: number } | null>(null);
     const [moves, setMoves] = useState(0);
     const [gameWon, setGameWon] = useState(false);
 
@@ -85,12 +85,19 @@ const FreecellGame: React.FC = () => {
             getValueNumber(card.value) === getValueNumber(topCard.value) + 1;
     };
 
-    // 카드 선택
-    const selectCard = (card: Card, from: string, fromIndex: number) => {
+    // 이동 가능한 최대 카드 수 (프리셀 규칙: (빈 프리셀+1) * 2^(빈 캐스케이드 수))
+    const maxMovable = (excludeCol = -1) => {
+        const freeCells = freeCell.filter(c => c === null).length;
+        const emptyCols = cascade.filter((col, i) => col.length === 0 && i !== excludeCol).length;
+        return (freeCells + 1) * Math.pow(2, emptyCols);
+    };
+
+    // 카드 선택 — 여러 장 시퀀스 지원
+    const selectCard = (cards: Card[], from: string, fromIndex: number) => {
         if (selectedCard) {
             tryMoveCard(from, fromIndex);
         } else {
-            setSelectedCard({ card, from, fromIndex });
+            setSelectedCard({ cards, from, fromIndex });
         }
     };
 
@@ -98,22 +105,24 @@ const FreecellGame: React.FC = () => {
     const tryMoveCard = (to: string, toIndex: number) => {
         if (!selectedCard) return;
 
-        const { card, from, fromIndex } = selectedCard;
+        const { cards, from, fromIndex } = selectedCard;
+        const card = cards[0];
         let moved = false;
 
         if (to.startsWith('cascade-')) {
             const targetCol = parseInt(to.split('-')[1]);
-            if (canMoveToCascade(card, cascade[targetCol])) {
-                moveToCascade(card, from, fromIndex, targetCol);
+            // 여러 장 이동은 캐스케이드로만 가능 + 이동 한도 체크
+            if (cards.length <= maxMovable(targetCol) && canMoveToCascade(card, cascade[targetCol])) {
+                moveToCascade(cards, from, fromIndex, targetCol);
                 moved = true;
             }
-        } else if (to.startsWith('foundation-')) {
+        } else if (to.startsWith('foundation-') && cards.length === 1) {
             const targetPile = parseInt(to.split('-')[1]);
             if (canMoveToFoundation(card, foundation[targetPile])) {
                 moveToFoundation(card, from, fromIndex, targetPile);
                 moved = true;
             }
-        } else if (to.startsWith('freecell-')) {
+        } else if (to.startsWith('freecell-') && cards.length === 1) {
             const targetCell = parseInt(to.split('-')[1]);
             if (freeCell[targetCell] === null) {
                 moveToFreeCell(card, from, fromIndex, targetCell);
@@ -123,19 +132,18 @@ const FreecellGame: React.FC = () => {
 
         if (moved) {
             setMoves(m => m + 1);
-            checkWin();
         }
         setSelectedCard(null);
     };
 
-    // 캐스케이드로 이동
-    const moveToCascade = (card: Card, from: string, fromIndex: number, toCol: number) => {
+    // 캐스케이드로 이동 (여러 장 지원)
+    const moveToCascade = (cards: Card[], from: string, fromIndex: number, toCol: number) => {
         const newCascade = cascade.map(col => [...col]);
 
         // 원래 위치에서 제거
         if (from.startsWith('cascade-')) {
             const fromCol = parseInt(from.split('-')[1]);
-            newCascade[fromCol] = newCascade[fromCol].slice(0, -1);
+            newCascade[fromCol] = newCascade[fromCol].slice(0, fromIndex);
         } else if (from.startsWith('freecell-')) {
             const fromCell = parseInt(from.split('-')[1]);
             const newFreeCell = [...freeCell];
@@ -148,7 +156,7 @@ const FreecellGame: React.FC = () => {
             setFoundation(newFoundation);
         }
 
-        newCascade[toCol] = [...newCascade[toCol], card];
+        newCascade[toCol] = [...newCascade[toCol], ...cards];
         setCascade(newCascade);
     };
 
@@ -187,11 +195,27 @@ const FreecellGame: React.FC = () => {
         }
     };
 
-    // 승리 체크
-    const checkWin = () => {
-        const totalFoundation = foundation.reduce((sum, pile) => sum + pile.length, 0);
-        if (totalFoundation === 52) {
+    // 승리 체크 — foundation 변경 후 실행 (stale state 방지)
+    useEffect(() => {
+        if (foundation.reduce((sum, pile) => sum + pile.length, 0) === 52) {
             setGameWon(true);
+        }
+    }, [foundation]);
+
+    // 카드 아래가 유효한 시퀀스(내림차순+색 교대)인지 확인
+    const isValidSequence = (cards: Card[]): boolean => {
+        for (let i = 0; i < cards.length - 1; i++) {
+            if (isRed(cards[i].suit) === isRed(cards[i + 1].suit)) return false;
+            if (getValueNumber(cards[i].value) !== getValueNumber(cards[i + 1].value) + 1) return false;
+        }
+        return true;
+    };
+
+    // 캐스케이드 카드 클릭 — 시퀀스이고 이동 한도 내면 선택
+    const handleCascadeCardClick = (column: Card[], colIndex: number, cardIndex: number) => {
+        const cardsToMove = column.slice(cardIndex);
+        if (isValidSequence(cardsToMove) && cardsToMove.length <= maxMovable()) {
+            selectCard(cardsToMove, `cascade-${colIndex}`, cardIndex);
         }
     };
 
@@ -248,7 +272,7 @@ const FreecellGame: React.FC = () => {
                     {freeCell.map((cell, i) => (
                         <div
                             key={i}
-                            onClick={() => cell ? selectCard(cell, `freecell-${i}`, 0) : tryMoveCard(`freecell-${i}`, 0)}
+                            onClick={() => cell ? selectCard([cell], `freecell-${i}`, 0) : tryMoveCard(`freecell-${i}`, 0)}
                         >
                             {cell ? renderCard(cell, undefined, selectedCard?.from === `freecell-${i}`) : renderCard(null)}
                         </div>
@@ -292,9 +316,7 @@ const FreecellGame: React.FC = () => {
                                     style={{ marginTop: cardIndex === 0 ? 0 : '-40px' }}
                                     onClick={(e) => {
                                         e.stopPropagation();
-                                        if (cardIndex === column.length - 1) {
-                                            selectCard(card, `cascade-${colIndex}`, cardIndex);
-                                        }
+                                        handleCascadeCardClick(column, colIndex, cardIndex);
                                     }}
                                 >
                                     {renderCard(
@@ -311,7 +333,7 @@ const FreecellGame: React.FC = () => {
 
             <div className="mt-4 text-xs text-slate-500 dark:text-slate-400 text-center">
                 <p>💡 모든 카드가 보입니다! 4개의 프리셀을 활용하세요.</p>
-                <p>맨 위 카드만 이동할 수 있습니다.</p>
+                <p>연속된 카드도 이동 가능 (빈 프리셀/열이 많을수록 더 많이).</p>
             </div>
         </div>
     );

@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef } from 'react';
 
 type Cell = 'red' | 'yellow' | null;
 
@@ -12,6 +12,7 @@ const ConnectFourGame: React.FC = () => {
     const [currentPlayer, setCurrentPlayer] = useState<'red' | 'yellow'>('red');
     const [winner, setWinner] = useState<'red' | 'yellow' | 'draw' | null>(null);
     const [winningCells, setWinningCells] = useState<[number, number][]>([]);
+    const genRef = useRef(0);
 
     const checkWin = useCallback((board: Cell[][], row: number, col: number, player: Cell): [number, number][] | null => {
         const directions = [
@@ -80,7 +81,8 @@ const ConnectFourGame: React.FC = () => {
         }
 
         setCurrentPlayer('yellow');
-        setTimeout(() => aiMove(result.board), 500);
+        const g = genRef.current;
+        setTimeout(() => { if (g === genRef.current) aiMove(result.board); }, 500);
     };
 
     const aiMove = (currentBoard: Cell[][]) => {
@@ -134,6 +136,7 @@ const ConnectFourGame: React.FC = () => {
     };
 
     const resetGame = () => {
+        genRef.current++;
         setBoard(Array(ROWS).fill(null).map(() => Array(COLS).fill(null)));
         setCurrentPlayer('red');
         setWinner(null);

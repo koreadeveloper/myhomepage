@@ -162,7 +162,19 @@ const SnakeGame = () => {
                     state.snake.unshift(head);
                     if (head.x === state.food.x && head.y === state.food.y) {
                         setScore(s => s + 10);
-                        state.food = { x: Math.floor(Math.random() * gridSize), y: Math.floor(Math.random() * gridSize) };
+                        // 먹이가 뱀 몸 위에 스폰되지 않도록 빈 칸에서만 선택
+                        const free: { x: number; y: number }[] = [];
+                        for (let fy = 0; fy < gridSize; fy++) {
+                            for (let fx = 0; fx < gridSize; fx++) {
+                                if (!state.snake.some(s => s.x === fx && s.y === fy)) free.push({ x: fx, y: fy });
+                            }
+                        }
+                        if (free.length === 0) {
+                            // 보드를 다 채움 = 클리어
+                            setGameOver(true);
+                            return;
+                        }
+                        state.food = free[Math.floor(Math.random() * free.length)];
                         state.moveInterval = Math.max(50, state.moveInterval - 2);
                     } else {
                         state.snake.pop();
@@ -393,12 +405,13 @@ const TetrisGame = () => {
         return false;
     };
 
-    const spawnPiece = () => {
+    const spawnPiece = (boardState = board) => {
         const keys = Object.keys(TETROMINOS) as TetrominoKey[];
         const key = keys[Math.floor(Math.random() * keys.length)];
         const piece = TETROMINOS[key];
         const newPiece = { ...piece, x: Math.floor(cols / 2) - 1, y: 0 };
-        if (checkCollision(newPiece, newPiece.x, newPiece.y, board)) {
+        if (checkCollision(newPiece, newPiece.x, newPiece.y, boardState)) {
+            setCurrPiece(null);
             setGameOver(true);
         } else {
             setCurrPiece(newPiece);
@@ -429,7 +442,7 @@ const TetrisGame = () => {
         }
         setScore(src => src + cleared * 100);
         setBoard(newBoard);
-        spawnPiece();
+        spawnPiece(newBoard);
     };
 
     const move = (dirX: number, dirY: number) => {
@@ -514,6 +527,8 @@ const Game2048 = () => {
     const [grid, setGrid] = useState<number[][]>([]);
     const [score, setScore] = useState(0);
     const [gameOver, setGameOver] = useState(false);
+    const [won, setWon] = useState(false);
+    const [keepPlaying, setKeepPlaying] = useState(false);
 
     const initGame = () => {
         const newGrid = Array(4).fill(0).map(() => Array(4).fill(0));
@@ -522,6 +537,8 @@ const Game2048 = () => {
         setGrid(newGrid);
         setScore(0);
         setGameOver(false);
+        setWon(false);
+        setKeepPlaying(false);
     };
 
     const addRandom = (g: number[][]) => {
@@ -571,9 +588,20 @@ const Game2048 = () => {
         if (moved) {
             addRandom(newGrid);
             setGrid(newGrid);
-            // Check game over (simplified)
+            // 승리 체크 (2048 달성, 계속하기 전까지 표시)
+            if (!won && !keepPlaying && newGrid.flat().includes(2048)) {
+                setWon(true);
+            }
+            // 게임오버: 빈칸 없고 상하좌우 합칠 수 있는 인접 타일도 없음
             if (!newGrid.flat().includes(0)) {
-                // Technically should check if any merge is possible, skipping for brevity
+                let canMerge = false;
+                for (let r = 0; r < 4 && !canMerge; r++) {
+                    for (let c = 0; c < 4 && !canMerge; c++) {
+                        if (c < 3 && newGrid[r][c] === newGrid[r][c + 1]) canMerge = true;
+                        if (r < 3 && newGrid[r][c] === newGrid[r + 1][c]) canMerge = true;
+                    }
+                }
+                if (!canMerge) setGameOver(true);
             }
         }
     };
@@ -594,7 +622,24 @@ const Game2048 = () => {
     return (
         <div className="flex flex-col items-center w-full h-full justify-center">
             <div className="mb-4 text-2xl font-bold dark:text-white">점수: <span className="text-amber-500">{score}</span></div>
-            <div className="bg-stone-500 p-3 rounded-xl w-full max-w-[60vh] aspect-square shadow-2xl">
+            <div className="relative bg-stone-500 p-3 rounded-xl w-full max-w-[60vh] aspect-square shadow-2xl">
+                {(gameOver || (won && !keepPlaying)) && (
+                    <div className="absolute inset-0 z-10 bg-black/70 rounded-xl flex flex-col items-center justify-center gap-4 backdrop-blur-sm">
+                        <div className="text-4xl">{won ? '🎉' : '😵'}</div>
+                        <div className="text-2xl font-black text-white">{won ? '2048 달성!' : '게임 오버'}</div>
+                        <div className="text-amber-400 font-bold">점수: {score}</div>
+                        <div className="flex gap-3">
+                            {won && (
+                                <button onClick={() => setKeepPlaying(true)} className="px-5 py-2.5 bg-amber-500 text-white rounded-xl font-bold hover:bg-amber-400">
+                                    계속하기
+                                </button>
+                            )}
+                            <button onClick={initGame} className="px-5 py-2.5 bg-stone-600 text-white rounded-xl font-bold hover:bg-stone-500">
+                                새 게임
+                            </button>
+                        </div>
+                    </div>
+                )}
                 <div className="grid grid-cols-4 grid-rows-4 gap-2 w-full h-full">
                     {grid.flat().map((val, i) => (
                         <div key={i} className={`rounded-lg flex items-center justify-center font-bold
@@ -636,37 +681,55 @@ const Minesweeper = () => {
     const [board, setBoard] = useState<Cell[][]>([]);
     const [status, setStatus] = useState<'playing' | 'won' | 'lost'>('playing');
     const [flagMode, setFlagMode] = useState(false);
+    const [minesPlaced, setMinesPlaced] = useState(false);
 
-    const initGame = () => {
-        const newBoard: Cell[][] = Array(size).fill(0).map(() => Array(size).fill(0).map(() => ({ isMine: false, isOpen: false, isFlag: false, count: 0 })));
-        let planted = 0;
-        while (planted < minesCount) {
-            const r = Math.floor(Math.random() * size);
-            const c = Math.floor(Math.random() * size);
-            if (!newBoard[r][c].isMine) {
-                newBoard[r][c].isMine = true;
-                planted++;
-            }
-        }
-        // Calc counts
+    // 첫 클릭한 칸과 그 주변에는 지뢰를 심지 않음 (첫 클릭 안전)
+    const plantMines = (b: Cell[][], safeR: number, safeC: number) => {
+        const candidates: [number, number][] = [];
         for (let r = 0; r < size; r++) {
             for (let c = 0; c < size; c++) {
-                if (!newBoard[r][c].isMine) {
+                if (Math.abs(r - safeR) <= 1 && Math.abs(c - safeC) <= 1) continue;
+                candidates.push([r, c]);
+            }
+        }
+        for (let i = candidates.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [candidates[i], candidates[j]] = [candidates[j], candidates[i]];
+        }
+        for (let i = 0; i < minesCount; i++) {
+            const [r, c] = candidates[i];
+            b[r][c].isMine = true;
+        }
+        // 숫자 계산
+        for (let r = 0; r < size; r++) {
+            for (let c = 0; c < size; c++) {
+                if (!b[r][c].isMine) {
                     let count = 0;
                     for (let dr = -1; dr <= 1; dr++) for (let dc = -1; dc <= 1; dc++) {
-                        if (r + dr >= 0 && r + dr < size && c + dc >= 0 && c + dc < size && newBoard[r + dr][c + dc].isMine) count++;
+                        if (r + dr >= 0 && r + dr < size && c + dc >= 0 && c + dc < size && b[r + dr][c + dc].isMine) count++;
                     }
-                    newBoard[r][c].count = count;
+                    b[r][c].count = count;
                 }
             }
         }
+    };
+
+    const initGame = () => {
+        const newBoard: Cell[][] = Array(size).fill(0).map(() => Array(size).fill(0).map(() => ({ isMine: false, isOpen: false, isFlag: false, count: 0 })));
         setBoard(newBoard);
+        setMinesPlaced(false);
         setStatus('playing');
     };
+
+    const flagCount = board.flat().filter(c => c.isFlag).length;
 
     const reveal = (r: number, c: number) => {
         if (status !== 'playing' || board[r][c].isOpen || board[r][c].isFlag) return;
         const newBoard = board.map(row => row.map(cell => ({ ...cell })));
+        if (!minesPlaced) {
+            plantMines(newBoard, r, c);
+            setMinesPlaced(true);
+        }
         if (newBoard[r][c].isMine) {
             setStatus('lost');
             newBoard[r][c].isOpen = true; // Show boom
@@ -710,7 +773,7 @@ const Minesweeper = () => {
     return (
         <div className="flex flex-col items-center w-full h-full justify-center">
             <div className={`mb-4 text-2xl font-bold ${status === 'won' ? 'text-green-500' : status === 'lost' ? 'text-red-500' : 'dark:text-white'}`}>
-                {status === 'playing' ? '지뢰 찾기' : status === 'won' ? '승리!' : '게임 오버'}
+                {status === 'playing' ? `💣 ${minesCount - flagCount}` : status === 'won' ? '승리!' : '게임 오버'}
             </div>
             <div className="bg-slate-300 dark:bg-slate-600 p-2 rounded-xl w-full max-w-[60vh] aspect-square shadow-xl">
                 <div className="grid grid-cols-10 grid-rows-10 gap-1 w-full h-full">
@@ -756,34 +819,100 @@ const Minesweeper = () => {
 };
 
 // --- Game 5: Sudoku ---
+const SUDOKU_PUZZLES: { initial: number[][]; solution: number[][] }[] = [
+    {
+        initial: [
+            [5, 3, 0, 0, 7, 0, 0, 0, 0], [6, 0, 0, 1, 9, 5, 0, 0, 0], [0, 9, 8, 0, 0, 0, 0, 6, 0],
+            [8, 0, 0, 0, 6, 0, 0, 0, 3], [4, 0, 0, 8, 0, 3, 0, 0, 1], [7, 0, 0, 0, 2, 0, 0, 0, 6],
+            [0, 6, 0, 0, 0, 0, 2, 8, 0], [0, 0, 0, 4, 1, 9, 0, 0, 5], [0, 0, 0, 0, 8, 0, 0, 7, 9]
+        ],
+        solution: [
+            [5, 3, 4, 6, 7, 8, 9, 1, 2], [6, 7, 2, 1, 9, 5, 3, 4, 8], [1, 9, 8, 3, 4, 2, 5, 6, 7],
+            [8, 5, 9, 7, 6, 1, 4, 2, 3], [4, 2, 6, 8, 5, 3, 7, 9, 1], [7, 1, 3, 9, 2, 4, 8, 5, 6],
+            [9, 6, 1, 5, 3, 7, 2, 8, 4], [2, 8, 7, 4, 1, 9, 6, 3, 5], [3, 4, 5, 2, 8, 6, 1, 7, 9]
+        ]
+    },
+    {
+        initial: [
+            [0, 0, 0, 2, 6, 0, 7, 0, 1], [6, 8, 0, 0, 7, 0, 0, 9, 0], [1, 9, 0, 0, 0, 4, 5, 0, 0],
+            [8, 2, 0, 1, 0, 0, 0, 4, 0], [0, 0, 4, 6, 0, 2, 9, 0, 0], [0, 5, 0, 0, 0, 3, 0, 2, 8],
+            [0, 0, 9, 3, 0, 0, 0, 7, 4], [0, 4, 0, 0, 5, 0, 0, 3, 6], [7, 0, 3, 0, 1, 8, 0, 0, 0]
+        ],
+        solution: [
+            [4, 3, 5, 2, 6, 9, 7, 8, 1], [6, 8, 2, 5, 7, 1, 4, 9, 3], [1, 9, 7, 8, 3, 4, 5, 6, 2],
+            [8, 2, 6, 1, 9, 5, 3, 4, 7], [3, 7, 4, 6, 8, 2, 9, 1, 5], [9, 5, 1, 7, 4, 3, 6, 2, 8],
+            [5, 1, 9, 3, 2, 6, 8, 7, 4], [2, 4, 8, 9, 5, 7, 1, 3, 6], [7, 6, 3, 4, 1, 8, 2, 5, 9]
+        ]
+    },
+    {
+        initial: [
+            [0, 2, 0, 6, 0, 8, 0, 0, 0], [5, 8, 0, 0, 0, 9, 7, 0, 0], [0, 0, 0, 0, 4, 0, 0, 0, 0],
+            [3, 7, 0, 0, 0, 0, 5, 0, 0], [6, 0, 0, 0, 0, 0, 0, 0, 4], [0, 0, 8, 0, 0, 0, 0, 1, 3],
+            [0, 0, 0, 0, 2, 0, 0, 0, 0], [0, 0, 9, 8, 0, 0, 0, 3, 6], [0, 0, 0, 3, 0, 6, 0, 9, 0]
+        ],
+        solution: [
+            [1, 2, 3, 6, 7, 8, 9, 4, 5], [5, 8, 4, 2, 3, 9, 7, 6, 1], [9, 6, 7, 1, 4, 5, 3, 2, 8],
+            [3, 7, 2, 4, 6, 1, 5, 8, 9], [6, 9, 1, 5, 8, 3, 2, 7, 4], [4, 5, 8, 7, 9, 2, 6, 1, 3],
+            [8, 3, 6, 9, 2, 4, 1, 5, 7], [2, 1, 9, 8, 5, 7, 4, 3, 6], [7, 4, 5, 3, 1, 6, 8, 9, 2]
+        ]
+    },
+    {
+        initial: [
+            [0, 0, 0, 6, 0, 0, 4, 0, 0], [7, 0, 0, 0, 0, 3, 6, 0, 0], [0, 0, 0, 0, 9, 1, 0, 8, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 5, 0, 1, 8, 0, 0, 0, 3], [0, 0, 0, 3, 0, 6, 0, 4, 5],
+            [0, 4, 0, 2, 0, 0, 0, 6, 0], [9, 0, 3, 0, 0, 0, 0, 0, 0], [0, 2, 0, 0, 0, 0, 1, 0, 0]
+        ],
+        solution: [
+            [5, 8, 1, 6, 7, 2, 4, 3, 9], [7, 9, 2, 8, 4, 3, 6, 5, 1], [3, 6, 4, 5, 9, 1, 7, 8, 2],
+            [4, 3, 8, 9, 5, 7, 2, 1, 6], [2, 5, 6, 1, 8, 4, 9, 7, 3], [1, 7, 9, 3, 2, 6, 8, 4, 5],
+            [8, 4, 5, 2, 1, 9, 3, 6, 7], [9, 1, 3, 7, 6, 8, 5, 2, 4], [6, 2, 7, 4, 3, 5, 1, 9, 8]
+        ]
+    },
+    {
+        initial: [
+            [1, 0, 0, 4, 8, 9, 0, 0, 6], [7, 3, 0, 0, 0, 0, 0, 4, 0], [0, 0, 0, 0, 0, 1, 2, 9, 5],
+            [0, 0, 7, 1, 2, 0, 6, 0, 0], [5, 0, 0, 7, 0, 3, 0, 0, 8], [0, 0, 6, 0, 9, 5, 7, 0, 0],
+            [9, 1, 4, 6, 0, 0, 0, 0, 0], [0, 2, 0, 0, 0, 0, 0, 3, 7], [8, 0, 0, 5, 1, 2, 0, 0, 4]
+        ],
+        solution: [
+            [1, 5, 2, 4, 8, 9, 3, 7, 6], [7, 3, 9, 2, 5, 6, 8, 4, 1], [4, 6, 8, 3, 7, 1, 2, 9, 5],
+            [3, 8, 7, 1, 2, 4, 6, 5, 9], [5, 9, 1, 7, 6, 3, 4, 2, 8], [2, 4, 6, 8, 9, 5, 7, 1, 3],
+            [9, 1, 4, 6, 3, 7, 5, 8, 2], [6, 2, 5, 9, 4, 8, 1, 3, 7], [8, 7, 3, 5, 1, 2, 9, 6, 4]
+        ]
+    },
+];
+
 const Sudoku = () => {
-    // Simple static problem for demo
-    const solution = [
-        [5, 3, 4, 6, 7, 8, 9, 1, 2], [6, 7, 2, 1, 9, 5, 3, 4, 8], [1, 9, 8, 3, 4, 2, 5, 6, 7],
-        [8, 5, 9, 7, 6, 1, 4, 2, 3], [4, 2, 6, 8, 5, 3, 7, 9, 1], [7, 1, 3, 9, 2, 4, 8, 5, 6],
-        [9, 6, 1, 5, 3, 7, 2, 8, 4], [2, 8, 7, 4, 1, 9, 6, 3, 5], [3, 4, 5, 2, 8, 6, 1, 7, 9]
-    ];
-    const initial = [
-        [5, 3, 0, 0, 7, 0, 0, 0, 0], [6, 0, 0, 1, 9, 5, 0, 0, 0], [0, 9, 8, 0, 0, 0, 0, 6, 0],
-        [8, 0, 0, 0, 6, 0, 0, 0, 3], [4, 0, 0, 8, 0, 3, 0, 0, 1], [7, 0, 0, 0, 2, 0, 0, 0, 6],
-        [0, 6, 0, 0, 0, 0, 2, 8, 0], [0, 0, 0, 4, 1, 9, 0, 0, 5], [0, 0, 0, 0, 8, 0, 0, 7, 9]
-    ];
-    const [board, setBoard] = useState(initial);
+    const [puzzle, setPuzzle] = useState(() => SUDOKU_PUZZLES[Math.floor(Math.random() * SUDOKU_PUZZLES.length)]);
+    const [board, setBoard] = useState<number[][]>(() => puzzle.initial.map(r => [...r]));
     const [check, setCheck] = useState('');
+    const [solved, setSolved] = useState(false);
+    const initial = puzzle.initial;
+    const solution = puzzle.solution;
+
+    const newGame = () => {
+        const next = SUDOKU_PUZZLES[Math.floor(Math.random() * SUDOKU_PUZZLES.length)];
+        setPuzzle(next);
+        setBoard(next.initial.map(r => [...r]));
+        setCheck('');
+        setSolved(false);
+    };
 
     const handleChange = (r: number, c: number, val: string) => {
-        if (initial[r][c] !== 0) return;
+        if (solved || initial[r][c] !== 0) return;
         const num = parseInt(val) || 0;
         if (num >= 0 && num <= 9) {
             const newBoard = board.map(row => [...row]);
             newBoard[r][c] = num;
             setBoard(newBoard);
+            setCheck('');
         }
     };
 
     const checkSolution = () => {
         const isCorrect = JSON.stringify(board) === JSON.stringify(solution);
-        setCheck(isCorrect ? '정답입니다!' : '다시 시도해보세요...');
+        setCheck(isCorrect ? '정답입니다! 🎉' : '다시 시도해보세요...');
+        if (isCorrect) setSolved(true);
     };
 
     return (
@@ -807,9 +936,10 @@ const Sudoku = () => {
                 </div>
             </div>
             <div className="flex gap-4 mt-6">
-                <button onClick={checkSolution} className="px-8 py-3 bg-indigo-500 text-white rounded-xl font-bold hover:bg-indigo-600 transition-colors">정답 확인</button>
+                <button onClick={checkSolution} disabled={solved} className="px-8 py-3 bg-indigo-500 text-white rounded-xl font-bold hover:bg-indigo-600 transition-colors disabled:opacity-50">정답 확인</button>
+                <button onClick={newGame} className="px-8 py-3 bg-slate-500 text-white rounded-xl font-bold hover:bg-slate-600 transition-colors">새 퍼즐</button>
             </div>
-            {check && <div className={`mt-3 font-bold text-xl ${check === '정답입니다!' ? 'text-green-500' : 'text-slate-500'}`}>{check}</div>}
+            {check && <div className={`mt-3 font-bold text-xl ${solved ? 'text-green-500' : 'text-slate-500'}`}>{check}</div>}
         </div>
     );
 };
@@ -823,7 +953,12 @@ const MemoryMatch = () => {
     const [moves, setMoves] = useState(0);
 
     const initGame = () => {
-        const items = [...emojis, ...emojis].sort(() => Math.random() - 0.5);
+        const items = [...emojis, ...emojis];
+        // Fisher-Yates 셔플 (sort 방식은 분포가 치우침)
+        for (let i = items.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [items[i], items[j]] = [items[j], items[i]];
+        }
         setCards(items.map((val, id) => ({ id, val, flipped: false, matched: false })));
         setFlipped([]);
         setMoves(0);
@@ -859,9 +994,16 @@ const MemoryMatch = () => {
         }
     };
 
+    const allMatched = cards.length > 0 && cards.every(c => c.matched);
+
     return (
         <div className="flex flex-col items-center w-full h-full justify-center">
             <div className="mb-4 text-xl font-bold dark:text-white">시도 횟수: {moves}</div>
+            {allMatched && (
+                <div className="mb-4 px-6 py-3 bg-gradient-to-r from-pink-500 to-rose-500 text-white rounded-xl font-bold text-lg animate-bounce">
+                    🎉 모두 찾았습니다! {moves}번 만에 클리어!
+                </div>
+            )}
             <div className="grid grid-cols-4 gap-4 w-full max-w-[60vh] aspect-square p-2">
                 {cards.map((c) => (
                     <div
@@ -906,15 +1048,53 @@ const TicTacToe = () => {
         setIsAiThinking(true);
     };
 
+    // 미니맥스 AI — 최적 수를 찾되 15% 확률로 실수 (이길 기회 제공)
+    const minimax = (squares: any[], isMaximizing: boolean, depth: number): number => {
+        const w = calculateWinner(squares);
+        if (w === 'O') return 10 - depth;
+        if (w === 'X') return depth - 10;
+        if (squares.every(s => s !== null)) return 0;
+
+        let best = isMaximizing ? -Infinity : Infinity;
+        for (let i = 0; i < 9; i++) {
+            if (squares[i] === null) {
+                squares[i] = isMaximizing ? 'O' : 'X';
+                const score = minimax(squares, !isMaximizing, depth + 1);
+                squares[i] = null;
+                best = isMaximizing ? Math.max(best, score) : Math.min(best, score);
+            }
+        }
+        return best;
+    };
+
+    const findBestMove = (): number => {
+        const emptyIndices = board.map((bs, i) => bs === null ? i : -1).filter(i => i !== -1);
+        // 가끔 실수
+        if (Math.random() < 0.15) {
+            return emptyIndices[Math.floor(Math.random() * emptyIndices.length)];
+        }
+        let bestScore = -Infinity;
+        let bestMove = emptyIndices[0];
+        for (const i of emptyIndices) {
+            const copy = [...board];
+            copy[i] = 'O';
+            const score = minimax(copy, false, 0);
+            if (score > bestScore) {
+                bestScore = score;
+                bestMove = i;
+            }
+        }
+        return bestMove;
+    };
+
     // AI Turn
     useEffect(() => {
         if (!isXNext && !winner && board.some(x => x === null) && isAiThinking) {
             const timer = setTimeout(() => {
-                const emptyIndices = board.map((bs, i) => bs === null ? i : null).filter(i => i !== null);
-                const rand = emptyIndices[Math.floor(Math.random() * emptyIndices.length)];
-                if (rand !== undefined) {
+                const moveIdx = findBestMove();
+                if (moveIdx !== undefined) {
                     const newBoard = [...board];
-                    newBoard[rand] = 'O';
+                    newBoard[moveIdx] = 'O';
                     setBoard(newBoard);
                     setIsXNext(true);
                     setIsAiThinking(false);
@@ -950,11 +1130,27 @@ const TicTacToe = () => {
 };
 
 // --- Game 8: Word Puzzle ---
+const WORDLE_WORDS = [
+    'APPLE', 'BRAVE', 'CRANE', 'DREAM', 'EAGLE', 'FLAME', 'GRAPE', 'HOUSE', 'IVORY', 'JELLY',
+    'KNIFE', 'LEMON', 'MAGIC', 'NIGHT', 'OCEAN', 'PIANO', 'QUEEN', 'RIVER', 'STONE', 'TIGER',
+    'UNCLE', 'VIVID', 'WATER', 'YOUTH', 'ZEBRA', 'BEACH', 'CHAIR', 'DANCE', 'EARTH', 'FROST',
+    'GLASS', 'HEART', 'IMAGE', 'JUICE', 'KOALA', 'LIGHT', 'MUSIC', 'NOVEL', 'ONION', 'PEARL',
+    'QUILT', 'ROBIN', 'SUGAR', 'TABLE', 'UMBRA', 'VALUE', 'WHEAT', 'XENON', 'YEAST', 'ZESTY',
+    'BLOOM', 'CLOUD', 'DELTA', 'EMBER', 'FAITH', 'GIANT', 'HONEY', 'INPUT', 'JOKER', 'KARMA',
+];
+
 const WordPuzzle = () => {
-    const answer = "APPLE"; // Hardcoded for demo
+    const [answer, setAnswer] = useState(() => WORDLE_WORDS[Math.floor(Math.random() * WORDLE_WORDS.length)]);
     const [guesses, setGuesses] = useState<string[]>([]);
     const [currentGuess, setCurrentGuess] = useState('');
     const [status, setStatus] = useState<'playing' | 'won' | 'lost'>('playing');
+
+    const resetGame = () => {
+        setAnswer(WORDLE_WORDS[Math.floor(Math.random() * WORDLE_WORDS.length)]);
+        setGuesses([]);
+        setCurrentGuess('');
+        setStatus('playing');
+    };
 
     const handleKey = (key: string) => {
         if (status !== 'playing') return;
@@ -991,10 +1187,31 @@ const WordPuzzle = () => {
         return 'bg-slate-500 border-slate-500 text-white';
     };
 
+    // 이미 사용한 글자의 결과 (키보드 색상용)
+    const letterStatus = (letter: string): 'correct' | 'present' | 'absent' | null => {
+        let result: 'correct' | 'present' | 'absent' | null = null;
+        for (const g of guesses) {
+            for (let i = 0; i < 5; i++) {
+                if (g[i] === letter) {
+                    if (answer[i] === letter) return 'correct';
+                    if (answer.includes(letter)) result = 'present';
+                    else if (!result) result = 'absent';
+                }
+            }
+        }
+        return result;
+    };
+
+    const KEYBOARD_ROWS = [
+        ['Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P'],
+        ['A', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L'],
+        ['ENTER', 'Z', 'X', 'C', 'V', 'B', 'N', 'M', 'BACK'],
+    ];
+
     return (
         <div className="flex flex-col items-center w-full h-full justify-center">
-            <div className="mb-8 text-2xl font-bold dark:text-white">{status === 'won' ? '정답입니다!' : status === 'lost' ? `정답: ${answer}` : '단어를 맞춰보세요'}</div>
-            <div className="space-y-2 mb-8 w-full max-w-sm">
+            <div className="mb-6 text-2xl font-bold dark:text-white">{status === 'won' ? '정답입니다! 🎉' : status === 'lost' ? `정답: ${answer}` : '단어를 맞춰보세요'}</div>
+            <div className="space-y-2 mb-6 w-full max-w-sm">
                 {[...Array(6)].map((_, i) => (
                     <div key={i} className="flex gap-2 justify-center">
                         {[...Array(5)].map((_, j) => {
@@ -1010,8 +1227,34 @@ const WordPuzzle = () => {
                     </div>
                 ))}
             </div>
-            {status !== 'playing' && <button onClick={() => { setGuesses([]); setCurrentGuess(''); setStatus('playing'); }} className="px-8 py-3 bg-orange-500 text-white rounded-xl font-bold hover:bg-orange-600 transition-colors">다시 도전</button>}
-            <p className="text-slate-500 text-sm mt-4">키보드로 입력하세요</p>
+
+            {/* 화면 키보드 (모바일 지원) */}
+            <div className="w-full max-w-lg space-y-1.5 px-2">
+                {KEYBOARD_ROWS.map((row, ri) => (
+                    <div key={ri} className="flex gap-1.5 justify-center">
+                        {row.map(key => {
+                            const st = letterStatus(key);
+                            const isWide = key === 'ENTER' || key === 'BACK';
+                            return (
+                                <button
+                                    key={key}
+                                    onClick={() => handleKey(key)}
+                                    className={`${isWide ? 'px-2 sm:px-3' : 'w-8 sm:w-10'} h-12 sm:h-14 rounded-lg font-bold text-sm sm:text-base transition-all active:scale-95
+                                        ${st === 'correct' ? 'bg-green-500 text-white'
+                                            : st === 'present' ? 'bg-yellow-500 text-white'
+                                                : st === 'absent' ? 'bg-slate-600 text-white/60'
+                                                    : 'bg-slate-300 dark:bg-slate-600 text-slate-800 dark:text-white hover:bg-slate-400'}`}
+                                >
+                                    {key === 'BACK' ? '⌫' : key === 'ENTER' ? '↵' : key}
+                                </button>
+                            );
+                        })}
+                    </div>
+                ))}
+            </div>
+
+            {status !== 'playing' && <button onClick={resetGame} className="mt-4 px-8 py-3 bg-orange-500 text-white rounded-xl font-bold hover:bg-orange-600 transition-colors">다시 도전</button>}
+            <p className="text-slate-500 text-sm mt-3">키보드 또는 화면 버튼으로 입력</p>
         </div>
     );
 };

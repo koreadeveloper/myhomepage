@@ -25,6 +25,7 @@ const ChessGame: React.FC = () => {
     const [gameStarted, setGameStarted] = useState(false);
     const [aiRating, setAiRating] = useState(800);
     const [lastMove, setLastMove] = useState<{ from: Square; to: Square } | null>(null);
+    const [pendingPromotion, setPendingPromotion] = useState<{ from: Square; to: Square } | null>(null);
 
     // Stockfish engine ref
     const stockfishRef = useRef<StockfishEngine | null>(null);
@@ -63,7 +64,14 @@ const ChessGame: React.FC = () => {
         if (selected) {
             const move = validMoves.find(m => m === square);
             if (move) {
-                makeMove(selected, square);
+                // 승격 수인지 확인
+                const selPiece = game.get(selected);
+                const isPromo = selPiece?.type === 'p' && (square[1] === '8' || square[1] === '1');
+                if (isPromo) {
+                    setPendingPromotion({ from: selected, to: square });
+                } else {
+                    makeMove(selected, square);
+                }
             } else if (piece && piece.color === playerColor) {
                 setSelected(square);
                 setValidMoves(game.moves({ square, verbose: true }).map(m => m.to as Square));
@@ -77,9 +85,9 @@ const ChessGame: React.FC = () => {
         }
     };
 
-    const makeMove = (from: Square, to: Square) => {
+    const makeMove = (from: Square, to: Square, promotion: 'q' | 'r' | 'b' | 'n' = 'q') => {
         try {
-            const move = game.move({ from, to, promotion: 'q' });
+            const move = game.move({ from, to, promotion });
             if (move) {
                 // Record captured piece
                 if (move.captured) {
@@ -129,7 +137,13 @@ const ChessGame: React.FC = () => {
 
     const handleDrop = (square: Square) => {
         if (dragging && validMoves.includes(square)) {
-            makeMove(dragging, square);
+            const selPiece = game.get(dragging);
+            const isPromo = selPiece?.type === 'p' && (square[1] === '8' || square[1] === '1');
+            if (isPromo) {
+                setPendingPromotion({ from: dragging, to: square });
+            } else {
+                makeMove(dragging, square);
+            }
         }
         setDragging(null);
     };
@@ -150,7 +164,6 @@ const ChessGame: React.FC = () => {
                 if (aiMode === 'stockfish') {
                     // Use Stockfish engine
                     if (!stockfishRef.current) {
-                        console.log('Creating new Stockfish engine with rating:', aiRating);
                         stockfishRef.current = new StockfishEngine();
                         stockfishRef.current.setDifficulty(aiRating);
                         // Wait for engine to initialize
@@ -158,23 +171,18 @@ const ChessGame: React.FC = () => {
                     }
 
                     try {
-                        console.log('Requesting move from Stockfish, FEN:', game.fen());
                         const moveStr = await stockfishRef.current.getBestMove(game.fen());
-                        console.log('Stockfish returned:', moveStr);
                         if (moveStr && moveStr.length >= 4) {
                             const from = moveStr.substring(0, 2) as Square;
                             const to = moveStr.substring(2, 4) as Square;
                             const promotion = moveStr.length > 4 ? moveStr[4] : undefined;
                             const found = moves.find(m => m.from === from && m.to === to);
                             if (found) {
-                                console.log('Valid move found:', found);
                                 bestMove = found;
                             } else {
-                                console.log('Move not found in legal moves, using random');
                                 bestMove = moves[Math.floor(Math.random() * moves.length)];
                             }
                         } else {
-                            console.log('Invalid move from Stockfish, using random');
                             bestMove = moves[Math.floor(Math.random() * moves.length)];
                         }
                     } catch (err) {
@@ -441,6 +449,40 @@ const ChessGame: React.FC = () => {
                         );
                     }))}
                 </div>
+
+                {/* 승격 선택 UI */}
+                {pendingPromotion && (
+                    <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/50 rounded-lg">
+                        <div className="bg-white dark:bg-slate-800 rounded-2xl p-4 shadow-2xl border border-slate-200 dark:border-slate-600">
+                            <p className="text-center font-bold text-slate-800 dark:text-white mb-3">승격할 기물을 선택하세요</p>
+                            <div className="flex gap-2">
+                                {(['q', 'r', 'b', 'n'] as const).map(p => {
+                                    const code = playerColor === 'b' ? p : p.toUpperCase();
+                                    return (
+                                        <button
+                                            key={p}
+                                            onClick={() => {
+                                                makeMove(pendingPromotion.from, pendingPromotion.to, p);
+                                                setPendingPromotion(null);
+                                                setSelected(null);
+                                                setValidMoves([]);
+                                            }}
+                                            className="w-16 h-16 bg-amber-100 dark:bg-slate-700 hover:bg-amber-200 dark:hover:bg-slate-600 rounded-xl border-2 border-amber-300 dark:border-slate-500 transition-all hover:scale-105 flex items-center justify-center"
+                                        >
+                                            <img src={PIECE_IMAGES[code] || ''} alt={p} className="w-12 h-12 object-contain" />
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                            <button
+                                onClick={() => { setPendingPromotion(null); setSelected(null); setValidMoves([]); }}
+                                className="mt-3 w-full py-1.5 text-sm text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
+                            >
+                                취소
+                            </button>
+                        </div>
+                    </div>
+                )}
             </div>
 
             {/* Right Panel - Move History */}

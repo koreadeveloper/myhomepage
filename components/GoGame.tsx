@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef } from 'react';
 
 type Stone = 'black' | 'white' | null;
 
@@ -17,6 +17,9 @@ const GoGame: React.FC = () => {
     const [lastMove, setLastMove] = useState<Position | null>(null);
     const [gameOver, setGameOver] = useState(false);
     const [passCount, setPassCount] = useState(0);
+    const [koBlocked, setKoBlocked] = useState(false);
+    // 코 룰: 직전 보드 상태 (되돌리는 수 금지)
+    const prevBoardRef = useRef<Stone[][] | null>(null);
 
     // 보드 초기화
     const initBoard = useCallback((size: 9 | 13 | 19) => {
@@ -27,7 +30,16 @@ const GoGame: React.FC = () => {
         setLastMove(null);
         setGameOver(false);
         setPassCount(0);
+        setKoBlocked(false);
+        prevBoardRef.current = null;
     }, []);
+
+    const boardsEqual = (a: Stone[][], b: Stone[][]): boolean => {
+        for (let r = 0; r < boardSize; r++)
+            for (let c = 0; c < boardSize; c++)
+                if (a[r][c] !== b[r][c]) return false;
+        return true;
+    };
 
     // 인접한 위치들
     const getNeighbors = (row: number, col: number): Position[] => {
@@ -123,6 +135,14 @@ const GoGame: React.FC = () => {
             return; // 자살 수는 무효
         }
 
+        // 코 룰: 직전 보드로 되돌리는 수 금지
+        if (prevBoardRef.current && boardsEqual(finalBoard, prevBoardRef.current)) {
+            setKoBlocked(true);
+            setTimeout(() => setKoBlocked(false), 1200);
+            return;
+        }
+
+        prevBoardRef.current = board;
         setBoard(finalBoard);
         setCaptured(prev => ({
             ...prev,
@@ -150,9 +170,24 @@ const GoGame: React.FC = () => {
 
         const scoredMoves: ScoredMove[] = [];
 
+        // 19x19 성능: 돌 주변(거리 2 이내) 후보만 평가
+        const anyStone = currentBoard.some(r => r.some(c => c !== null));
+        const nearStone = (r: number, c: number): boolean => {
+            for (let dr = -2; dr <= 2; dr++)
+                for (let dc = -2; dc <= 2; dc++) {
+                    const nr = r + dr, nc = c + dc;
+                    if (nr >= 0 && nr < boardSize && nc >= 0 && nc < boardSize && currentBoard[nr][nc] !== null)
+                        return true;
+                }
+            return false;
+        };
+
         for (let row = 0; row < boardSize; row++) {
             for (let col = 0; col < boardSize; col++) {
                 if (currentBoard[row][col] !== null) continue;
+                if (anyStone && !nearStone(row, col)) continue;
+                // 빈 판이면 중앙 부근만
+                if (!anyStone && Math.abs(row - center) + Math.abs(col - center) > 2) continue;
 
                 // 자살 수 체크
                 const testBoard = currentBoard.map(r => [...r]);
@@ -163,6 +198,9 @@ const GoGame: React.FC = () => {
                 const liberties = countLiberties(group, afterCapture.board);
 
                 if (liberties === 0 && afterCapture.captured === 0) continue;
+
+                // 코 룰 체크
+                if (prevBoardRef.current && boardsEqual(afterCapture.board, prevBoardRef.current)) continue;
 
                 let score = 0;
 
@@ -242,6 +280,7 @@ const GoGame: React.FC = () => {
             ...prev,
             [color]: prev[color] + opponentCapture.captured
         }));
+        prevBoardRef.current = currentBoard;
         setLastMove(move);
         setPassCount(0);
         setTurn(opponent);
@@ -251,6 +290,7 @@ const GoGame: React.FC = () => {
     const handlePass = (color?: 'black' | 'white') => {
         const currentPassCount = passCount + 1;
         setPassCount(currentPassCount);
+        prevBoardRef.current = null; // 패스 후 코 제한 해제
 
         if (currentPassCount >= 2) {
             setGameOver(true);
@@ -264,10 +304,52 @@ const GoGame: React.FC = () => {
         }
     };
 
-    // 점수 계산 (간단 버전: 잡은 돌 수)
+    // 점수 계산 (중국식 면적 계산: 돌 수 + 집 + 사석, 백 집계보정 6.5)
     const getScore = () => {
-        // 실제 바둑 점수 계산은 복잡하므로, 간단히 잡은 돌 수로 대체
-        return captured;
+        const territory = { black: 0, white: 0 };
+        const stones = { black: 0, white: 0 };
+        const visited = new Set<string>();
+
+        // 빈 영역 플러드필 → 한쪽 색으로만 둘러싸인 영역만 집으로 인정
+        for (let r = 0; r < boardSize; r++) {
+            for (let c = 0; c < boardSize; c++) {
+                const cell = board[r][c];
+                if (cell) {
+                    stones[cell]++;
+                    continue;
+                }
+                const key = `${r},${c}`;
+                if (visited.has(key)) continue;
+
+                const region: Position[] = [];
+                const borderColors = new Set<'black' | 'white'>();
+                const stack: Position[] = [{ row: r, col: c }];
+                while (stack.length > 0) {
+                    const pos = stack.pop()!;
+                    const k = `${pos.row},${pos.col}`;
+                    if (visited.has(k)) continue;
+                    const cellVal = board[pos.row][pos.col];
+                    if (cellVal) {
+                        borderColors.add(cellVal);
+                        continue;
+                    }
+                    visited.add(k);
+                    region.push(pos);
+                    getNeighbors(pos.row, pos.col).forEach(n => stack.push(n));
+                }
+                if (borderColors.size === 1) {
+                    const color = [...borderColors][0];
+                    territory[color] += region.length;
+                }
+            }
+        }
+
+        const KOMI = 6.5;
+        return {
+            black: captured.black + stones.black + territory.black,
+            white: captured.white + stones.white + territory.white + KOMI,
+            detail: { stones, territory, captured, komi: KOMI }
+        };
     };
 
     const score = getScore();
@@ -306,8 +388,17 @@ const GoGame: React.FC = () => {
             </div>
 
             {gameOver && (
-                <div className="px-6 py-3 bg-gradient-to-r from-amber-500 to-orange-500 text-white rounded-xl font-bold animate-pulse">
+                <div className="px-6 py-3 bg-gradient-to-r from-amber-500 to-orange-500 text-white rounded-xl font-bold animate-pulse text-center">
                     게임 종료! {score.black > score.white ? '흑' : score.white > score.black ? '백' : '무승부'} 승리!
+                    <div className="text-xs font-normal opacity-90">
+                        집 {score.detail.territory.black}:{score.detail.territory.white} · 사석 {score.detail.captured.black}:{score.detail.captured.white} · 백 덤 {score.detail.komi}
+                    </div>
+                </div>
+            )}
+
+            {koBlocked && (
+                <div className="px-4 py-2 bg-red-500 text-white rounded-xl font-bold">
+                    코(ko) 룰: 바로 되따낼 수 없습니다
                 </div>
             )}
 

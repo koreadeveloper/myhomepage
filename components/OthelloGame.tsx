@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef } from 'react';
 
 type Cell = 'black' | 'white' | null;
 
@@ -14,6 +14,8 @@ const OthelloGame: React.FC = () => {
     const [currentPlayer, setCurrentPlayer] = useState<'black' | 'white'>('black');
     const [gameOver, setGameOver] = useState(false);
     const [validMoves, setValidMoves] = useState<[number, number][]>([]);
+    const [aiThinking, setAiThinking] = useState(false);
+    const genRef = useRef(0);
 
     const directions = [
         [-1, -1], [-1, 0], [-1, 1],
@@ -63,7 +65,7 @@ const OthelloGame: React.FC = () => {
     }, [board, currentPlayer, getValidMoves]);
 
     const handleClick = (row: number, col: number) => {
-        if (gameOver) return;
+        if (gameOver || currentPlayer !== 'black' || aiThinking) return;
 
         const toFlip = getFlippable(board, row, col, currentPlayer);
         if (toFlip.length === 0) return;
@@ -83,19 +85,23 @@ const OthelloGame: React.FC = () => {
             setCurrentPlayer(opponent);
             // AI 턴
             if (opponent === 'white') {
-                setTimeout(() => aiMove(newBoard, opponent), 500);
+                setAiThinking(true);
+                const g = genRef.current;
+                setTimeout(() => { if (g === genRef.current) aiMove(newBoard, opponent); }, 500);
             }
         } else {
             const myMoves = getValidMoves(newBoard, currentPlayer);
             if (myMoves.length === 0) {
                 setGameOver(true);
+            } else {
+                // 상대 둘 곳 없음 → 내 턴 유지 (패스)
             }
         }
     };
 
     const aiMove = (board: Cell[][], player: 'black' | 'white') => {
         const moves = getValidMoves(board, player);
-        if (moves.length === 0) return;
+        if (moves.length === 0) { setAiThinking(false); return; }
 
         // 코너 우선, 가장자리 차선
         const cornerMoves = moves.filter(([r, c]) =>
@@ -137,15 +143,22 @@ const OthelloGame: React.FC = () => {
 
         if (opponentMoves.length > 0) {
             setCurrentPlayer(opponent);
+            setAiThinking(false);
         } else {
             const myMoves = getValidMoves(newBoard, player);
             if (myMoves.length === 0) {
                 setGameOver(true);
+                setAiThinking(false);
+            } else {
+                // 플레이어가 둘 곳 없음 → AI가 계속 둠
+                const g = genRef.current;
+                setTimeout(() => { if (g === genRef.current) aiMove(newBoard, player); }, 500);
             }
         }
     };
 
     const resetGame = () => {
+        genRef.current++;
         const initial: Cell[][] = Array(8).fill(null).map(() => Array(8).fill(null));
         initial[3][3] = 'white';
         initial[3][4] = 'black';
@@ -154,6 +167,7 @@ const OthelloGame: React.FC = () => {
         setBoard(initial);
         setCurrentPlayer('black');
         setGameOver(false);
+        setAiThinking(false);
     };
 
     const countPieces = () => {

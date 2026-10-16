@@ -639,6 +639,7 @@ const GoStopGame: React.FC = () => {
     const [playerScore, setPlayerScore] = useState(0);
     const [aiScore, setAiScore] = useState(0);
     const [goCount, setGoCount] = useState(0);
+    const [aiGoCount, setAiGoCount] = useState(0);
     const [message, setMessage] = useState('게임을 시작하세요!');
     const [isPlayerTurn, setIsPlayerTurn] = useState(true);
     const [selectedCard, setSelectedCard] = useState<(HwatuCard & { id: number }) | null>(null);
@@ -768,6 +769,7 @@ const GoStopGame: React.FC = () => {
             setPlayerScore(0);
             setAiScore(0);
             setGoCount(0);
+            setAiGoCount(0);
 
             // Phase 변경을 마지막에 수행
             setIsPlayerTurn(true);
@@ -842,13 +844,15 @@ const GoStopGame: React.FC = () => {
             }
             setField(prev => prev.filter(c => c.id !== matches[0].id));
         } else {
-            // 여러 개 매칭 시 첫 번째 가져가기 (간단화)
+            // 여러 개 매칭 시 가치 높은 카드 우선 (광>띠>열>피)
+            const typeValue = (t: string) => t === 'gwang' ? 4 : t === 'tti' ? 3 : t === 'yul' ? 2 : 1;
+            const best = [...matches].sort((a, b) => typeValue(b.type) - typeValue(a.type))[0];
             if (isPlayerTurn) {
-                setPlayerCapture(prev => [...prev, flipped, matches[0]]);
+                setPlayerCapture(prev => [...prev, flipped, best]);
             } else {
-                setAiCapture(prev => [...prev, flipped, matches[0]]);
+                setAiCapture(prev => [...prev, flipped, best]);
             }
-            setField(prev => prev.filter(c => c.id !== matches[0].id));
+            setField(prev => prev.filter(c => c.id !== best.id));
         }
 
         endTurn();
@@ -895,63 +899,71 @@ const GoStopGame: React.FC = () => {
         }
     };
 
-    // AI 턴
+    // 카드 가치 (광>띠>열>피)
+    const cardTypeValue = (t: string) => t === 'gwang' ? 4 : t === 'tti' ? 3 : t === 'yul' ? 2 : 1;
+
+    // AI 턴 — 최신 획득 목록을 직접 추적 (stale state 방지)
     const aiTurn = () => {
         if (aiHand.length === 0) {
             endTurn();
             return;
         }
 
-        // 간단한 AI: 매칭되는 카드 우선, 없으면 아무거나
-        let cardToPlay: (HwatuCard & { id: number }) | null = null;
-
+        // 카드 선택: 가치 높은 매칭을 주는 카드 우선
+        let cardToPlay = aiHand[0];
+        let bestValue = -1;
         for (const card of aiHand) {
             const matches = field.filter(f => f.month === card.month);
-            if (matches.length > 0) {
+            const value = matches.reduce((s, m) => s + cardTypeValue(m.type), 0);
+            if (value > bestValue) {
+                bestValue = value;
                 cardToPlay = card;
-                break;
             }
         }
 
-        if (!cardToPlay) {
-            cardToPlay = aiHand[0];
-        }
-
         // 카드 내기
-        const matches = field.filter(f => f.month === cardToPlay!.month);
+        const matches = field.filter(f => f.month === cardToPlay.month);
+        let newAiCapture = [...aiCapture];
+        let fieldAfterPlay = [...field];
 
         if (matches.length === 0) {
-            setField(prev => [...prev, cardToPlay!]);
+            fieldAfterPlay.push(cardToPlay);
+            setField(prev => [...prev, cardToPlay]);
         } else {
-            setAiCapture(prev => [...prev, cardToPlay!, matches[0]]);
-            setField(prev => prev.filter(c => c.id !== matches[0].id));
+            const best = [...matches].sort((a, b) => cardTypeValue(b.type) - cardTypeValue(a.type))[0];
+            newAiCapture.push(cardToPlay, best);
+            fieldAfterPlay = fieldAfterPlay.filter(c => c.id !== best.id);
+            setAiCapture(prev => [...prev, cardToPlay, best]);
+            setField(prev => prev.filter(c => c.id !== best.id));
         }
 
-        setAiHand(prev => prev.filter(c => c.id !== cardToPlay!.id));
+        const newAiHand = aiHand.filter(c => c.id !== cardToPlay.id);
+        setAiHand(newAiHand);
 
         // 덱에서 뒤집기
         setTimeout(() => {
             if (deckRef.current.length > 0) {
                 const flipped = deckRef.current.pop()!;
-                const flipMatches = field.filter(f => f.month === flipped.month);
+                const flipMatches = fieldAfterPlay.filter(f => f.month === flipped.month);
 
                 if (flipMatches.length === 0) {
                     setField(prev => [...prev, flipped]);
                 } else {
-                    setAiCapture(prev => [...prev, flipped, flipMatches[0]]);
-                    setField(prev => prev.filter(c => c.id !== flipMatches[0].id));
+                    const best = [...flipMatches].sort((a, b) => cardTypeValue(b.type) - cardTypeValue(a.type))[0];
+                    newAiCapture.push(flipped, best);
+                    setAiCapture(prev => [...prev, flipped, best]);
+                    setField(prev => prev.filter(c => c.id !== best.id));
                 }
             }
 
-            // 턴 종료
+            // 턴 종료 — 점수는 이번 턴의 최종 획득물로 계산
             setIsPlayerTurn(true);
             setMessage('카드를 선택하세요!');
 
-            // 점수 업데이트
-            const aScore = calculateScore(aiCapture);
+            const aScore = calculateScore(newAiCapture);
             setAiScore(aScore);
 
-            if (aiHand.length === 0 && playerHand.length === 0) {
+            if (newAiHand.length === 0 && playerHand.length === 0) {
                 const pScore = calculateScore(playerCapture);
                 if (pScore > aScore) {
                     setWinner('player');
@@ -963,6 +975,22 @@ const GoStopGame: React.FC = () => {
                     setMessage('무승부!');
                 }
                 setPhase('finished');
+                return;
+            }
+
+            // AI 고/스톱 판단 (7점 이상일 때)
+            if (aScore >= 7) {
+                const pScore = calculateScore(playerCapture);
+                // 앞서있거나 10점 이상이면 스톱
+                if (aScore >= 10 || aScore > pScore) {
+                    setWinner('ai');
+                    setMessage(`😢 AI 스톱! 최종 점수 ${aScore}점 — 패배`);
+                    setPhase('finished');
+                    return;
+                }
+                // 지고 있으면 고
+                setAiGoCount(c => c + 1);
+                setMessage(`AI가 고(GO)! AI 점수 ${aScore}점`);
             }
         }, 500);
     };

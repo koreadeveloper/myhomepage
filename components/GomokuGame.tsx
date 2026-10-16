@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef } from 'react';
 
 // 오목 (Five in a Row / Gomoku)
 const GomokuGame = () => {
@@ -9,6 +9,7 @@ const GomokuGame = () => {
     const [isPlayerTurn, setIsPlayerTurn] = useState(true);
     const [winner, setWinner] = useState<null | 'black' | 'white' | 'draw'>(null);
     const [thinking, setThinking] = useState(false);
+    const genRef = useRef(0);
 
     const checkWinner = useCallback((b: (null | 'black' | 'white')[][], row: number, col: number, player: 'black' | 'white') => {
         const directions = [[1, 0], [0, 1], [1, 1], [1, -1]];
@@ -109,7 +110,9 @@ const GomokuGame = () => {
         setIsPlayerTurn(false);
         setThinking(true);
 
+        const g = genRef.current;
         setTimeout(() => {
+            if (g !== genRef.current) return;
             const aiMove = getAiMove(newBoard);
             if (aiMove) {
                 newBoard[aiMove.row][aiMove.col] = 'white';
@@ -126,6 +129,7 @@ const GomokuGame = () => {
     }, [board, winner, isPlayerTurn, thinking, checkWinner, getAiMove]);
 
     const resetGame = () => {
+        genRef.current++;
         setBoard(Array(BOARD_SIZE).fill(null).map(() => Array(BOARD_SIZE).fill(null)));
         setIsPlayerTurn(true);
         setWinner(null);

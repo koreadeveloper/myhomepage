@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef } from 'react';
 
 type Cell = 'empty' | 'ship' | 'hit' | 'miss';
 
@@ -32,6 +32,17 @@ const BattleshipGame: React.FC = () => {
     const [message, setMessage] = useState('배를 배치하세요');
     const [playerHits, setPlayerHits] = useState(0);
     const [enemyHits, setEnemyHits] = useState(0);
+    const [aiThinking, setAiThinking] = useState(false);
+
+    // 최신 보드 참조 (비동기 AI 턴의 stale closure 방지)
+    const playerBoardRef = useRef(playerBoard);
+    const huntTargetsRef = useRef<[number, number][]>([]);
+
+    // state 변경 시 ref 동기화
+    const syncPlayerBoard = (b: Cell[][]) => {
+        playerBoardRef.current = b;
+        setPlayerBoard(b);
+    };
 
     const totalShipCells = initialShips.reduce((sum, ship) => sum + ship.size, 0);
 
@@ -68,7 +79,7 @@ const BattleshipGame: React.FC = () => {
         }
 
         const newBoard = placeShip(playerBoard, row, col, ship.size, isHorizontal);
-        setPlayerBoard(newBoard);
+        syncPlayerBoard(newBoard);
 
         const newShips = [...playerShips];
         newShips[selectedShip].placed = true;
@@ -101,7 +112,7 @@ const BattleshipGame: React.FC = () => {
     };
 
     const handleEnemyBoardClick = (row: number, col: number) => {
-        if (phase !== 'playing') return;
+        if (phase !== 'playing' || aiThinking) return;
         if (enemyBoard[row][col] !== 'empty') return;
 
         const newEnemyBoard = enemyBoard.map(r => [...r]);
@@ -123,35 +134,61 @@ const BattleshipGame: React.FC = () => {
         }
 
         // AI 턴
+        setAiThinking(true);
         setTimeout(() => aiAttack(), 800);
     };
 
     const aiAttack = () => {
-        const available: [number, number][] = [];
-        for (let r = 0; r < GRID_SIZE; r++) {
-            for (let c = 0; c < GRID_SIZE; c++) {
-                if (playerBoard[r][c] === 'empty' || playerBoard[r][c] === 'ship') {
-                    available.push([r, c]);
+        // 최신 보드 사용
+        const board = playerBoardRef.current;
+
+        // Hunt 모드: 명중된 함선 주변을 우선 공격
+        const isAttacked = (r: number, c: number) => board[r][c] === 'hit' || board[r][c] === 'miss';
+        huntTargetsRef.current = huntTargetsRef.current.filter(([r, c]) =>
+            r >= 0 && r < GRID_SIZE && c >= 0 && c < GRID_SIZE && !isAttacked(r, c)
+        );
+
+        let row: number, col: number;
+        if (huntTargetsRef.current.length > 0) {
+            [row, col] = huntTargetsRef.current.shift()!;
+        } else {
+            // 랜덤 + 체커보드 패턴 (함선 효율적 탐색)
+            const available: [number, number][] = [];
+            const parity: [number, number][] = [];
+            for (let r = 0; r < GRID_SIZE; r++) {
+                for (let c = 0; c < GRID_SIZE; c++) {
+                    if (!isAttacked(r, c)) {
+                        available.push([r, c]);
+                        if ((r + c) % 2 === 0) parity.push([r, c]);
+                    }
                 }
             }
+            if (available.length === 0) { setAiThinking(false); return; }
+            const pool = parity.length > 0 ? parity : available;
+            [row, col] = pool[Math.floor(Math.random() * pool.length)];
         }
 
-        if (available.length === 0) return;
-
-        const [row, col] = available[Math.floor(Math.random() * available.length)];
-        const newPlayerBoard = playerBoard.map(r => [...r]);
-        const isHit = playerBoard[row][col] === 'ship';
+        const newPlayerBoard = board.map(r => [...r]);
+        const isHit = board[row][col] === 'ship';
         newPlayerBoard[row][col] = isHit ? 'hit' : 'miss';
+        playerBoardRef.current = newPlayerBoard;
         setPlayerBoard(newPlayerBoard);
 
         if (isHit) {
-            const newHits = enemyHits + 1;
+            // 명중 → 인접 칸을 사냥 목표에 추가
+            const neighbors: [number, number][] = [[row - 1, col], [row + 1, col], [row, col - 1], [row, col + 1]];
+            huntTargetsRef.current.push(...neighbors.filter(([r, c]) =>
+                r >= 0 && r < GRID_SIZE && c >= 0 && c < GRID_SIZE && !isAttacked(r, c)
+            ));
+
+            const newHits = newPlayerBoard.flat().filter(c => c === 'hit').length;
             setEnemyHits(newHits);
             if (newHits >= totalShipCells) {
                 setPhase('lost');
                 setMessage('😢 패배! 모든 아군 함대가 격침되었습니다...');
             }
         }
+        setAiThinking(false);
     };
 
     const resetGame = () => {
@@ -164,6 +201,9 @@ const BattleshipGame: React.FC = () => {
         setMessage('배를 배치하세요');
         setPlayerHits(0);
         setEnemyHits(0);
+        setAiThinking(false);
+        playerBoardRef.current = createEmptyGrid();
+        huntTargetsRef.current = [];
     };
 
     const renderCell = (cell: Cell, isEnemy: boolean, hidden?: Cell) => {

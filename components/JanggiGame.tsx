@@ -71,8 +71,28 @@ const JanggiGame: React.FC = () => {
         }
     };
 
-    const getValidMoves = useCallback((row: number, col: number): Position[] => {
-        const piece = board[row][col];
+    const palaceCenter = (player: Player) => player === 'cho' ? { row: 8, col: 4 } : { row: 1, col: 4 };
+    const isPalaceCenter = (r: number, c: number, player: Player) => {
+        const p = palaceCenter(player);
+        return r === p.row && c === p.col;
+    };
+    const isPalaceCorner = (r: number, c: number, player: Player) => {
+        const rows = player === 'cho' ? [7, 9] : [0, 2];
+        return rows.includes(r) && (c === 3 || c === 5);
+    };
+    // 궁성 대각선 인접점 (꼭지점↔중앙)
+    const palaceDiagTargets = (r: number, c: number, player: Player): Position[] => {
+        const p = palaceCenter(player);
+        if (r === p.row && c === p.col) {
+            const rows = player === 'cho' ? [7, 9] : [0, 2];
+            return rows.flatMap(rr => [{ row: rr, col: 3 }, { row: rr, col: 5 }]);
+        }
+        if (isPalaceCorner(r, c, player)) return [p];
+        return [];
+    };
+
+    const getValidMovesOn = useCallback((b: (Piece | null)[][], row: number, col: number): Position[] => {
+        const piece = b[row][col];
         if (!piece) return [];
 
         const moves: Position[] = [];
@@ -81,7 +101,7 @@ const JanggiGame: React.FC = () => {
 
         const addMove = (r: number, c: number) => {
             if (r >= 0 && r < ROWS && c >= 0 && c < COLS) {
-                const target = board[r][c];
+                const target = b[r][c];
                 if (!target || target.player !== player) {
                     moves.push({ row: r, col: c });
                 }
@@ -91,20 +111,13 @@ const JanggiGame: React.FC = () => {
         switch (type) {
             case '궁':
             case '사':
-                // 궁성 안에서 1칸 이동
-                const palace = isInPalace(row, col, player);
-                if (palace) {
+                // 궁성 안에서 1칸 이동 + 대각선 (꼭지점↔중앙 양방향)
+                if (isInPalace(row, col, player)) {
                     [[0, 1], [0, -1], [1, 0], [-1, 0]].forEach(([dr, dc]) => {
                         const nr = row + dr, nc = col + dc;
                         if (isInPalace(nr, nc, player)) addMove(nr, nc);
                     });
-                    // 대각선 (궁성 중앙 또는 꼭지점)
-                    if ((row === 1 || row === 8) && col === 4) {
-                        [[1, 1], [1, -1], [-1, 1], [-1, -1]].forEach(([dr, dc]) => {
-                            const nr = row + dr, nc = col + dc;
-                            if (isInPalace(nr, nc, player)) addMove(nr, nc);
-                        });
-                    }
+                    palaceDiagTargets(row, col, player).forEach(t => addMove(t.row, t.col));
                 }
                 break;
 
@@ -113,7 +126,7 @@ const JanggiGame: React.FC = () => {
                 for (const [dr, dc] of [[0, 1], [0, -1], [1, 0], [-1, 0]]) {
                     let r = row + dr, c = col + dc;
                     while (r >= 0 && r < ROWS && c >= 0 && c < COLS) {
-                        const target = board[r][c];
+                        const target = b[r][c];
                         if (!target) {
                             moves.push({ row: r, col: c });
                         } else {
@@ -124,6 +137,24 @@ const JanggiGame: React.FC = () => {
                         c += dc;
                     }
                 }
+                // 궁성 대각선 이동: 꼭지점→중앙→반대편 꼭지점
+                if (isPalaceCorner(row, col, player)) {
+                    const center = palaceCenter(player);
+                    const t = b[center.row][center.col];
+                    if (!t || t.player !== player) {
+                        moves.push({ row: center.row, col: center.col });
+                        if (!t) {
+                            const or = center.row + (center.row - row), oc = center.col + (center.col - col);
+                            const t2 = b[or][oc];
+                            if (!t2 || t2.player !== player) moves.push({ row: or, col: oc });
+                        }
+                    }
+                } else if (isPalaceCenter(row, col, player)) {
+                    palaceDiagTargets(row, col, player).forEach(tg => {
+                        const t = b[tg.row][tg.col];
+                        if (!t || t.player !== player) moves.push(tg);
+                    });
+                }
                 break;
 
             case '포':
@@ -132,7 +163,7 @@ const JanggiGame: React.FC = () => {
                     let r = row + dr, c = col + dc;
                     let jumped = false;
                     while (r >= 0 && r < ROWS && c >= 0 && c < COLS) {
-                        const target = board[r][c];
+                        const target = b[r][c];
                         if (!jumped) {
                             if (target && target.type !== '포') {
                                 jumped = true;
@@ -151,6 +182,16 @@ const JanggiGame: React.FC = () => {
                         c += dc;
                     }
                 }
+                // 궁성 대각선: 꼭지점→(중앙 넘기)→반대편 꼭지점
+                if (isPalaceCorner(row, col, player)) {
+                    const center = palaceCenter(player);
+                    const mid = b[center.row][center.col];
+                    if (mid && mid.type !== '포') {
+                        const or = center.row + (center.row - row), oc = center.col + (center.col - col);
+                        const t2 = b[or][oc];
+                        if (!t2 || (t2.player !== player && t2.type !== '포')) moves.push({ row: or, col: oc });
+                    }
+                }
                 break;
 
             case '마':
@@ -167,7 +208,7 @@ const JanggiGame: React.FC = () => {
                 ];
                 for (const { block, end } of horsePatterns) {
                     const br = row + block[0], bc = col + block[1];
-                    if (br >= 0 && br < ROWS && bc >= 0 && bc < COLS && !board[br][bc]) {
+                    if (br >= 0 && br < ROWS && bc >= 0 && bc < COLS && !b[br][bc]) {
                         addMove(row + end[0], col + end[1]);
                     }
                 }
@@ -189,7 +230,7 @@ const JanggiGame: React.FC = () => {
                     let blocked = false;
                     for (const [bdr, bdc] of blocks) {
                         const br = row + bdr, bc = col + bdc;
-                        if (br < 0 || br >= ROWS || bc < 0 || bc >= COLS || board[br][bc]) {
+                        if (br < 0 || br >= ROWS || bc < 0 || bc >= COLS || b[br][bc]) {
                             blocked = true;
                             break;
                         }
@@ -204,14 +245,129 @@ const JanggiGame: React.FC = () => {
                 addMove(row + dir, col);
                 addMove(row, col - 1);
                 addMove(row, col + 1);
+                // 궁성 대각선 전진 (꼭지점↔중앙 라인, 전진 방향만)
+                if (isInPalace(row, col, player)) {
+                    palaceDiagTargets(row, col, player)
+                        .filter(t => (t.row - row) === dir)
+                        .forEach(t => addMove(t.row, t.col));
+                }
                 break;
         }
 
         return moves;
-    }, [board]);
+    }, []);
+
+    const getValidMoves = (row: number, col: number) => getValidMovesOn(board, row, col);
+
+    // 궁 위치 찾기
+    const findGeneral = (b: (Piece | null)[][], player: Player): Position | null => {
+        for (let r = 0; r < ROWS; r++)
+            for (let c = 0; c < COLS; c++) {
+                const p = b[r][c];
+                if (p?.type === '궁' && p.player === player) return { row: r, col: c };
+            }
+        return null;
+    };
+
+    // 특정 칸이 byPlayer에게 공격받는지
+    const isAttacked = (b: (Piece | null)[][], r: number, c: number, byPlayer: Player): boolean => {
+        for (let pr = 0; pr < ROWS; pr++)
+            for (let pc = 0; pc < COLS; pc++) {
+                const p = b[pr][pc];
+                if (p?.player !== byPlayer) continue;
+                if (getValidMovesOn(b, pr, pc).some(m => m.row === r && m.col === c)) return true;
+            }
+        return false;
+    };
+
+    const isInCheck = (b: (Piece | null)[][], player: Player): boolean => {
+        const gen = findGeneral(b, player);
+        if (!gen) return false;
+        return isAttacked(b, gen.row, gen.col, player === 'cho' ? 'han' : 'cho');
+    };
+
+    // 자기 궁을 공격받게 두는 수 제외한 합법수
+    const legalMoves = (b: (Piece | null)[][], row: number, col: number): Position[] => {
+        const piece = b[row][col];
+        if (!piece) return [];
+        return getValidMovesOn(b, row, col).filter(m => {
+            const nb = b.map(r => [...r]);
+            nb[m.row][m.col] = nb[row][col];
+            nb[row][col] = null;
+            return !isInCheck(nb, piece.player);
+        });
+    };
+
+    const hasAnyLegalMove = (b: (Piece | null)[][], player: Player): boolean => {
+        for (let r = 0; r < ROWS; r++)
+            for (let c = 0; c < COLS; c++)
+                if (b[r][c]?.player === player && legalMoves(b, r, c).length > 0) return true;
+        return false;
+    };
+
+    const pieceValues: Record<string, number> = { '궁': 1000, '차': 13, '포': 7, '마': 5, '상': 3, '사': 3, '졸': 2, '병': 2 };
+
+    // 한(漢) AI: 캡처 가치 + 장군 가중
+    const aiMove = (b: (Piece | null)[][]) => {
+        const moves: { from: Position; to: Position; score: number }[] = [];
+        for (let r = 0; r < ROWS; r++) {
+            for (let c = 0; c < COLS; c++) {
+                const p = b[r][c];
+                if (p?.player !== 'han') continue;
+                for (const m of legalMoves(b, r, c)) {
+                    let score = Math.random() * 4;
+                    const target = b[m.row][m.col];
+                    if (target) score += (pieceValues[target.type!] || 0) * 10;
+                    // 장군 보너스: 수 후 상대 궁 공격
+                    const nb = b.map(row => [...row]);
+                    nb[m.row][m.col] = nb[r][c];
+                    nb[r][c] = null;
+                    if (isInCheck(nb, 'cho')) score += 15;
+                    score += m.row * 0.05; // 전진 보너스 (한은 아래로)
+                    moves.push({ from: { row: r, col: c }, to: m, score });
+                }
+            }
+        }
+
+        if (moves.length === 0) {
+            // AI가 둘 수 없음 → 플레이어 승리
+            setGameOver(true);
+            setWinner('cho');
+            return;
+        }
+
+        moves.sort((a, b) => b.score - a.score);
+        const best = moves[0];
+        const nb = b.map(r => [...r]);
+        const captured = nb[best.to.row][best.to.col];
+        nb[best.to.row][best.to.col] = nb[best.from.row][best.from.col];
+        nb[best.from.row][best.from.col] = null;
+        setBoard(nb);
+
+        if (captured?.type === '궁') {
+            setGameOver(true);
+            setWinner('han');
+            return;
+        }
+        // 플레이어 체크메이트/둘 곳 없음 (장기는 패스 없음 → 둘 수 없으면 패배)
+        if (!hasAnyLegalMove(nb, 'cho')) {
+            setGameOver(true);
+            setWinner('han');
+            return;
+        }
+        setCurrentPlayer('cho');
+    };
+
+    // AI 턴 트리거
+    useEffect(() => {
+        if (currentPlayer === 'han' && !gameOver) {
+            const t = setTimeout(() => aiMove(board), 500);
+            return () => clearTimeout(t);
+        }
+    }, [currentPlayer, gameOver]);
 
     const handleClick = (row: number, col: number) => {
-        if (gameOver) return;
+        if (gameOver || currentPlayer !== 'cho') return;
 
         const piece = board[row][col];
 
@@ -226,20 +382,23 @@ const JanggiGame: React.FC = () => {
                 newBoard[selectedPos.row][selectedPos.col] = null;
                 setBoard(newBoard);
 
-                // 궁 잡힘 체크
+                // 궁 잡힘 / 체크메이트 체크
                 if (captured?.type === '궁') {
                     setGameOver(true);
-                    setWinner(currentPlayer);
+                    setWinner('cho');
+                } else if (!hasAnyLegalMove(newBoard, 'han')) {
+                    setGameOver(true);
+                    setWinner('cho');
                 } else {
-                    setCurrentPlayer(currentPlayer === 'cho' ? 'han' : 'cho');
+                    setCurrentPlayer('han');
                 }
             }
             setSelectedPos(null);
             setValidMoves([]);
-        } else if (piece && piece.player === currentPlayer) {
-            // 기물 선택
+        } else if (piece && piece.player === 'cho') {
+            // 기물 선택 (합법수만 표시 — 자살수 제외)
             setSelectedPos({ row, col });
-            setValidMoves(getValidMoves(row, col));
+            setValidMoves(legalMoves(board, row, col));
         }
     };
 
@@ -273,16 +432,22 @@ const JanggiGame: React.FC = () => {
 
             <div className="flex gap-4">
                 <div className={`px-4 py-2 rounded-xl font-bold ${currentPlayer === 'cho' ? 'bg-green-500 text-white' : 'bg-green-100'}`}>
-                    초(楚)
+                    초(楚) — 나
                 </div>
                 <div className={`px-4 py-2 rounded-xl font-bold ${currentPlayer === 'han' ? 'bg-red-500 text-white' : 'bg-red-100'}`}>
-                    한(漢)
+                    한(漢) — AI
                 </div>
             </div>
 
+            {!gameOver && isInCheck(board, 'cho') && (
+                <div className="px-4 py-2 bg-red-500 text-white rounded-xl font-bold animate-pulse">
+                    ⚠️ 장군!
+                </div>
+            )}
+
             {gameOver && (
                 <div className={`px-6 py-3 rounded-xl font-bold text-white ${winner === 'cho' ? 'bg-green-500' : 'bg-red-500'}`}>
-                    🎉 {winner === 'cho' ? '초' : '한'} 승리!
+                    🎉 {winner === 'cho' ? '초(나)' : '한(AI)'} 승리!
                 </div>
             )}
 
@@ -318,7 +483,8 @@ const JanggiGame: React.FC = () => {
             </button>
 
             <div className="text-xs text-slate-500 dark:text-slate-400 text-center">
-                <p>💡 기물을 클릭하여 선택, 이동할 위치를 클릭하세요.</p>
+                <p>💡 초(녹색) 기물을 클릭해 이동하세요. 한(적색)은 AI가 둡니다.</p>
+                <p>장군 상태에선 궁을 지키는 수만 둘 수 있습니다.</p>
             </div>
         </div>
     );

@@ -32,20 +32,16 @@ export class StockfishEngine {
             this.worker.onmessage = (e: MessageEvent) => {
                 const message = typeof e.data === 'string' ? e.data : String(e.data);
 
-                console.log('Stockfish:', message);
-
                 if (message === 'uciok') {
-                    console.log('Stockfish UCI ready, applying options...');
                     this.isReady = true;
                     this.applyOptions();
                     // Process any queued messages
                     this.processQueue();
                 } else if (message === 'readyok') {
-                    console.log('Stockfish ready!');
+                    // Engine ready
                 } else if (message.startsWith('bestmove')) {
                     const parts = message.split(' ');
                     const move = parts[1];
-                    console.log('Stockfish bestmove:', move);
                     if (this.pendingResolve && move && move !== '(none)') {
                         this.pendingResolve(move);
                         this.pendingResolve = null;
@@ -59,7 +55,6 @@ export class StockfishEngine {
 
             // Send UCI init command
             this.worker.postMessage('uci');
-            console.log('Stockfish worker created, UCI command sent');
 
         } catch (error) {
             console.error('Failed to initialize Stockfish:', error);
@@ -139,8 +134,6 @@ export class StockfishEngine {
             console.error('Stockfish worker not initialized');
             return null;
         }
-
-        console.log('getBestMove called with depth:', this.options.depth, 'movetime:', this.options.moveTime);
 
         return new Promise((resolve) => {
             this.pendingResolve = resolve;

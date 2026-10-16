@@ -188,14 +188,27 @@ const WordSearchGame: React.FC = () => {
                 className="bg-white dark:bg-slate-800 p-2 rounded-xl shadow-lg select-none"
                 onMouseUp={handleMouseUp}
                 onMouseLeave={handleMouseUp}
+                onTouchMove={(e) => {
+                    // 터치 드래그로 셀 선택
+                    const t = e.touches[0];
+                    const el = document.elementFromPoint(t.clientX, t.clientY) as HTMLElement | null;
+                    if (el?.dataset?.wsr !== undefined && el?.dataset?.wsc !== undefined) {
+                        handleCellMouseEnter(parseInt(el.dataset.wsr), parseInt(el.dataset.wsc));
+                    }
+                }}
+                onTouchEnd={handleMouseUp}
+                style={{ touchAction: 'none' }}
             >
                 <div className="grid gap-0.5" style={{ gridTemplateColumns: `repeat(${GRID_SIZE}, 1fr)` }}>
                     {grid.map((row, rowIdx) =>
                         row.map((cell, colIdx) => (
                             <div
                                 key={`${rowIdx}-${colIdx}`}
+                                data-wsr={rowIdx}
+                                data-wsc={colIdx}
                                 onMouseDown={() => handleCellMouseDown(rowIdx, colIdx)}
                                 onMouseEnter={() => handleCellMouseEnter(rowIdx, colIdx)}
+                                onTouchStart={() => handleCellMouseDown(rowIdx, colIdx)}
                                 className={`w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center font-bold text-base sm:text-lg
                                     cursor-pointer transition-all select-none rounded
                                     ${isFound(rowIdx, colIdx)

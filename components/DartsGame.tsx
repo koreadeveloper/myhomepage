@@ -233,14 +233,19 @@ const DartsGame: React.FC = () => {
         setPower(0);
     };
 
-    const handleMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    // 캔버스 좌표 (표시 크기 ↔ 내부 해상도 스케일 보정)
+    const getCanvasPos = (clientX: number, clientY: number) => {
         const canvas = canvasRef.current;
-        if (!canvas) return;
+        if (!canvas) return { x: 0, y: 0 };
         const rect = canvas.getBoundingClientRect();
-        setMousePos({
-            x: e.clientX - rect.left,
-            y: e.clientY - rect.top
-        });
+        return {
+            x: (clientX - rect.left) * (canvas.width / rect.width),
+            y: (clientY - rect.top) * (canvas.height / rect.height)
+        };
+    };
+
+    const handleMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
+        setMousePos(getCanvasPos(e.clientX, e.clientY));
     };
 
     const handleMouseDown = () => {
@@ -255,6 +260,24 @@ const DartsGame: React.FC = () => {
         if (isAiming) {
             throwDart();
         }
+    };
+
+    const handleTouchStart = (e: React.TouchEvent<HTMLCanvasElement>) => {
+        e.preventDefault();
+        const t = e.touches[0];
+        setMousePos(getCanvasPos(t.clientX, t.clientY));
+        handleMouseDown();
+    };
+
+    const handleTouchMove = (e: React.TouchEvent<HTMLCanvasElement>) => {
+        e.preventDefault();
+        const t = e.touches[0];
+        setMousePos(getCanvasPos(t.clientX, t.clientY));
+    };
+
+    const handleTouchEnd = (e: React.TouchEvent<HTMLCanvasElement>) => {
+        e.preventDefault();
+        handleMouseUp();
     };
 
     return (
@@ -316,6 +339,10 @@ const DartsGame: React.FC = () => {
                     onMouseDown={handleMouseDown}
                     onMouseUp={handleMouseUp}
                     onMouseLeave={() => setIsAiming(false)}
+                    onTouchStart={handleTouchStart}
+                    onTouchMove={handleTouchMove}
+                    onTouchEnd={handleTouchEnd}
+                    style={{ touchAction: 'none' }}
                 />
 
                 {/* 파워 게이지 */}

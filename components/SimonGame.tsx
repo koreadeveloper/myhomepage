@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 
 const SimonGame: React.FC = () => {
     const colors = ['red', 'blue', 'green', 'yellow'] as const;
@@ -21,10 +21,17 @@ const SimonGame: React.FC = () => {
         yellow: { base: 'bg-yellow-500 hover:bg-yellow-400', active: 'bg-yellow-300 shadow-lg shadow-yellow-300' },
     };
 
+    // AudioContext 하나 재사용 (매번 생성하면 브라우저 한도 초과로 소리 멈춤)
+    const audioContextRef = useRef<AudioContext | null>(null);
+
     const playSound = useCallback((color: ColorType) => {
-        // 브라우저 호환성을 위해 AudioContext 사용
         try {
-            const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+            if (!audioContextRef.current) {
+                audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+            }
+            const audioContext = audioContextRef.current;
+            if (audioContext.state === 'suspended') audioContext.resume();
+
             const oscillator = audioContext.createOscillator();
             const gainNode = audioContext.createGain();
 
@@ -45,6 +52,14 @@ const SimonGame: React.FC = () => {
         } catch (e) {
             // Audio not supported
         }
+    }, []);
+
+    // 컴포넌트 언마운트 시 AudioContext 해제
+    useEffect(() => {
+        return () => {
+            audioContextRef.current?.close().catch(() => {});
+            audioContextRef.current = null;
+        };
     }, []);
 
     const flashColor = useCallback((color: ColorType) => {

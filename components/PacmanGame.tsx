@@ -44,6 +44,31 @@ const PacmanGame = () => {
         [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
     ];
 
+    const resetPositions = (state: typeof gameStateRef.current) => {
+        state.pacman = { x: 9, y: 15, dir: { x: 0, y: 0 } };
+        state.ghosts = [
+            { x: 8, y: 9, dir: { x: 1, y: 0 }, color: '#ff0000' },
+            { x: 10, y: 9, dir: { x: -1, y: 0 }, color: '#00ffff' },
+        ];
+        state.powerMode = false;
+        state.powerTimer = 0;
+    };
+
+    // 레벨업: 점수 유지, 도트만 재배치
+    const nextLevel = useCallback(() => {
+        const dots = new Set<string>();
+        for (let y = 0; y < maze.length; y++) {
+            for (let x = 0; x < maze[0].length; x++) {
+                if (maze[y][x] === 0 || maze[y][x] === 2) {
+                    dots.add(`${x},${y}`);
+                }
+            }
+        }
+        resetPositions(gameStateRef.current);
+        gameStateRef.current.dots = dots;
+        setLevel(l => l + 1);
+    }, []);
+
     const initGame = useCallback(() => {
         const dots = new Set<string>();
         for (let y = 0; y < maze.length; y++) {
@@ -53,18 +78,11 @@ const PacmanGame = () => {
                 }
             }
         }
-        gameStateRef.current = {
-            pacman: { x: 9, y: 15, dir: { x: 0, y: 0 } },
-            ghosts: [
-                { x: 8, y: 9, dir: { x: 1, y: 0 }, color: '#ff0000' },
-                { x: 10, y: 9, dir: { x: -1, y: 0 }, color: '#00ffff' },
-            ],
-            dots,
-            powerMode: false,
-            powerTimer: 0,
-            lastMoveTime: 0,
-        };
+        resetPositions(gameStateRef.current);
+        gameStateRef.current.dots = dots;
+        gameStateRef.current.lastMoveTime = 0;
         setScore(0);
+        setLevel(1);
         setGameOver(false);
         setStarted(true);
     }, []);
@@ -109,12 +127,31 @@ const PacmanGame = () => {
                     }
                 }
 
-                // Move ghosts
+                // Move ghosts — 추격/도주 AI (유턴 제외)
                 state.ghosts.forEach(ghost => {
                     const dirs = [{ x: 1, y: 0 }, { x: -1, y: 0 }, { x: 0, y: 1 }, { x: 0, y: -1 }];
-                    const validDirs = dirs.filter(d => !isWall(ghost.x + d.x, ghost.y + d.y));
+                    // 유턴 금지(막다른 곳 제외) + 벽 제외
+                    let validDirs = dirs.filter(d =>
+                        !(d.x === -ghost.dir.x && d.y === -ghost.dir.y) && !isWall(ghost.x + d.x, ghost.y + d.y)
+                    );
+                    if (validDirs.length === 0) {
+                        validDirs = dirs.filter(d => !isWall(ghost.x + d.x, ghost.y + d.y));
+                    }
                     if (validDirs.length > 0) {
-                        if (Math.random() < 0.3 || isWall(ghost.x + ghost.dir.x, ghost.y + ghost.dir.y)) {
+                        if (Math.random() < 0.85) {
+                            // 파워모드: 도망 / 평소: 추격
+                            const px = state.pacman.x, py = state.pacman.y;
+                            const dist = (d: { x: number; y: number }) => {
+                                const nx = (ghost.x + d.x + maze[0].length) % maze[0].length;
+                                const ny = ghost.y + d.y;
+                                const dx = Math.min(Math.abs(nx - px), maze[0].length - Math.abs(nx - px));
+                                const dy = Math.abs(ny - py);
+                                return dx * dx + dy * dy;
+                            };
+                            const scored = validDirs.map(d => ({ d, dist: dist(d) }));
+                            scored.sort((a, b) => state.powerMode ? b.dist - a.dist : a.dist - b.dist);
+                            ghost.dir = scored[0].d;
+                        } else {
                             ghost.dir = validDirs[Math.floor(Math.random() * validDirs.length)];
                         }
                         ghost.x = (ghost.x + ghost.dir.x + maze[0].length) % maze[0].length;
@@ -137,10 +174,9 @@ const PacmanGame = () => {
                     if (state.powerTimer <= 0) state.powerMode = false;
                 }
 
-                // Win condition
+                // Win condition — 점수 유지하고 레벨만 진행
                 if (state.dots.size === 0) {
-                    setLevel(l => l + 1);
-                    initGame();
+                    nextLevel();
                 }
 
                 state.lastMoveTime = timestamp;
@@ -195,7 +231,7 @@ const PacmanGame = () => {
 
         animationId = requestAnimationFrame(draw);
         return () => cancelAnimationFrame(animationId);
-    }, [started, gameOver, initGame]);
+    }, [started, gameOver, initGame, nextLevel]);
 
     useEffect(() => {
         const handleKey = (e: KeyboardEvent) => {

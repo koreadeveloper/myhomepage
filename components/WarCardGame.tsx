@@ -18,6 +18,7 @@ const WarCardGame: React.FC = () => {
     const [gameOver, setGameOver] = useState(false);
     const [winner, setWinner] = useState<'player' | 'ai' | null>(null);
     const [isWar, setIsWar] = useState(false);
+    const [isResolving, setIsResolving] = useState(false); // 해결 중 클릭 차단
 
     const createDeck = useCallback((): Card[] => {
         const suits: Card['suit'][] = ['♠', '♥', '♦', '♣'];
@@ -52,6 +53,7 @@ const WarCardGame: React.FC = () => {
         setGameOver(false);
         setWinner(null);
         setIsWar(false);
+        setIsResolving(false);
     }, [createDeck]);
 
     const checkGameOver = useCallback((pDeck: Card[], aDeck: Card[]) => {
@@ -71,7 +73,7 @@ const WarCardGame: React.FC = () => {
     }, []);
 
     const flipCard = () => {
-        if (!isPlaying || gameOver || playerDeck.length === 0 || aiDeck.length === 0) return;
+        if (!isPlaying || gameOver || isResolving || playerDeck.length === 0 || aiDeck.length === 0) return;
 
         const [pCard, ...pRest] = playerDeck;
         const [aCard, ...aRest] = aiDeck;
@@ -80,6 +82,7 @@ const WarCardGame: React.FC = () => {
         setAiCard(aCard);
         setPlayerDeck(pRest);
         setAiDeck(aRest);
+        setIsResolving(true);
 
         // 승부 결정
         setTimeout(() => {
@@ -95,6 +98,7 @@ const WarCardGame: React.FC = () => {
             setMessage(`${pCard.value} > ${aCard.value} - ${pile.length}장 획득! 🎉`);
             setWarPile([]);
             setIsWar(false);
+            setIsResolving(false);
             checkGameOver([...pDeck, ...wonCards], aDeck);
         } else if (aCard.numValue > pCard.numValue) {
             // AI 승
@@ -103,6 +107,7 @@ const WarCardGame: React.FC = () => {
             setMessage(`${pCard.value} < ${aCard.value} - AI가 ${pile.length}장 획득`);
             setWarPile([]);
             setIsWar(false);
+            setIsResolving(false);
             checkGameOver(pDeck, [...aDeck, ...wonCards]);
         } else {
             // WAR!
@@ -207,7 +212,7 @@ const WarCardGame: React.FC = () => {
                 className={`w-32 h-44 rounded-xl shadow-lg flex items-center justify-center cursor-pointer
                     bg-gradient-to-br from-indigo-600 to-purple-700 border-4 border-indigo-400
                     hover:scale-105 transition-transform
-                    ${gameOver ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    ${gameOver || isResolving ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
                 <div className="text-center text-white">
                     <div className="text-4xl">🃏</div>

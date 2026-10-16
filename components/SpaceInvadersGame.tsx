@@ -14,9 +14,13 @@ const SpaceInvadersGame = () => {
         bullets: [] as { x: number; y: number }[],
         enemies: [] as { x: number; y: number; type: number }[],
         enemyBullets: [] as { x: number; y: number }[],
+        barriers: [] as { x: number; y: number; w: number; h: number; hp: number }[],
         enemyDir: 1,
         lastShot: 0,
         lastEnemyShot: 0,
+        touchLeft: false,
+        touchRight: false,
+        touchFire: false,
     });
 
     const initGame = useCallback(() => {
@@ -26,14 +30,20 @@ const SpaceInvadersGame = () => {
                 enemies.push({ x: col * 70 + 50, y: row * 50 + 50, type: row < 1 ? 0 : 1 });
             }
         }
+        // 방어막 4개
+        const barriers = [0, 1, 2, 3].map(i => ({ x: 60 + i * 150, y: 520, w: 60, h: 40, hp: 4 }));
         gameStateRef.current = {
             player: { x: 280, width: 50 },
             bullets: [],
             enemies,
             enemyBullets: [],
+            barriers,
             enemyDir: 1,
             lastShot: 0,
             lastEnemyShot: 0,
+            touchLeft: false,
+            touchRight: false,
+            touchFire: false,
         };
         setScore(0);
         setLives(3);
@@ -54,6 +64,14 @@ const SpaceInvadersGame = () => {
 
         const draw = (timestamp: number) => {
             frameCount++;
+
+            // 터치 홀드 이동/연사
+            if (state.touchLeft) state.player.x = Math.max(0, state.player.x - 6);
+            if (state.touchRight) state.player.x = Math.min(canvas.width - state.player.width, state.player.x + 6);
+            if (state.touchFire && timestamp - state.lastShot > 250) {
+                state.bullets.push({ x: state.player.x + state.player.width / 2, y: canvas.height - 55 });
+                state.lastShot = timestamp;
+            }
 
             // Move bullets
             state.bullets = state.bullets.filter(b => b.y > 0);
@@ -94,6 +112,20 @@ const SpaceInvadersGame = () => {
                     }
                 });
             });
+
+            // 방어막 충돌 (플레이어/적 탄환 모두)
+            const hitBarrier = (b: { x: number; y: number }): boolean => {
+                for (const bar of state.barriers) {
+                    if (bar.hp <= 0) continue;
+                    if (b.x > bar.x && b.x < bar.x + bar.w && b.y > bar.y && b.y < bar.y + bar.h) {
+                        bar.hp--;
+                        return true;
+                    }
+                }
+                return false;
+            };
+            state.bullets = state.bullets.filter(b => !hitBarrier(b));
+            state.enemyBullets = state.enemyBullets.filter(b => !hitBarrier(b));
 
             // Enemy bullet-player collision
             state.enemyBullets.forEach((bullet, i) => {
@@ -151,6 +183,13 @@ const SpaceInvadersGame = () => {
                 ctx.fillRect(enemy.x + 22, enemy.y + 20, 6, 5);
             });
 
+            // Draw barriers
+            state.barriers.forEach(bar => {
+                if (bar.hp <= 0) return;
+                ctx.fillStyle = `rgba(34,197,94,${0.25 + bar.hp * 0.18})`;
+                ctx.fillRect(bar.x, bar.y, bar.w, bar.h * (bar.hp / 4));
+            });
+
             // Draw bullets
             ctx.fillStyle = '#fbbf24';
             state.bullets.forEach(b => ctx.fillRect(b.x - 2, b.y, 4, 12));
@@ -187,7 +226,7 @@ const SpaceInvadersGame = () => {
                 e.preventDefault();
                 const now = Date.now();
                 if (now - state.lastShot > 200) {
-                    state.bullets.push({ x: state.player.x + state.player.width / 2, y: 450 });
+                    state.bullets.push({ x: state.player.x + state.player.width / 2, y: (canvas?.height || 700) - 55 });
                     state.lastShot = now;
                 }
             }
@@ -219,13 +258,31 @@ const SpaceInvadersGame = () => {
                 </div>
             )}
             {started && !gameOver && !won && (
-                <div className="grid grid-cols-3 gap-2 lg:hidden">
-                    <button onClick={() => gameStateRef.current.player.x = Math.max(0, gameStateRef.current.player.x - 20)} className="p-4 bg-slate-700 rounded-lg">◀</button>
-                    <button onClick={() => {
-                        const state = gameStateRef.current;
-                        state.bullets.push({ x: state.player.x + state.player.width / 2, y: 450 });
-                    }} className="p-4 bg-red-600 rounded-lg">🔥</button>
-                    <button onClick={() => gameStateRef.current.player.x = Math.min(360, gameStateRef.current.player.x + 20)} className="p-4 bg-slate-700 rounded-lg">▶</button>
+                <div className="grid grid-cols-3 gap-2 lg:hidden select-none">
+                    <button
+                        onTouchStart={(e) => { e.preventDefault(); gameStateRef.current.touchLeft = true; }}
+                        onTouchEnd={() => gameStateRef.current.touchLeft = false}
+                        onTouchCancel={() => gameStateRef.current.touchLeft = false}
+                        onMouseDown={() => gameStateRef.current.touchLeft = true}
+                        onMouseUp={() => gameStateRef.current.touchLeft = false}
+                        onMouseLeave={() => gameStateRef.current.touchLeft = false}
+                        className="p-4 bg-slate-700 text-white rounded-lg active:bg-slate-500">◀</button>
+                    <button
+                        onTouchStart={(e) => { e.preventDefault(); gameStateRef.current.touchFire = true; }}
+                        onTouchEnd={() => gameStateRef.current.touchFire = false}
+                        onTouchCancel={() => gameStateRef.current.touchFire = false}
+                        onMouseDown={() => gameStateRef.current.touchFire = true}
+                        onMouseUp={() => gameStateRef.current.touchFire = false}
+                        onMouseLeave={() => gameStateRef.current.touchFire = false}
+                        className="p-4 bg-red-600 text-white rounded-lg active:bg-red-400">🔥</button>
+                    <button
+                        onTouchStart={(e) => { e.preventDefault(); gameStateRef.current.touchRight = true; }}
+                        onTouchEnd={() => gameStateRef.current.touchRight = false}
+                        onTouchCancel={() => gameStateRef.current.touchRight = false}
+                        onMouseDown={() => gameStateRef.current.touchRight = true}
+                        onMouseUp={() => gameStateRef.current.touchRight = false}
+                        onMouseLeave={() => gameStateRef.current.touchRight = false}
+                        className="p-4 bg-slate-700 text-white rounded-lg active:bg-slate-500">▶</button>
                 </div>
             )}
         </div>

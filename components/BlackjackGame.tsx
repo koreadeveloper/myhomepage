@@ -199,9 +199,15 @@ const BlackjackGame = () => {
                         <span className="text-xl lg:text-2xl font-bold text-slate-800 dark:text-white">베팅: {bet}</span>
                         <button onClick={() => setBet(b => Math.min(chips, b + 50))} className="px-5 py-3 bg-slate-600 text-white text-lg rounded-lg active:bg-slate-500">+50</button>
                     </div>
-                    <button onClick={startGame} disabled={bet > chips || chips <= 0} className="px-10 py-4 bg-green-500 text-white text-xl font-bold rounded-lg hover:bg-green-400 active:bg-green-400 disabled:bg-slate-400">
-                        {chips <= 0 ? '게임 오버' : '게임 시작'}
-                    </button>
+                    {chips <= 0 ? (
+                        <button onClick={() => { setChips(1000); setBet(100); }} className="px-10 py-4 bg-amber-500 text-white text-xl font-bold rounded-lg hover:bg-amber-400 active:bg-amber-400">
+                            💰 칩 충전 (1,000)
+                        </button>
+                    ) : (
+                        <button onClick={startGame} disabled={bet > chips} className="px-10 py-4 bg-green-500 text-white text-xl font-bold rounded-lg hover:bg-green-400 active:bg-green-400 disabled:bg-slate-400">
+                            게임 시작
+                        </button>
+                    )}
                 </div>
             )}
 

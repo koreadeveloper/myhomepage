@@ -147,7 +147,6 @@ const SolitaireGame: React.FC = () => {
 
         if (moved) {
             setMoves(m => m + 1);
-            checkWin();
         }
         setSelectedCards(null);
     };
@@ -198,11 +197,22 @@ const SolitaireGame: React.FC = () => {
         }
     };
 
-    // 승리 체크
-    const checkWin = () => {
-        const totalFoundation = foundation.reduce((sum, pile) => sum + pile.length, 0);
-        if (totalFoundation === 52) {
+    // 승리 체크 — foundation 변경 후 실행되므로 stale state 문제 없음
+    useEffect(() => {
+        if (foundation.reduce((sum, pile) => sum + pile.length, 0) === 52) {
             setGameWon(true);
+        }
+    }, [foundation]);
+
+    // 더블클릭: 가능하면 기초로 자동 이동
+    const autoMoveToFoundation = (card: Card, from: string, fromIndex: number) => {
+        for (let i = 0; i < 4; i++) {
+            if (canMoveToFoundation(card, foundation[i])) {
+                moveToFoundation(card, from, fromIndex, i);
+                setMoves(m => m + 1);
+                setSelectedCards(null);
+                return;
+            }
         }
     };
 
@@ -326,6 +336,13 @@ const SolitaireGame: React.FC = () => {
                                             selectCard(cardsToMove, `tableau-${colIndex}`, cardIndex);
                                         }
                                     }}
+                                    onDoubleClick={(e) => {
+                                        e.stopPropagation();
+                                        // 맨 위 카드만 기초로 이동 가능
+                                        if (card.faceUp && cardIndex === column.length - 1 && !selectedCards) {
+                                            autoMoveToFoundation(card, `tableau-${colIndex}`, cardIndex);
+                                        }
+                                    }}
                                 >
                                     {renderCard(
                                         card,
@@ -341,6 +358,7 @@ const SolitaireGame: React.FC = () => {
 
             <div className="mt-4 text-xs text-slate-500 dark:text-slate-400 text-center">
                 <p>💡 카드를 클릭하여 선택하고, 목적지를 클릭하여 이동하세요.</p>
+                <p>맨 위 카드를 더블클릭하면 기초로 자동 이동합니다.</p>
             </div>
         </div>
     );

@@ -135,13 +135,39 @@ const SpeedCardGame: React.FC = () => {
         return !playerCanPlay && !aiCanPlay;
     };
 
+    // 막혔는데 어느 한쪽 덱이라도 비면 → 남은 카드 적은 쪽이 승리 (실제 스피드 룰)
+    useEffect(() => {
+        if (!isStuck()) return;
+        if (playerDeck.length === 0 || aiDeck.length === 0) {
+            const playerRemaining = playerDeck.length + playerHand.length;
+            const aiRemaining = aiDeck.length;
+            if (playerRemaining < aiRemaining) {
+                setWinner('player');
+                setMessage('🎉 승리! (남은 카드 적음)');
+            } else if (aiRemaining < playerRemaining) {
+                setWinner('ai');
+                setMessage('😢 AI 승리! (남은 카드 적음)');
+            } else {
+                setWinner('player');
+                setMessage('무승부!');
+            }
+        }
+    }, [playerHand, playerDeck, aiDeck, centerPiles, winner, gameStarted]);
+
     const flipNewCards = () => {
-        if (playerDeck.length > 0 && aiDeck.length > 0) {
+        const newPiles: [Card | null, Card | null] = [centerPiles[0], centerPiles[1]];
+        if (playerDeck.length > 0) {
             const [pCard, ...pRest] = playerDeck;
-            const [aCard, ...aRest] = aiDeck;
-            setCenterPiles([pCard, aCard]);
+            newPiles[0] = pCard;
             setPlayerDeck(pRest);
+        }
+        if (aiDeck.length > 0) {
+            const [aCard, ...aRest] = aiDeck;
+            newPiles[1] = aCard;
             setAiDeck(aRest);
+        }
+        if (playerDeck.length > 0 || aiDeck.length > 0) {
+            setCenterPiles(newPiles);
             setMessage('새 카드가 놓였습니다!');
         }
     };

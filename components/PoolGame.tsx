@@ -169,7 +169,19 @@ const PoolGame: React.FC = () => {
                             ball.vy = 0;
                             if (ball.number === 0) {
                                 setMessage('파울! 큐볼이 들어갔습니다.');
-                                setCueBall(prev => prev ? { ...prev, x: 200, y: TABLE_HEIGHT / 2, vx: 0, vy: 0, pocketed: false } : null);
+                                // 큐볼 리스폰: 다른 공과 겹치지 않는 위치 찾기
+                                const findFreeSpot = () => {
+                                    for (const x of [200, 150, 250, 100, 300]) {
+                                        for (const y of [TABLE_HEIGHT / 2, TABLE_HEIGHT / 3, TABLE_HEIGHT * 2 / 3, 80, TABLE_HEIGHT - 80]) {
+                                            const free = updatedBalls.every(b => b.pocketed ||
+                                                Math.hypot(b.x - x, b.y - y) > BALL_RADIUS * 2 + 4);
+                                            if (free) return { x, y };
+                                        }
+                                    }
+                                    return { x: 200, y: TABLE_HEIGHT / 2 };
+                                };
+                                const spot = findFreeSpot();
+                                setCueBall(prev => prev ? { ...prev, x: spot.x, y: spot.y, vx: 0, vy: 0, pocketed: false } : null);
                             } else if (ball.number === 8) {
                                 const remainingBalls = updatedBalls.filter(b => b.number !== 8 && !b.pocketed);
                                 if (remainingBalls.length === 0) {
@@ -307,13 +319,19 @@ const PoolGame: React.FC = () => {
         }
     }, [balls, cueBall, isAiming, aimStart, aimEnd, isMoving]);
 
+    const getCanvasPos = (clientX: number, clientY: number) => {
+        const rect = canvasRef.current?.getBoundingClientRect();
+        const canvas = canvasRef.current;
+        if (!rect || !canvas) return { x: 0, y: 0 };
+        return {
+            x: (clientX - rect.left) * (canvas.width / rect.width),
+            y: (clientY - rect.top) * (canvas.height / rect.height)
+        };
+    };
+
     const handleMouseDown = (e: React.MouseEvent) => {
         if (isMoving || gameOver || !cueBall) return;
-        const rect = canvasRef.current?.getBoundingClientRect();
-        if (!rect) return;
-
-        const x = e.clientX - rect.left;
-        const y = e.clientY - rect.top;
+        const { x, y } = getCanvasPos(e.clientX, e.clientY);
 
         // 큐볼 근처에서만 조준 시작 (150px로 확대)
         const dx = x - cueBall.x;
@@ -327,10 +345,31 @@ const PoolGame: React.FC = () => {
 
     const handleMouseMove = (e: React.MouseEvent) => {
         if (!isAiming) return;
-        const rect = canvasRef.current?.getBoundingClientRect();
-        if (!rect) return;
-        setAimEnd({ x: e.clientX - rect.left, y: e.clientY - rect.top });
+        setAimEnd(getCanvasPos(e.clientX, e.clientY));
     };
+
+    const handleTouchStart = (e: React.TouchEvent) => {
+        if (isMoving || gameOver || !cueBall) return;
+        const t = e.touches[0];
+        const { x, y } = getCanvasPos(t.clientX, t.clientY);
+        const dx = x - cueBall.x;
+        const dy = y - cueBall.y;
+        if (Math.sqrt(dx * dx + dy * dy) < 150) {
+            e.preventDefault();
+            setIsAiming(true);
+            setAimStart({ x, y });
+            setAimEnd({ x, y });
+        }
+    };
+
+    const handleTouchMove = (e: React.TouchEvent) => {
+        if (!isAiming) return;
+        e.preventDefault();
+        const t = e.touches[0];
+        setAimEnd(getCanvasPos(t.clientX, t.clientY));
+    };
+
+    const handleTouchEnd = () => handleMouseUp();
 
     const handleMouseUp = () => {
         if (!isAiming || !cueBall) return;
@@ -378,6 +417,10 @@ const PoolGame: React.FC = () => {
                 onMouseMove={handleMouseMove}
                 onMouseUp={handleMouseUp}
                 onMouseLeave={() => setIsAiming(false)}
+                onTouchStart={handleTouchStart}
+                onTouchMove={handleTouchMove}
+                onTouchEnd={handleTouchEnd}
+                style={{ touchAction: 'none', maxWidth: '100%' }}
             />
 
             <button
