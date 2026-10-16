@@ -88,7 +88,6 @@ export interface VisitRow {
   session_id: string;
   path: string | null;
   referrer: string | null;
-  ip_address: string | null;
   country: string | null;
   country_code: string | null;
   city: string | null;
@@ -96,12 +95,25 @@ export interface VisitRow {
   browser: string | null;
 }
 
+// 공개 통계 — IP 없는 뷰를 읽습니다
 export const fetchVisits = async (limit = 1000): Promise<VisitRow[]> => {
   if (!supabase) return [];
   const { data } = await supabase
-    .from('site_visits')
+    .from('site_visits_public')
     .select('*')
     .order('created_at', { ascending: false })
     .limit(limit);
   return data || [];
+};
+
+// IP 열람 — 비밀번호가 DB(app_secrets)와 일치할 때만 반환
+export const fetchVisitIps = async (password: string): Promise<Record<string, string> | null> => {
+  if (!supabase) return null;
+  const { data, error } = await supabase.rpc('get_visit_ips', { secret: password });
+  if (error || !data) return null;
+  return Object.fromEntries(
+    (data as { id: string; ip_address: string | null }[])
+      .filter((r) => r.ip_address)
+      .map((r) => [r.id, r.ip_address as string])
+  );
 };

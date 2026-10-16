@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { BarChart3, Globe2, MonitorSmartphone, Users } from 'lucide-react';
-import { fetchVisits, VisitRow } from '../services/analytics';
+import { BarChart3, Globe2, Lock, MonitorSmartphone, Users } from 'lucide-react';
+import { fetchVisits, fetchVisitIps, VisitRow } from '../services/analytics';
 
 // 국가 코드 → 국기 이모지
 const flag = (code: string | null) =>
@@ -26,10 +26,24 @@ const timeAgo = (iso: string) => {
 const Stats: React.FC = () => {
   const [visits, setVisits] = useState<VisitRow[]>([]);
   const [loading, setLoading] = useState(true);
+  const [ipMap, setIpMap] = useState<Record<string, string>>({});
+  const [pwOpen, setPwOpen] = useState(false);
+  const [pw, setPw] = useState('');
+  const [pwError, setPwError] = useState(false);
+  const [pwBusy, setPwBusy] = useState(false);
 
   useEffect(() => {
     fetchVisits(2000).then((v) => { setVisits(v); setLoading(false); });
   }, []);
+
+  const unlockIps = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setPwBusy(true); setPwError(false);
+    const map = await fetchVisitIps(pw);
+    setPwBusy(false);
+    if (map === null) { setPwError(true); return; }
+    setIpMap(map); setPwOpen(false); setPw('');
+  };
 
   const stats = useMemo(() => {
     const sessions = new Set(visits.map((v) => v.session_id)).size;
@@ -179,7 +193,35 @@ const Stats: React.FC = () => {
 
       {/* 최근 방문 */}
       <div className="rounded-3xl bg-white/80 dark:bg-white/5 border border-white/60 dark:border-white/10 p-6">
-        <h2 className="font-black text-slate-900 dark:text-white mb-5">최근 방문</h2>
+        <div className="flex items-center justify-between mb-5">
+          <h2 className="font-black text-slate-900 dark:text-white">최근 방문</h2>
+          <button
+            onClick={() => setPwOpen((v) => !v)}
+            className="inline-flex items-center gap-1.5 text-xs font-bold text-muted dark:text-slate-400 hover:text-brand transition-colors"
+          >
+            <Lock size={12} /> IP 보기
+          </button>
+        </div>
+        {pwOpen && (
+          <form onSubmit={unlockIps} className="flex items-center gap-2 mb-4">
+            <input
+              type="password"
+              value={pw}
+              onChange={(e) => setPw(e.target.value)}
+              placeholder="비밀번호"
+              autoFocus
+              className="flex-1 max-w-xs rounded-xl border border-slate-200 dark:border-white/10 bg-white/70 dark:bg-white/5 px-3 py-2 text-sm font-semibold text-slate-800 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-400"
+            />
+            <button
+              type="submit"
+              disabled={pwBusy}
+              className="rounded-xl bg-indigo-500 hover:bg-indigo-600 disabled:opacity-50 text-white text-xs font-bold px-4 py-2 transition-colors"
+            >
+              {pwBusy ? '확인 중…' : '확인'}
+            </button>
+            {pwError && <span className="text-xs font-bold text-red-500">비밀번호가 틀렸습니다</span>}
+          </form>
+        )}
         <ul className="divide-y divide-slate-100 dark:divide-white/5">
           {recent.map((v) => (
             <li key={v.id} className="py-3 flex items-center gap-3 text-sm">
@@ -195,9 +237,9 @@ const Stats: React.FC = () => {
                   {v.path || '/'} · {host(v.referrer)}
                 </p>
               </div>
-              {v.ip_address && (
+              {ipMap[v.id] && (
                 <code className="text-[10px] font-mono font-bold text-slate-400 dark:text-slate-500 bg-slate-100 dark:bg-white/10 rounded px-1.5 py-0.5 shrink-0 hidden sm:block">
-                  {v.ip_address}
+                  {ipMap[v.id]}
                 </code>
               )}
               <span className="text-xs font-bold text-slate-400 shrink-0">{timeAgo(v.created_at)}</span>
